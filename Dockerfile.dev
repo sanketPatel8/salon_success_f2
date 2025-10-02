@@ -1,0 +1,26 @@
+# Development Dockerfile for Salon Success Manager
+FROM node:20-alpine
+
+# Install dependencies for development
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose the development port
+EXPOSE 8080
+
+# Set environment variables for development
+ENV NODE_ENV=development
+ENV PORT=8080
+
+# Start the development server
+CMD ["npm", "run", "dev"]

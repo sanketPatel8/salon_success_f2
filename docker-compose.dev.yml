@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Development
+  postgres:
+    image: postgres:15-alpine
+    container_name: salon-success-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: salon_success_manager_dev
+      POSTGRES_USER: salon_user
+      POSTGRES_PASSWORD: salon_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - salon-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salon_user -d salon_success_manager_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Development Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: salon-success-app-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://salon_user:salon_password@postgres:5432/salon_success_manager_dev
+      - SESSION_SECRET=dev-session-secret-change-in-production
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - VITE_STRIPE_PUBLIC_KEY=${VITE_STRIPE_PUBLIC_KEY}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - ADMIN_PASSWORD=admin123
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - salon-dev-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/dist
+
+volumes:
+  postgres_dev_data:
+    driver: local
+
+networks:
+  salon-dev-network:
+    driver: bridge

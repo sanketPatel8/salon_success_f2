@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 348 100% 97%; /* #ffeef4 */
+  --foreground: 0 0% 0%; /* black */
+  --muted: 348 100% 95%;
+  --muted-foreground: 0 0% 40%;
+  --popover: 0 0% 100%; /* white */
+  --popover-foreground: 0 0% 0%; /* black */
+  --card: 0 0% 100%; /* white */
+  --card-foreground: 0 0% 0%; /* black */
+  --border: 348 30% 85%;
+  --input: 348 30% 90%;
+  --primary: 348 100% 78%; /* #ff8f9f */
+  --primary-foreground: 0 0% 0%; /* black */
+  --secondary: 0 0% 95%;
+  --secondary-foreground: 0 0% 0%; /* black */
+  --accent: 348 100% 97%; /* #ffeef4 */
+  --accent-foreground: 0 0% 0%; /* black */
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --success: 348 100% 78%; /* #ff8f9f */
+  --warning: 35 100% 50%;
+  --error: 0 74% 50%;
+  --ring: 348 100% 78%; /* #ff8f9f */
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 0 0% 0%; /* black */
+  --foreground: 0 0% 100%; /* white */
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 70%;
+  --popover: 0 0% 5%;
+  --popover-foreground: 0 0% 100%; /* white */
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 100%; /* white */
+  --border: 0 0% 20%;
+  --input: 0 0% 15%;
+  --primary: 348 100% 78%; /* #ff8f9f */
+  --primary-foreground: 0 0% 0%; /* black */
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 100%; /* white */
+  --accent: 348 100% 78%; /* #ff8f9f */
+  --accent-foreground: 0 0% 0%; /* black */
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 348 100% 78%; /* #ff8f9f */
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-success {
+    color: hsl(var(--success));
+  }
+  
+  .text-warning {
+    color: hsl(var(--warning));
+  }
+  
+  .text-error {
+    color: hsl(var(--error));
+  }
+  
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+  
+  .bg-warning {
+    background-color: hsl(var(--warning));
+  }
+  
+  .bg-error {
+    background-color: hsl(var(--error));
+  }
+  
+  .border-success {
+    border-color: hsl(var(--success));
+  }
+  
+  .border-warning {
+    border-color: hsl(var(--warning));
+  }
+  
+  .border-error {
+    border-color: hsl(var(--error));
+  }
+}
