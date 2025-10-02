@@ -973,7 +973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let subscriptionStatus = {
-        active: false,
+        active: true,
         status: user.subscriptionStatus,
         endDate: user.subscriptionEndDate
       };
