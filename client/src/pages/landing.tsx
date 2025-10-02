@@ -3,9 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Check, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, FileText, Star, Users, Shield, Crown } from "lucide-react";
 import { Link } from "wouter";
-import logoPath from "@assets/KatieGodfrey-Logo_Black.png";
 import katiePhotoPath from "@assets/katie-photo.png";
-
 
 const features = [
   {
@@ -82,20 +80,20 @@ export default function Landing() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <div>
-                <h1 className="text-xl font-bold text-slate-800">Salon Success Manager</h1>
-                <p className="text-sm text-slate-500">by Katie Godfrey</p>
+                <h1 className="text-base sm:text-xl font-bold text-slate-800">Salon Success Manager</h1>
+                <p className="text-xs sm:text-sm text-slate-500">by Katie Godfrey</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/login">
-                <Button variant="outline">Sign In</Button>
+                <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">Sign In</Button>
               </Link>
               <Link href="/register">
-                <Button>Subscribe Now</Button>
+                <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-4">Subscribe Now</Button>
               </Link>
             </div>
           </div>
@@ -103,78 +101,78 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-6">
+      <section className="py-10 sm:py-16 lg:py-20 px-4 sm:px-6">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div className="text-center lg:text-left">
-              <div className="mb-6 flex justify-center lg:justify-start">
-                <h2 className="text-2xl font-bold text-primary">Salon Success Manager</h2>
+              <div className="mb-4 sm:mb-6 flex justify-center lg:justify-start">
+                <h2 className="text-xl sm:text-2xl font-bold text-primary">Salon Success Manager</h2>
               </div>
-              <h1 className="text-5xl font-bold text-slate-900 mb-6 leading-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
                 Transform Your Salon into a 
                 <span className="text-primary"> Profitable Business</span>
               </h1>
               
-              <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+              <p className="text-base sm:text-lg lg:text-xl text-slate-600 mb-6 sm:mb-8 leading-relaxed">
                 Stop guessing your prices. Start managing like a CEO. Get the financial clarity and tools you need 
                 to build a successful salon, clinic, or training academy.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <Link href="/register">
-                  <Button size="lg" className="text-lg px-8 py-4">
+                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
                     Subscribe Now
                     <span className="ml-2">→</span>
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="text-lg px-8 py-4">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
                   Watch Demo
                 </Button>
               </div>
-              <p className="text-sm text-slate-500 mt-4">
+              <p className="text-xs sm:text-sm text-slate-500 mt-3 sm:mt-4">
                 £23.97/month • Cancel anytime • Have a promo code? Enter during signup
               </p>
             </div>
             
-            <div className="relative">
+            <div className="relative mt-8 lg:mt-0">
               <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
-                <div className="bg-gradient-to-r from-primary to-primary/80 h-3"></div>
-                <div className="p-6">
-                  <div className="space-y-4">
+                <div className="bg-gradient-to-r from-primary to-primary/80 h-2 sm:h-3"></div>
+                <div className="p-4 sm:p-6">
+                  <div className="space-y-3 sm:space-y-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                          <DollarSign className="w-4 h-4 text-primary" />
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                          <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                         </div>
-                        <span className="font-medium">Monthly Revenue</span>
+                        <span className="text-sm sm:text-base font-medium">Monthly Revenue</span>
                       </div>
-                      <span className="text-2xl font-bold text-green-600">£12,450</span>
+                      <span className="text-lg sm:text-2xl font-bold text-green-600">£12,450</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Percent className="w-4 h-4 text-blue-600" />
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Percent className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                         </div>
-                        <span className="font-medium">Profit Margin</span>
+                        <span className="text-sm sm:text-base font-medium">Profit Margin</span>
                       </div>
-                      <span className="text-2xl font-bold text-blue-600">68%</span>
+                      <span className="text-lg sm:text-2xl font-bold text-blue-600">68%</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-purple-600" />
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
                         </div>
-                        <span className="font-medium">Hourly Rate</span>
+                        <span className="text-sm sm:text-base font-medium">Hourly Rate</span>
                       </div>
-                      <span className="text-2xl font-bold text-purple-600">£85</span>
+                      <span className="text-lg sm:text-2xl font-bold text-purple-600">£85</span>
                     </div>
                   </div>
-                  <div className="mt-6 h-32 bg-gradient-to-r from-primary/10 to-blue-100 rounded-lg flex items-end justify-center">
-                    <div className="flex items-end gap-2 pb-4">
+                  <div className="mt-4 sm:mt-6 h-24 sm:h-32 bg-gradient-to-r from-primary/10 to-blue-100 rounded-lg flex items-end justify-center">
+                    <div className="flex items-end gap-1 sm:gap-2 pb-3 sm:pb-4">
                       {[40, 65, 45, 80, 60, 90, 75].map((height, i) => (
                         <div
                           key={i}
                           className="bg-primary rounded-t"
-                          style={{ height: `${height}%`, width: '12px' }}
+                          style={{ height: `${height}%`, width: '8px', minWidth: '8px' }}
                         />
                       ))}
                     </div>
@@ -183,7 +181,7 @@ export default function Landing() {
               </div>
               
               {/* Floating Cards */}
-              <div className="absolute -top-4 -left-4 bg-white rounded-lg shadow-lg p-3 border">
+              <div className="hidden sm:block absolute -top-4 -left-4 bg-white rounded-lg shadow-lg p-3 border">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
                     <TrendingUp className="w-3 h-3 text-green-600" />
@@ -192,7 +190,7 @@ export default function Landing() {
                 </div>
               </div>
               
-              <div className="absolute -bottom-4 -right-4 bg-white rounded-lg shadow-lg p-3 border">
+              <div className="hidden sm:block absolute -bottom-4 -right-4 bg-white rounded-lg shadow-lg p-3 border">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                     <Users className="w-3 h-3 text-blue-600" />
@@ -206,20 +204,22 @@ export default function Landing() {
       </section>
 
       {/* Testimonial Section */}
-      <section className="py-16 px-6 bg-white">
+      <section className="py-12 sm:py-16 px-4 sm:px-6 bg-white">
         <div className="container mx-auto max-w-4xl">
-          <div className="bg-blue-50 border-l-4 border-primary p-8 rounded-r-lg">
-            <div className="flex items-start gap-6">
-              <img 
+          <div className="bg-blue-50 border-l-4 border-primary p-4 sm:p-6 lg:p-8 rounded-r-lg">
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
+                <img 
                 src={katiePhotoPath} 
                 alt="Katie Godfrey" 
                 className="w-20 h-20 rounded-full object-cover flex-shrink-0"
               />
+              </div>
               <div className="flex-1">
-                <p className="text-lg text-slate-700 italic leading-relaxed mb-4">
+                <p className="text-sm sm:text-base lg:text-lg text-slate-700 italic leading-relaxed mb-3 sm:mb-4">
                   "So many professionals come to me confused about why they're making money, but have nothing left at the end of the month. Nine times out of ten, it comes down to incorrect pricing and not knowing their break-even point or the real cost of running their business day-to-day. This app takes the guesswork out of your numbers, no spreadsheets, no confusing accountant jargon. Just simple, clear insights to help you understand exactly how to price, where your profit is, and how to finally make more money in your business."
                 </p>
-                <p className="text-sm font-semibold text-primary">- Katie Godfrey, Business Strategist</p>
+                <p className="text-xs sm:text-sm font-semibold text-primary">- Katie Godfrey, Business Strategist</p>
               </div>
             </div>
           </div>
@@ -227,13 +227,13 @@ export default function Landing() {
       </section>
 
       {/* App Preview Section */}
-      <section className="py-20 px-6 bg-slate-50">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-slate-50">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
               See Your Business Dashboard in Action
             </h2>
-            <p className="text-lg text-slate-600">
+            <p className="text-base sm:text-lg text-slate-600">
               Get real-time insights and manage every aspect of your salon business
             </p>
           </div>
@@ -241,81 +241,81 @@ export default function Landing() {
           <div className="relative">
             <div className="bg-white rounded-xl shadow-2xl overflow-hidden border">
               {/* Mock Browser Header */}
-              <div className="bg-slate-100 px-4 py-3 flex items-center gap-2">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+              <div className="bg-slate-100 px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2">
+                <div className="flex gap-1.5 sm:gap-2">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-400 rounded-full"></div>
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-400 rounded-full"></div>
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full"></div>
                 </div>
-                <div className="flex-1 bg-white rounded px-3 py-1 mx-4">
-                  <span className="text-sm text-slate-500">salon-success-manager.app</span>
+                <div className="flex-1 bg-white rounded px-2 sm:px-3 py-1 mx-2 sm:mx-4">
+                  <span className="text-xs sm:text-sm text-slate-500">salon-success-manager.app</span>
                 </div>
               </div>
               
               {/* Mock Dashboard */}
-              <div className="p-6 bg-gradient-to-br from-white to-slate-50">
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-white rounded-lg p-4 shadow-sm border">
+              <div className="p-4 sm:p-6 bg-gradient-to-br from-white to-slate-50">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-600">This Month's Revenue</span>
-                      <TrendingUp className="w-4 h-4 text-green-600" />
+                      <span className="text-xs sm:text-sm text-slate-600">This Month's Revenue</span>
+                      <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
                     </div>
-                    <div className="text-2xl font-bold text-slate-900">£18,240</div>
-                    <div className="text-sm text-green-600">+24% from last month</div>
+                    <div className="text-xl sm:text-2xl font-bold text-slate-900">£18,240</div>
+                    <div className="text-xs sm:text-sm text-green-600">+24% from last month</div>
                   </div>
                   
-                  <div className="bg-white rounded-lg p-4 shadow-sm border">
+                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-600">Average Profit Margin</span>
-                      <Percent className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs sm:text-sm text-slate-600">Average Profit Margin</span>
+                      <Percent className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                     </div>
-                    <div className="text-2xl font-bold text-slate-900">72%</div>
-                    <div className="text-sm text-blue-600">Above industry average</div>
+                    <div className="text-xl sm:text-2xl font-bold text-slate-900">72%</div>
+                    <div className="text-xs sm:text-sm text-blue-600">Above industry average</div>
                   </div>
                   
-                  <div className="bg-white rounded-lg p-4 shadow-sm border">
+                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border sm:col-span-2 md:col-span-1">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-600">Optimal Hourly Rate</span>
-                      <Clock className="w-4 h-4 text-purple-600" />
+                      <span className="text-xs sm:text-sm text-slate-600">Optimal Hourly Rate</span>
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
                     </div>
-                    <div className="text-2xl font-bold text-slate-900">£95</div>
-                    <div className="text-sm text-purple-600">Based on your data</div>
+                    <div className="text-xl sm:text-2xl font-bold text-slate-900">£95</div>
+                    <div className="text-xs sm:text-sm text-purple-600">Based on your data</div>
                   </div>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-lg p-4 shadow-sm border">
-                    <h3 className="font-semibold mb-3">Recent Calculations</h3>
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
+                    <h3 className="font-semibold text-sm sm:text-base mb-2 sm:mb-3">Recent Calculations</h3>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm">Hair Cut & Blow Dry</span>
-                        <span className="font-medium">£45</span>
+                      <div className="flex justify-between items-center py-1.5 sm:py-2">
+                        <span className="text-xs sm:text-sm">Hair Cut & Blow Dry</span>
+                        <span className="font-medium text-sm sm:text-base">£45</span>
                       </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm">Full Colour Treatment</span>
-                        <span className="font-medium">£120</span>
+                      <div className="flex justify-between items-center py-1.5 sm:py-2">
+                        <span className="text-xs sm:text-sm">Full Colour Treatment</span>
+                        <span className="font-medium text-sm sm:text-base">£120</span>
                       </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm">Wedding Package</span>
-                        <span className="font-medium">£350</span>
+                      <div className="flex justify-between items-center py-1.5 sm:py-2">
+                        <span className="text-xs sm:text-sm">Wedding Package</span>
+                        <span className="font-medium text-sm sm:text-base">£350</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="bg-white rounded-lg p-4 shadow-sm border">
-                    <h3 className="font-semibold mb-3">Expense Overview</h3>
+                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
+                    <h3 className="font-semibold text-sm sm:text-base mb-2 sm:mb-3">Expense Overview</h3>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm">Product Supplies</span>
-                        <span className="text-red-600">-£1,240</span>
+                      <div className="flex justify-between items-center py-1.5 sm:py-2">
+                        <span className="text-xs sm:text-sm">Product Supplies</span>
+                        <span className="text-red-600 text-sm sm:text-base">-£1,240</span>
                       </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm">Rent & Utilities</span>
-                        <span className="text-red-600">-£2,400</span>
+                      <div className="flex justify-between items-center py-1.5 sm:py-2">
+                        <span className="text-xs sm:text-sm">Rent & Utilities</span>
+                        <span className="text-red-600 text-sm sm:text-base">-£2,400</span>
                       </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm">Marketing</span>
-                        <span className="text-red-600">-£480</span>
+                      <div className="flex justify-between items-center py-1.5 sm:py-2">
+                        <span className="text-xs sm:text-sm">Marketing</span>
+                        <span className="text-red-600 text-sm sm:text-base">-£480</span>
                       </div>
                     </div>
                   </div>
@@ -327,30 +327,30 @@ export default function Landing() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-white">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
               Everything You Need to Manage Your Business
             </h2>
-            <p className="text-lg text-slate-600">
+            <p className="text-base sm:text-lg text-slate-600">
               Professional tools designed specifically for salon and clinic owners
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                      <Icon className="w-6 h-6 text-primary" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
+                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                     </div>
-                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-base leading-relaxed">
+                    <CardDescription className="text-sm sm:text-base leading-relaxed">
                       {feature.description}
                     </CardDescription>
                   </CardContent>
@@ -362,7 +362,7 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-6 relative">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 relative">
         {/* Luxury Salon Background */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 to-slate-800/90">
           <div 
@@ -374,38 +374,38 @@ export default function Landing() {
         </div>
         
         <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white mb-4">
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
               Trusted by Salon Owners Across the World
             </h2>
-            <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="flex items-center justify-center gap-1 sm:gap-2 mb-3 sm:mb-4">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-yellow-400 text-yellow-400" />
               ))}
-              <span className="ml-2 text-slate-200">4.9/5 from 200+ reviews</span>
+              <span className="ml-2 text-sm sm:text-base text-slate-200">4.9/5 from 200+ reviews</span>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-primary font-bold text-lg">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center mb-3 sm:mb-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mr-3 sm:mr-4">
+                      <span className="text-primary font-bold text-base sm:text-lg">
                         {testimonial.name.charAt(0)}
                       </span>
                     </div>
                     <div className="flex">
                       {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 fill-yellow-400 text-yellow-400" />
                       ))}
                     </div>
                   </div>
-                  <p className="text-slate-700 mb-4 italic">"{testimonial.quote}"</p>
+                  <p className="text-sm sm:text-base text-slate-700 mb-3 sm:mb-4 italic">"{testimonial.quote}"</p>
                   <div>
-                    <p className="font-semibold text-slate-900">{testimonial.name}</p>
-                    <p className="text-sm text-slate-500">{testimonial.business}</p>
+                    <p className="font-semibold text-sm sm:text-base text-slate-900">{testimonial.name}</p>
+                    <p className="text-xs sm:text-sm text-slate-500">{testimonial.business}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -415,48 +415,48 @@ export default function Landing() {
       </section>
 
       {/* Pricing */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-white">
         <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
               Simple, Transparent Pricing
             </h2>
-            <p className="text-lg text-slate-600">
+            <p className="text-base sm:text-lg text-slate-600">
               One plan, all features, incredible value
             </p>
           </div>
 
           <Card className="border-2 border-primary shadow-xl">
             <CardHeader className="text-center pb-2">
-              <Badge variant="default" className="w-fit mx-auto mb-4">
+              <Badge variant="default" className="w-fit mx-auto mb-3 sm:mb-4 text-xs sm:text-sm">
                 Most Popular
               </Badge>
-              <CardTitle className="text-2xl">Professional Plan</CardTitle>
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <span className="text-4xl font-bold text-slate-900">£23.97</span>
-                <span className="text-slate-500">/month</span>
+              <CardTitle className="text-xl sm:text-2xl">Professional Plan</CardTitle>
+              <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4">
+                <span className="text-3xl sm:text-4xl font-bold text-slate-900">£23.97</span>
+                <span className="text-sm sm:text-base text-slate-500">/month</span>
               </div>
-              <CardDescription className="text-base mt-2">
+              <CardDescription className="text-sm sm:text-base mt-2">
                 Everything you need to manage your business professionally
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid md:grid-cols-2 gap-4 mb-8">
+            <CardContent className="pt-4 sm:pt-6">
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 {pricingBenefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <span className="text-slate-700">{benefit}</span>
+                  <div key={index} className="flex items-center gap-2 sm:gap-3">
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm sm:text-base text-slate-700">{benefit}</span>
                   </div>
                 ))}
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <Link href="/register">
-                  <Button size="lg" className="w-full text-lg py-4">
+                  <Button size="lg" className="w-full text-base sm:text-lg py-3 sm:py-4">
                     Subscribe Now - £23.97/month
                   </Button>
                 </Link>
-                <p className="text-center text-sm text-slate-500">
+                <p className="text-center text-xs sm:text-sm text-slate-500">
                   Cancel anytime • Have a promo code? Enter during signup
                 </p>
               </div>
@@ -466,21 +466,21 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 bg-primary text-white">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-primary text-white">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
             Ready to Transform Your Business?
           </h2>
-          <p className="text-xl mb-8 text-primary-foreground/90">
+          <p className="text-base sm:text-xl mb-6 sm:mb-8 text-primary-foreground/90">
             Join hundreds of salon owners who've increased their profits with data-driven decisions
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link href="/register">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-4">
+              <Button size="lg" variant="secondary" className="w-full text-black sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
                 Subscribe Now
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-primary">
+            <Button size="lg" variant="outline" className="w-full sm:w-auto text-black text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 border-white hover:bg-white hover:text-primary">
               Contact Sales
             </Button>
           </div>
@@ -488,22 +488,22 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12 px-6">
+      <footer className="bg-slate-900 text-white py-8 sm:py-12 px-4 sm:px-6">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             <div>
-              <div className="mb-4">
-                <h3 className="font-bold">Salon Success Manager</h3>
-                <p className="text-sm text-slate-400">by Katie Godfrey</p>
+              <div className="mb-3 sm:mb-4">
+                <h3 className="font-bold text-base sm:text-lg">Salon Success Manager</h3>
+                <p className="text-xs sm:text-sm text-slate-400">by Katie Godfrey</p>
               </div>
-              <p className="text-slate-400 text-sm">
+              <p className="text-slate-400 text-xs sm:text-sm">
                 Professional business management tools for salon and clinic owners.
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
+              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Company</h4>
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
                 <li><a href="https://kgbusinessmentor.com/" className="hover:text-white">About Katie</a></li>
                 <li><a href="mailto:info@kgbusinessmentor.com" className="hover:text-white">Contact</a></li>
                 <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
@@ -511,15 +511,15 @@ export default function Landing() {
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Get Started</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
+              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Get Started</h4>
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
                 <li><Link href="/register" className="hover:text-white">Subscribe</Link></li>
                 <li><Link href="/login" className="hover:text-white">Sign In</Link></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-sm text-slate-400">
+          <div className="border-t border-slate-800 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-xs sm:text-sm text-slate-400">
             <p>&copy; 2025 Katie Godfrey Business Mentor. All rights reserved.</p>
           </div>
         </div>
