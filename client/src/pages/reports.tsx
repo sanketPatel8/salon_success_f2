@@ -248,21 +248,21 @@ export default function Reports() {
   }
 
   // Check subscription status
-  if (!subscriptionStatus?.active) {
-    return (
-      <>
-        <Header 
-          title="Business Reports & Analytics" 
-          description="Generate comprehensive business reports and insights" 
-        />
-        <Paywall 
-          title="Business Reports & Analytics"
-          description="Access detailed financial reports and insights"
-          feature="business analytics and reporting"
-        />
-      </>
-    );
-  }
+  // if (!subscriptionStatus?.active) {
+  //   return (
+  //     <>
+  //       <Header 
+  //         title="Business Reports & Analytics" 
+  //         description="Generate comprehensive business reports and insights" 
+  //       />
+  //       <Paywall 
+  //         title="Business Reports & Analytics"
+  //         description="Access detailed financial reports and insights"
+  //         feature="business analytics and reporting"
+  //       />
+  //     </>
+  //   );
+  // }
 
   return (
     <>

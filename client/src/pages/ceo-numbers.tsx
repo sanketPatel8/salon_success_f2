@@ -83,7 +83,6 @@ export default function CEONumbers() {
   const createIncomeGoalMutation = useMutation({
     mutationFn: (data: IncomeGoalForm) => apiRequest("POST", "/api/income-goals", data),
     onSuccess: () => {
-      // Invalidate all income goal queries (both filtered and unfiltered)
       queryClient.invalidateQueries({ queryKey: ["/api/income-goals"] });
       setShowGoalDialog(false);
       goalForm.reset({
@@ -236,37 +235,20 @@ export default function CEONumbers() {
     );
   }
 
-  // Check subscription status
-  if (!(subscriptionStatus as any)?.active) {
-    return (
-      <>
-        <Header 
-          title="CEO Numbers & Money Pots" 
-          description="Track weekly income and financial goals across your businesses" 
-        />
-        <Paywall 
-          title="CEO Numbers & Money Pots"
-          description="Monitor your business performance"
-          feature="CEO tracking and financial analytics"
-        />
-      </>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-4 mb-4">
       <Header 
         title="CEO Numbers" 
         description="Track your weekly income, monitor money pots, and manage multiple business locations"
       />
 
       {/* Business Selection & Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="business-select">Business:</Label>
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="flex items-center gap-2 flex-1">
+            <Label htmlFor="business-select" className="whitespace-nowrap text-sm">Business:</Label>
             <Select value={selectedBusiness.toString()} onValueChange={(value) => setSelectedBusiness(value === "all" ? "all" : parseInt(value))}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="flex-1 sm:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -282,12 +264,12 @@ export default function CEONumbers() {
 
           <Dialog open={showBusinessDialog} onOpenChange={setShowBusinessDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Business
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Add New Business</DialogTitle>
                 <DialogDescription>
@@ -322,7 +304,7 @@ export default function CEONumbers() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" disabled={createBusinessMutation.isPending}>
+                  <Button type="submit" disabled={createBusinessMutation.isPending} className="w-full">
                     {createBusinessMutation.isPending ? "Creating..." : "Create Business"}
                   </Button>
                 </form>
@@ -332,12 +314,12 @@ export default function CEONumbers() {
         </div>
 
         {/* Week Navigation */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-between sm:justify-end">
           <Button variant="outline" size="sm" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium px-3">
-            Week of {format(currentWeek, "MMM d, yyyy")}
+          <span className="text-xs sm:text-sm font-medium px-2 sm:px-3 text-center">
+            {format(currentWeek, "d MMM, yyyy")}
           </span>
           <Button variant="outline" size="sm" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
             <ChevronRight className="h-4 w-4" />
@@ -349,14 +331,14 @@ export default function CEONumbers() {
       </div>
 
       {/* Money Pots Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Week Total</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">Week Total</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(weekTotal)}</div>
+            <div className="text-lg sm:text-2xl font-bold">{formatCurrency(weekTotal)}</div>
           </CardContent>
         </Card>
 
@@ -364,17 +346,17 @@ export default function CEONumbers() {
         {potAllocations.map((pot) => (
           <Card key={pot.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2">
                 <div 
-                  className="w-3 h-3 rounded-full" 
+                  className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0" 
                   style={{ backgroundColor: pot.color || "hsl(var(--primary))" }}
                 />
-                {pot.name} ({pot.percentage}%)
+                <span className="truncate">{pot.name} ({pot.percentage}%)</span>
               </CardTitle>
-              <PiggyBank className="h-4 w-4" style={{ color: pot.color || "hsl(var(--primary))" }} />
+              <PiggyBank className="h-4 w-4 flex-shrink-0" style={{ color: pot.color || "hsl(var(--primary))" }} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" style={{ color: pot.color || "hsl(var(--primary))" }}>
+              <div className="text-lg sm:text-2xl font-bold" style={{ color: pot.color || "hsl(var(--primary))" }}>
                 {formatCurrency(pot.amount)}
               </div>
             </CardContent>
@@ -385,13 +367,13 @@ export default function CEONumbers() {
         {totalAllocatedPercentage < 100 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 Available ({(100 - totalAllocatedPercentage).toFixed(1)}%)
               </CardTitle>
               <Building2 className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">
+              <div className="text-lg sm:text-2xl font-bold text-primary">
                 {formatCurrency(remainingAmount)}
               </div>
             </CardContent>
@@ -400,15 +382,15 @@ export default function CEONumbers() {
 
         {/* Show link to manage money pots if none exist */}
         {moneyPots.length === 0 && (
-          <Card className="col-span-full">
+          <Card className="col-span-2 lg:col-span-full">
             <CardHeader>
-              <CardTitle className="text-center">No Money Pots Configured</CardTitle>
+              <CardTitle className="text-center text-sm sm:text-base">No Money Pots Configured</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                 Create custom money pots to allocate your income (VAT, Profit, Emergency Fund, etc.)
               </p>
-              <Button asChild>
+              <Button asChild size="sm">
                 <a href="/money-pots">
                   <Plus className="h-4 w-4 mr-2" />
                   Set Up Money Pots
@@ -422,21 +404,21 @@ export default function CEONumbers() {
       {/* Weekly Income Entry - Prominent Section */}
       <Card className="border-2 border-primary bg-gradient-to-r from-pink-50 to-rose-50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <DollarSign className="h-6 w-6 text-primary" />
+          <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
+            <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             Enter This Week's Takings
           </CardTitle>
-          <CardDescription className="text-base">
-            Week of {format(currentWeek, "MMMM d")} - {format(addDays(currentWeek, 6), "MMMM d, yyyy")}
+          <CardDescription className="text-sm sm:text-base">
+            {format(currentWeek, "d MMM")} - {format(addDays(currentWeek, 6), "d MMM, yyyy")}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6">
           {businesses.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">Create a business first to start tracking your weekly income</p>
+            <div className="text-center py-6 sm:py-8">
+              <p className="text-sm sm:text-base text-muted-foreground mb-4">Create a business first to start tracking your weekly income</p>
               <Dialog open={showBusinessDialog} onOpenChange={setShowBusinessDialog}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button size="sm">
                     <Plus className="h-4 w-4 mr-2" />
                     Create Your First Business
                   </Button>
@@ -444,7 +426,7 @@ export default function CEONumbers() {
               </Dialog>
             </div>
           ) : selectedBusiness === "all" ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {businesses.map((business) => {
                 const businessIncome = weeklyIncomes.find(income => 
                   income.businessId === business.id && 
@@ -453,7 +435,7 @@ export default function CEONumbers() {
                 const currentValue = businessIncome?.weeklyTotal || "";
                 
                 return (
-                  <div key={business.id} className="bg-white rounded-lg p-4 border">
+                  <div key={business.id} className="bg-white rounded-lg p-3 sm:p-4 border">
                     <form onSubmit={(e) => {
                       e.preventDefault();
                       const formData = new FormData(e.target as HTMLFormElement);
@@ -462,33 +444,33 @@ export default function CEONumbers() {
                         handleWeeklyIncomeSubmit(business.id, amount);
                       }
                     }}>
-                      <div className="flex items-center gap-4 mb-3">
-                        <Label className="w-32 font-semibold text-lg">{business.name}:</Label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl font-bold text-slate-600">£</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3">
+                        <Label className="font-semibold text-base sm:text-lg">{business.name}:</Label>
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="text-lg sm:text-xl font-bold text-slate-600">£</span>
                           <Input
                             name={`businessAmount-${business.id}`}
                             type="number"
                             step="0.01"
                             placeholder="0.00"
                             defaultValue={currentValue}
-                            className="text-xl font-bold text-2xl h-12 w-48 text-center border-2"
+                            className="text-lg sm:text-xl font-bold h-10 sm:h-12 flex-1 sm:w-48 text-center border-2"
                             required
                           />
                         </div>
-                        <Button type="submit" size="lg" className="h-12 px-6 font-semibold">
+                        <Button type="submit" size="sm" className="w-full sm:w-auto h-10 sm:h-12 sm:px-6 font-semibold">
                           Enter
                         </Button>
                       </div>
                     </form>
                     {currentValue && (
-                      <div className="grid gap-2 text-sm bg-slate-50 rounded p-3" style={{ gridTemplateColumns: `repeat(${Math.max(moneyPots.length, 1)}, 1fr)` }}>
+                      <div className="grid gap-2 text-xs sm:text-sm bg-slate-50 rounded p-2 sm:p-3" style={{ gridTemplateColumns: `repeat(${Math.min(moneyPots.length + (totalAllocatedPercentage < 100 ? 1 : 0), 2)}, 1fr)` }}>
                         {moneyPots.length > 0 ? (
                           <>
                             {moneyPots.map(pot => (
                               <div key={pot.id}>
                                 <span style={{ color: pot.color || "hsl(var(--primary))" }} className="font-medium flex items-center gap-1">
-                                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pot.color || "hsl(var(--primary))" }} />
+                                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pot.color || "hsl(var(--primary))" }} />
                                   {pot.name} ({pot.percentage}%):
                                 </span>
                                 <span className="font-bold">
@@ -506,7 +488,7 @@ export default function CEONumbers() {
                             )}
                           </>
                         ) : (
-                          <div className="text-center text-muted-foreground">
+                          <div className="text-center text-muted-foreground col-span-full">
                             <a href="/money-pots" className="text-primary hover:underline">
                               Set up money pots to see allocation breakdown
                             </a>
@@ -519,7 +501,7 @@ export default function CEONumbers() {
               })}
             </div>
           ) : (
-            <div className="bg-white rounded-lg p-6 border text-center">
+            <div className="bg-white rounded-lg p-4 sm:p-6 border">
               <form onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target as HTMLFormElement);
@@ -528,51 +510,51 @@ export default function CEONumbers() {
                   handleWeeklyIncomeSubmit(selectedBusiness as number, amount);
                 }
               }}>
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <Label className="font-semibold text-xl">This Week's Total Takings:</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-3xl font-bold text-slate-600">£</span>
+                <div className="flex flex-col gap-3 sm:gap-4 mb-4">
+                  <Label className="font-semibold text-base sm:text-xl text-center">This Week's Total Takings:</Label>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-2xl sm:text-3xl font-bold text-slate-600">£</span>
                     <Input
                       name="weeklyAmount"
                       type="number"
                       step="0.01"
                       placeholder="0.00"
                       defaultValue={currentWeekIncome?.weeklyTotal || ""}
-                      className="text-3xl font-bold h-16 w-64 text-center border-2 border-primary"
+                      className="text-2xl sm:text-3xl font-bold h-12 sm:h-16 w-full max-w-xs text-center border-2 border-primary"
                       required
                     />
                   </div>
-                  <Button type="submit" size="lg" className="h-16 px-8 text-lg font-semibold">
+                  <Button type="submit" size="lg" className="w-full h-12 sm:h-16 text-base sm:text-lg font-semibold">
                     Enter
                   </Button>
                 </div>
               </form>
               {currentWeekIncome?.weeklyTotal && (
-                <div className="grid gap-6 mt-6 bg-slate-50 rounded-lg p-4" style={{ gridTemplateColumns: `repeat(${Math.max(moneyPots.length + (totalAllocatedPercentage < 100 ? 1 : 0), 1)}, 1fr)` }}>
+                <div className="grid gap-3 sm:gap-6 mt-4 sm:mt-6 bg-slate-50 rounded-lg p-3 sm:p-4" style={{ gridTemplateColumns: `repeat(${Math.min(moneyPots.length + (totalAllocatedPercentage < 100 ? 1 : 0), 2)}, 1fr)` }}>
                   {moneyPots.length > 0 ? (
                     <>
                       {moneyPots.map(pot => (
                         <div key={pot.id} className="text-center">
-                          <div className="font-semibold mb-1 flex items-center justify-center gap-2" style={{ color: pot.color || "hsl(var(--primary))" }}>
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: pot.color || "hsl(var(--primary))" }} />
-                            {pot.name} ({pot.percentage}%)
+                          <div className="font-semibold text-xs sm:text-sm mb-1 flex items-center justify-center gap-1 sm:gap-2" style={{ color: pot.color || "hsl(var(--primary))" }}>
+                            <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0" style={{ backgroundColor: pot.color || "hsl(var(--primary))" }} />
+                            <span>{pot.name} ({pot.percentage}%)</span>
                           </div>
-                          <div className="text-2xl font-bold" style={{ color: pot.color || "hsl(var(--primary))" }}>
+                          <div className="text-lg sm:text-2xl font-bold" style={{ color: pot.color || "hsl(var(--primary))" }}>
                             {formatCurrency((parseFloat(currentWeekIncome.weeklyTotal) * parseFloat(pot.percentage.toString())) / 100)}
                           </div>
                         </div>
                       ))}
                       {totalAllocatedPercentage < 100 && (
                         <div className="text-center">
-                          <div className="text-primary font-semibold mb-1">Available ({(100 - totalAllocatedPercentage).toFixed(1)}%)</div>
-                          <div className="text-2xl font-bold text-primary">
+                          <div className="text-primary font-semibold text-xs sm:text-sm mb-1">Available ({(100 - totalAllocatedPercentage).toFixed(1)}%)</div>
+                          <div className="text-lg sm:text-2xl font-bold text-primary">
                             {formatCurrency(parseFloat(currentWeekIncome.weeklyTotal) * ((100 - totalAllocatedPercentage) / 100))}
                           </div>
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="text-center col-span-full text-muted-foreground">
+                    <div className="text-center col-span-full text-xs sm:text-sm text-muted-foreground">
                       <a href="/money-pots" className="text-primary hover:underline font-semibold">
                         Set up money pots to see allocation breakdown
                       </a>
@@ -589,10 +571,10 @@ export default function CEONumbers() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Income Summary</CardTitle>
-            <CardDescription>Track your growth over time</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Income Summary</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Track your growth over time</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 text-sm sm:text-base">
             <div className="flex justify-between">
               <span>This Week:</span>
               <span className="font-bold">{formatCurrency(weekTotal)}</span>
@@ -610,14 +592,14 @@ export default function CEONumbers() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Weeks</CardTitle>
-            <CardDescription>Quick view of past performance</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Recent Weeks</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Quick view of past performance</CardDescription>
           </CardHeader>
           <CardContent>
             {weeklyIncomes.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No historical data yet</p>
+              <p className="text-muted-foreground text-xs sm:text-sm">No historical data yet</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {weeklyIncomes
                   .filter(income => selectedBusiness === "all" || income.businessId === selectedBusiness)
                   .slice(0, 4)
@@ -627,10 +609,10 @@ export default function CEONumbers() {
                     const weekEnd = addDays(weekStart, 6);
                     
                     return (
-                      <div key={income.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                      <div key={income.id} className="flex justify-between items-center py-2 border-b last:border-b-0 text-xs sm:text-sm">
                         <div>
-                          <div className="text-sm font-medium">
-                            {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d")}
+                          <div className="font-medium">
+                            {format(weekStart, "d MMM")} - {format(weekEnd, "d MMM")}
                           </div>
                           {selectedBusiness === "all" && business && (
                             <div className="text-xs text-muted-foreground">{business.name}</div>
@@ -651,37 +633,39 @@ export default function CEONumbers() {
       {/* Enhanced Spreadsheet with Monthly Totals and Year Comparison */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5" />
-            Weekly Income Spreadsheet with Monthly Totals
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5" />
+            Weekly Income Spreadsheet
           </CardTitle>
-          <CardDescription>Complete history with monthly summaries and year-over-year comparison</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Complete history with monthly summaries and year-over-year comparison</CardDescription>
           
           {/* Year Selection Controls */}
-          <div className="flex items-center gap-4 mt-4">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mt-4">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Button 
                 variant={viewMode === "current" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("current")}
+                className="flex-1 sm:flex-none"
               >
                 <Calendar className="h-4 w-4 mr-1" />
-                Current Year
+                <span className="text-xs sm:text-sm">Current Year</span>
               </Button>
               <Button 
                 variant={viewMode === "comparison" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("comparison")}
+                className="flex-1 sm:flex-none"
               >
                 <ArrowUpDown className="h-4 w-4 mr-1" />
-                Compare Years
+                <span className="text-xs sm:text-sm">Compare Years</span>
               </Button>
             </div>
             
             {viewMode === "comparison" && availableYears.length > 1 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-                  <SelectTrigger className="w-24">
+                  <SelectTrigger className="w-20 sm:w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -690,9 +674,9 @@ export default function CEONumbers() {
                     ))}
                   </SelectContent>
                 </Select>
-                <span className="text-sm text-muted-foreground">vs</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">vs</span>
                 <Select value={comparisonYear.toString()} onValueChange={(value) => setComparisonYear(parseInt(value))}>
-                  <SelectTrigger className="w-24">
+                  <SelectTrigger className="w-20 sm:w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -707,79 +691,183 @@ export default function CEONumbers() {
         </CardHeader>
         <CardContent>
           {weeklyIncomes.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg mb-2">No weekly income data yet</p>
-              <p>Start by entering your weekly takings above to see your spreadsheet</p>
+            <div className="text-center py-8 sm:py-12 text-muted-foreground">
+              <CalendarDays className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm sm:text-lg mb-2">No weekly income data yet</p>
+              <p className="text-xs sm:text-base">Start by entering your weekly takings above to see your spreadsheet</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="bg-slate-100 border-b-2 border-slate-300">
-                    <th className="text-left py-3 px-4 font-semibold border-r border-slate-300">Week Starting</th>
-                    <th className="text-left py-3 px-4 font-semibold border-r border-slate-300">Week Ending</th>
-                    {selectedBusiness === "all" && <th className="text-left py-3 px-4 font-semibold border-r border-slate-300">Business</th>}
-                    <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-blue-50">Total Takings</th>
-                    <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-orange-50">VAT/Tax (20%)</th>
-                    <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-green-50">Profit Pot (5%)</th>
-                    <th className="text-right py-3 px-4 font-semibold bg-blue-50">Available (75%)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {weeklyIncomes
-                    .filter(income => selectedBusiness === "all" || income.businessId === selectedBusiness)
-                    .sort((a, b) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime())
-                    .slice(0, 20)
-                    .map((income, index) => {
-                      const business = businesses.find(b => b.id === income.businessId);
-                      const weekStart = new Date(income.weekStartDate);
-                      const weekEnd = addDays(weekStart, 6);
-                      const total = parseFloat(income.weeklyTotal);
-                      const vatAmount = total * 0.20;
-                      const profitAmount = total * 0.05;
-                      const availableAmount = total * 0.75;
-                      const isCurrentWeek = isSameWeek(weekStart, currentWeek, { weekStartsOn: 1 });
-                      
-                      return (
-                        <tr key={income.id} className={`border-b hover:bg-slate-50 ${isCurrentWeek ? 'bg-blue-50 border-blue-200' : index % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}>
-                          <td className="py-3 px-4 border-r border-slate-200 font-medium">
-                            {format(weekStart, "MMM d, yyyy")}
-                            {isCurrentWeek && <Badge className="ml-2 text-xs">Current</Badge>}
-                          </td>
-                          <td className="py-3 px-4 border-r border-slate-200">
-                            {format(weekEnd, "MMM d, yyyy")}
-                          </td>
-                          {selectedBusiness === "all" && (
-                            <td className="py-3 px-4 border-r border-slate-200">{business?.name || "Unknown"}</td>
-                          )}
-                          <td className="text-right py-3 px-4 font-bold border-r border-slate-200 bg-blue-25">
-                            {formatCurrency(total)}
-                          </td>
-                          <td className="text-right py-3 px-4 font-semibold border-r border-slate-200 text-orange-600 bg-orange-25">
-                            {formatCurrency(vatAmount)}
-                          </td>
-                          <td className="text-right py-3 px-4 font-semibold border-r border-slate-200 text-green-600 bg-green-25">
-                            {formatCurrency(profitAmount)}
-                          </td>
-                          <td className="text-right py-3 px-4 font-semibold text-blue-600 bg-blue-25">
-                            {formatCurrency(availableAmount)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
+            <div className="space-y-4 sm:space-y-6">
+              {/* Mobile Card View */}
+              <div className="block sm:hidden space-y-3">
+                {weeklyIncomes
+                  .filter(income => selectedBusiness === "all" || income.businessId === selectedBusiness)
+                  .sort((a, b) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime())
+                  .slice(0, 20)
+                  .map((income) => {
+                    const business = businesses.find(b => b.id === income.businessId);
+                    const weekStart = new Date(income.weekStartDate);
+                    const weekEnd = addDays(weekStart, 6);
+                    const total = parseFloat(income.weeklyTotal);
+                    const vatAmount = total * 0.20;
+                    const profitAmount = total * 0.05;
+                    const availableAmount = total * 0.75;
+                    const isCurrentWeek = isSameWeek(weekStart, currentWeek, { weekStartsOn: 1 });
+                    
+                    return (
+                      <Card key={income.id} className={isCurrentWeek ? 'bg-blue-50 border-blue-200' : ''}>
+                        <CardContent className="p-3 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-semibold text-sm">
+                                {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
+                              </div>
+                              {selectedBusiness === "all" && business && (
+                                <div className="text-xs text-muted-foreground">{business.name}</div>
+                              )}
+                            </div>
+                            {isCurrentWeek && <Badge className="text-xs">Current</Badge>}
+                          </div>
+                          <Separator />
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <div className="text-muted-foreground">Total Takings</div>
+                              <div className="font-bold text-blue-600">{formatCurrency(total)}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">VAT/Tax (20%)</div>
+                              <div className="font-semibold text-orange-600">{formatCurrency(vatAmount)}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">Profit Pot (5%)</div>
+                              <div className="font-semibold text-green-600">{formatCurrency(profitAmount)}</div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">Available (75%)</div>
+                              <div className="font-semibold text-blue-600">{formatCurrency(availableAmount)}</div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100 border-b-2 border-slate-300">
+                      <th className="text-left py-3 px-4 font-semibold border-r border-slate-300">Week Starting</th>
+                      <th className="text-left py-3 px-4 font-semibold border-r border-slate-300">Week Ending</th>
+                      {selectedBusiness === "all" && <th className="text-left py-3 px-4 font-semibold border-r border-slate-300">Business</th>}
+                      <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-blue-50">Total Takings</th>
+                      <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-orange-50">VAT/Tax (20%)</th>
+                      <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-green-50">Profit Pot (5%)</th>
+                      <th className="text-right py-3 px-4 font-semibold bg-blue-50">Available (75%)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {weeklyIncomes
+                      .filter(income => selectedBusiness === "all" || income.businessId === selectedBusiness)
+                      .sort((a, b) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime())
+                      .slice(0, 20)
+                      .map((income, index) => {
+                        const business = businesses.find(b => b.id === income.businessId);
+                        const weekStart = new Date(income.weekStartDate);
+                        const weekEnd = addDays(weekStart, 6);
+                        const total = parseFloat(income.weeklyTotal);
+                        const vatAmount = total * 0.20;
+                        const profitAmount = total * 0.05;
+                        const availableAmount = total * 0.75;
+                        const isCurrentWeek = isSameWeek(weekStart, currentWeek, { weekStartsOn: 1 });
+                        
+                        return (
+                          <tr key={income.id} className={`border-b hover:bg-slate-50 ${isCurrentWeek ? 'bg-blue-50 border-blue-200' : index % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}>
+                            <td className="py-3 px-4 border-r border-slate-200 font-medium">
+                              {format(weekStart, "d MMM, yyyy")}
+                              {isCurrentWeek && <Badge className="ml-2 text-xs">Current</Badge>}
+                            </td>
+                            <td className="py-3 px-4 border-r border-slate-200">
+                              {format(weekEnd, "d MMM, yyyy")}
+                            </td>
+                            {selectedBusiness === "all" && (
+                              <td className="py-3 px-4 border-r border-slate-200">{business?.name || "Unknown"}</td>
+                            )}
+                            <td className="text-right py-3 px-4 font-bold border-r border-slate-200 bg-blue-25">
+                              {formatCurrency(total)}
+                            </td>
+                            <td className="text-right py-3 px-4 font-semibold border-r border-slate-200 text-orange-600 bg-orange-25">
+                              {formatCurrency(vatAmount)}
+                            </td>
+                            <td className="text-right py-3 px-4 font-semibold border-r border-slate-200 text-green-600 bg-green-25">
+                              {formatCurrency(profitAmount)}
+                            </td>
+                            <td className="text-right py-3 px-4 font-semibold text-blue-600 bg-blue-25">
+                              {formatCurrency(availableAmount)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
               
               {/* Monthly Summary Section */}
               {weeklyIncomes.filter(income => selectedBusiness === "all" || income.businessId === selectedBusiness).length > 0 && (
-                <div className="mt-8 space-y-4">
+                <div className="mt-6 sm:mt-8 space-y-4">
                   <div className="flex items-center gap-2 mb-4">
-                    <Calendar className="h-5 w-5" />
-                    <h3 className="font-semibold text-lg">Monthly Totals & Year Comparison</h3>
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <h3 className="font-semibold text-base sm:text-lg">Monthly Totals & Year Comparison</h3>
                   </div>
                   
-                  <div className="overflow-x-auto">
+                  {/* Mobile Card View for Monthly Totals */}
+                  <div className="block sm:hidden space-y-3">
+                    {Array.from({length: 12}, (_, i) => {
+                      const monthIndex = i;
+                      const currentYearTotal = currentYearMonthlyTotals[monthIndex] || 0;
+                      const comparisonYearTotal = comparisonYearMonthlyTotals[monthIndex] || 0;
+                      const difference = currentYearTotal - comparisonYearTotal;
+                      const growthPercent = comparisonYearTotal > 0 ? ((difference / comparisonYearTotal) * 100) : (currentYearTotal > 0 ? 100 : 0);
+                      const availableAmount = currentYearTotal * 0.75;
+                      
+                      if (currentYearTotal === 0 && comparisonYearTotal === 0) return null;
+                      
+                      return (
+                        <Card key={monthIndex}>
+                          <CardContent className="p-3 space-y-2">
+                            <div className="font-semibold text-sm">
+                              {format(new Date(2025, monthIndex, 1), "MMMM yyyy").replace("2025", selectedYear.toString())}
+                            </div>
+                            <Separator />
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <div className="text-muted-foreground">{selectedYear} Total</div>
+                                <div className="font-bold text-blue-600">{formatCurrency(currentYearTotal)}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">{selectedYear} Available</div>
+                                <div className="font-bold text-blue-600">{formatCurrency(availableAmount)}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">{comparisonYear} Total</div>
+                                <div className="font-bold">{formatCurrency(comparisonYearTotal)}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">Growth</div>
+                                <div className={`font-bold ${growthPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {growthPercent >= 0 ? '+' : ''}{growthPercent.toFixed(1)}%
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }).filter(Boolean)}
+                  </div>
+
+                  {/* Desktop Table View for Monthly Totals */}
+                  <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-sm border-collapse">
                       <thead>
                         <tr className="bg-amber-50 border-b-2 border-amber-300">
@@ -799,7 +887,6 @@ export default function CEONumbers() {
                           const growthPercent = comparisonYearTotal > 0 ? ((difference / comparisonYearTotal) * 100) : (currentYearTotal > 0 ? 100 : 0);
                           const availableAmount = currentYearTotal * 0.75;
                           
-                          // Only show months with data
                           if (currentYearTotal === 0 && comparisonYearTotal === 0) return null;
                           
                           return (
@@ -834,19 +921,19 @@ export default function CEONumbers() {
 
       {/* Income Goals */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
           <div>
-            <CardTitle>Income Goals</CardTitle>
-            <CardDescription>Set and track your targets</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Income Goals</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Set and track your targets</CardDescription>
           </div>
           <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Goal
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Set Income Goal</DialogTitle>
                 <DialogDescription>
@@ -917,7 +1004,7 @@ export default function CEONumbers() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" disabled={createIncomeGoalMutation.isPending}>
+                  <Button type="submit" disabled={createIncomeGoalMutation.isPending} className="w-full">
                     {createIncomeGoalMutation.isPending ? "Creating..." : "Create Goal"}
                   </Button>
                 </form>
@@ -927,18 +1014,17 @@ export default function CEONumbers() {
         </CardHeader>
         <CardContent>
           {(() => {
-            // Filter goals based on selected business
             const filteredGoals = incomeGoals.filter(goal => {
               if (selectedBusiness === "all") {
-                return true; // Show all goals when "all" is selected
+                return true;
               } else {
-                return goal.businessId === selectedBusiness; // Show goals for selected business
+                return goal.businessId === selectedBusiness;
               }
             });
 
             if (filteredGoals.length === 0) {
               return (
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-xs sm:text-sm">
                   {selectedBusiness === "all" 
                     ? "No brand-wide goals set yet" 
                     : `No goals set for ${businesses.find(b => b.id === selectedBusiness)?.name || 'this business'} yet`
@@ -950,15 +1036,12 @@ export default function CEONumbers() {
             return (
               <div className="space-y-3">
                 {filteredGoals.slice(0, 3).map((goal) => {
-                  // Calculate current amount based on business selection and goal type
                   let currentAmount = 0;
                   
                   if (selectedBusiness === "all") {
-                    // For brand-wide goals, use totals across all businesses
                     currentAmount = goal.goalType === "weekly" ? weekTotal :
                                    goal.goalType === "monthly" ? monthTotal : yearTotal;
                   } else {
-                    // For business-specific goals, calculate from that business only
                     const businessIncomes = weeklyIncomes.filter(income => income.businessId === selectedBusiness);
                     const currentDate = new Date();
                     
@@ -990,7 +1073,7 @@ export default function CEONumbers() {
                   
                   return (
                     <div key={goal.id} className="space-y-2">
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-xs sm:text-sm">
                         <span className="flex items-center gap-2">
                           {goal.goalType} goal
                           {business && (

@@ -190,21 +190,21 @@ export default function ExpenseTracker() {
   }
 
   // Check subscription status
-  if (!(subscriptionStatus as any)?.active) {
-    return (
-      <>
-        <Header 
-          title="Expense Tracker" 
-          description="Track and categorize your business expenses" 
-        />
-        <Paywall 
-          title="Expense Tracker"
-          description="Monitor and control your business costs"
-          feature="expense tracking and categorization"
-        />
-      </>
-    );
-  }
+  // if (!(subscriptionStatus as any)?.active) {
+  //   return (
+  //     <>
+  //       <Header 
+  //         title="Expense Tracker" 
+  //         description="Track and categorize your business expenses" 
+  //       />
+  //       <Paywall 
+  //         title="Expense Tracker"
+  //         description="Monitor and control your business costs"
+  //         feature="expense tracking and categorization"
+  //       />
+  //     </>
+  //   );
+  // }
 
   return (
     <>
@@ -439,10 +439,7 @@ export default function ExpenseTracker() {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>No</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => {
-                                    setExpenseToDelete(expense.id);
-                                    handleConfirmDelete();
-                                  }}
+                                  onClick={() => deleteExpenseMutation.mutate(expense.id)}
                                   className="bg-red-600 hover:bg-red-700"
                                 >
                                   Yes

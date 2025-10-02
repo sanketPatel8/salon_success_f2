@@ -170,7 +170,7 @@ export default function MoneyPots() {
   const totalPercentage = (moneyPots as MoneyPot[]).reduce((sum: number, pot: MoneyPot) => sum + parseFloat(pot.percentage.toString()), 0);
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 md:mt-[0px] mt-[75px]">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Money Pots</h1>

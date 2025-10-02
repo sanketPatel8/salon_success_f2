@@ -176,21 +176,21 @@ export default function ProfitMarginCalculator() {
   }
 
   // Check subscription status
-  if (!(subscriptionStatus as any)?.active) {
-    return (
-      <>
-        <Header 
-          title="Profit Margin Calculator" 
-          description="Analyze treatment profitability and optimize your pricing strategy" 
-        />
-        <Paywall 
-          title="Profit Margin Calculator"
-          description="Maximize your treatment profitability"
-          feature="profit margin analysis"
-        />
-      </>
-    );
-  }
+  // if (!(subscriptionStatus as any)?.active) {
+  //   return (
+  //     <>
+  //       <Header 
+  //         title="Profit Margin Calculator" 
+  //         description="Analyze treatment profitability and optimize your pricing strategy" 
+  //       />
+  //       <Paywall 
+  //         title="Profit Margin Calculator"
+  //         description="Maximize your treatment profitability"
+  //         feature="profit margin analysis"
+  //       />
+  //     </>
+  //   );
+  // }
 
   return (
     <>
@@ -246,7 +246,7 @@ export default function ProfitMarginCalculator() {
                               <Input
                                 {...field}
                                 type="number"
-                                placeholder="150"
+                                placeholder="0"
                                 className="pl-8"
                                 onChange={(e) => {
                                   field.onChange(e);
@@ -270,7 +270,7 @@ export default function ProfitMarginCalculator() {
                             <Input
                               {...field}
                               type="number"
-                              placeholder="90"
+                              placeholder="0"
                             />
                           </FormControl>
                           <FormMessage />

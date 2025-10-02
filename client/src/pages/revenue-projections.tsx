@@ -95,21 +95,21 @@ export default function RevenueProjections() {
   }
 
   // Check subscription status
-  if (!(subscriptionStatus as any)?.active) {
-    return (
-      <>
-        <Header 
-          title="Revenue Projections & Forecasting" 
-          description="Project future revenue based on treatment performance" 
-        />
-        <Paywall 
-          title="Revenue Projections & Forecasting"
-          description="Plan your business growth with data-driven forecasts"
-          feature="revenue forecasting and projections"
-        />
-      </>
-    );
-  }
+  // if (!(subscriptionStatus as any)?.active) {
+  //   return (
+  //     <>
+  //       <Header 
+  //         title="Revenue Projections & Forecasting" 
+  //         description="Project future revenue based on treatment performance" 
+  //       />
+  //       <Paywall 
+  //         title="Revenue Projections & Forecasting"
+  //         description="Plan your business growth with data-driven forecasts"
+  //         feature="revenue forecasting and projections"
+  //       />
+  //     </>
+  //   );
+  // }
 
   return (
     <>
@@ -170,7 +170,7 @@ export default function RevenueProjections() {
                         ...prev, 
                         sessionsPerWeek: parseFloat(e.target.value) || 0
                       }))}
-                      placeholder="10"
+                      placeholder="0"
                     />
                   </div>
 

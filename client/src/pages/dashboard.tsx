@@ -154,7 +154,7 @@ export default function Dashboard() {
         description="Track your salon's performance, calculate optimal pricing, and manage business growth" 
       />
       
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-8  overflow-y-auto">
         {/* Trial Status Banner */}
         {trialStatus && trialStatus.status === "trial" && (
           <Alert className="border-amber-200 bg-amber-50 text-amber-800 mb-6">
@@ -386,7 +386,7 @@ export default function Dashboard() {
                     <Link key={index} href={action.href}>
                       <Button
                         variant={action.primary ? "default" : "outline"}
-                        className={`w-full justify-start space-x-3 ${
+                        className={`w-full justify-start space-x-3 mt-4 ${
                           action.primary 
                             ? "bg-primary text-white hover:bg-blue-700" 
                             : "border-2 border-slate-200 text-slate-700 hover:bg-slate-50"

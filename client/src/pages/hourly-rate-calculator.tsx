@@ -156,36 +156,36 @@ export default function HourlyRateCalculator() {
   };
 
   // Show loading while checking subscription
-  if (subscriptionLoading) {
-    return (
-      <>
-        <Header 
-          title="Hourly Rate Calculator" 
-          description="Calculate your optimal hourly rate based on expenses and profit goals" 
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
-        </div>
-      </>
-    );
-  }
+  // if (subscriptionLoading) {
+  //   return (
+  //     <>
+  //       <Header 
+  //         title="Hourly Rate Calculator" 
+  //         description="Calculate your optimal hourly rate based on expenses and profit goals" 
+  //       />
+  //       <div className="flex-1 flex items-center justify-center">
+  //         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
+  //       </div>
+  //     </>
+  //   );
+  // }
 
   // Check subscription status
-  if (!subscriptionStatus || !(subscriptionStatus as any).active) {
-    return (
-      <>
-        <Header 
-          title="Hourly Rate Calculator" 
-          description="Calculate your optimal hourly rate based on expenses and profit goals" 
-        />
-        <Paywall 
-          title="Hourly Rate Calculator"
-          description="Calculate your optimal pricing strategy"
-          feature="hourly rate calculations"
-        />
-      </>
-    );
-  }
+  // if (!subscriptionStatus || !(subscriptionStatus as any).active) {
+  //   return (
+  //     <>
+  //       <Header 
+  //         title="Hourly Rate Calculator" 
+  //         description="Calculate your optimal hourly rate based on expenses and profit goals" 
+  //       />
+  //       <Paywall 
+  //         title="Hourly Rate Calculator"
+  //         description="Calculate your optimal pricing strategy"
+  //         feature="hourly rate calculations"
+  //       />
+  //     </>
+  //   );
+  // }
 
   return (
     <>
@@ -194,18 +194,18 @@ export default function HourlyRateCalculator() {
         description="Calculate your optimal hourly rate based on expenses and profit goals" 
       />
       
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 overflow-y-auto ">
         <div className="max-w-2xl mx-auto">
           {/* Calculator Form */}
           <Card className="border border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800">Calculate Your Rate</h3>
-                  <p className="text-slate-600 text-sm mt-1">Enter your business details to calculate the optimal hourly rate. To gain the correct rate, under monthly expenses make sure you add all expenses of the business including wages and stock</p>
+                  <h3 className="text-xl font-bold text-slate-800 ">Calculate Your Rate</h3>
+                  <p className="text-slate-600 text-sm mt-1 ">Enter your business details to calculate the optimal hourly rate. To gain the correct rate, under monthly expenses make sure you add all expenses of the business including wages and stock</p>
                 </div>
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Calculator className="text-primary h-5 w-5" />
+                <div className="hidden md:flex w-8 h-8 bg-blue-100 rounded-lg items-center justify-center">
+                  <Calculator className="text-primary h-5 w-5 " />
                 </div>
               </div>
 
@@ -224,7 +224,7 @@ export default function HourlyRateCalculator() {
                               <Input
                                 {...field}
                                 type="text"
-                                placeholder="5,000"
+                                placeholder="0"
                                 className="pl-8"
                                 onChange={(e) => {
                                   const formattedValue = formatNumberWithCommas(e.target.value);
@@ -250,7 +250,7 @@ export default function HourlyRateCalculator() {
                               <Input
                                 {...field}
                                 type="text"
-                                placeholder="30"
+                                placeholder="0"
                                 className="pr-8"
                                 onChange={(e) => {
                                   const validatedValue = validatePercentageInput(e.target.value);
@@ -278,7 +278,7 @@ export default function HourlyRateCalculator() {
                             <Input
                               {...field}
                               type="text"
-                              placeholder="40"
+                              placeholder="0"
                               onChange={(e) => {
                                 const formattedValue = formatNumberWithCommas(e.target.value);
                                 field.onChange(formattedValue);
@@ -302,7 +302,7 @@ export default function HourlyRateCalculator() {
                               <Input
                                 {...field}
                                 type="text"
-                                placeholder="25"
+                                placeholder="0"
                                 className="pr-8"
                                 onChange={(e) => {
                                   const validatedValue = validatePercentageInput(e.target.value);

@@ -178,14 +178,14 @@ export default function StockBudgetCalculator() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 mb-4">
       <Header
         title="Stock Budget Calculator"
         description="Track your product purchases over 3-6 months to establish accurate monthly stock budgets for better financial planning."
       />
 
       {/* Budget Insights */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4 mx-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
@@ -242,7 +242,7 @@ export default function StockBudgetCalculator() {
       </div>
 
       {/* Period Selection */}
-      <Card>
+      <Card className="mx-4">
         <CardHeader>
           <CardTitle>Budget Period</CardTitle>
           <CardDescription>
@@ -264,7 +264,7 @@ export default function StockBudgetCalculator() {
       </Card>
 
       {/* Add Stock Purchase Form */}
-      <Card>
+      <Card className="mx-4">
         <CardHeader>
           <CardTitle>Add Stock Purchase</CardTitle>
           <CardDescription>
@@ -379,7 +379,7 @@ export default function StockBudgetCalculator() {
       </Card>
 
       {/* Purchase History */}
-      <Card>
+      <Card className="mx-4">
         <CardHeader>
           <CardTitle>Purchase History</CardTitle>
           <CardDescription>
@@ -398,7 +398,7 @@ export default function StockBudgetCalculator() {
               <p className="text-sm">Add your first purchase above to start tracking your spending.</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 ">
               {stockPurchases.slice(0, 10).map((purchase: StockPurchase) => (
                 <div key={purchase.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
