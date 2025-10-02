@@ -87,7 +87,6 @@ export const CURRENCIES: Currency[] = [
   { code: 'USD', symbol: '$', name: 'US Dollar', locale: 'en-US' },
   { code: 'EUR', symbol: '€', name: 'Euro', locale: 'en-EU' },
   { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham', locale: 'ar-AE' },
-  // ...other currencies
 ];
 
 interface CurrencyContextType {
@@ -101,7 +100,7 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>(CURRENCIES[0]);
-  const [rates, setRates] = useState<{ [key: string]: number }>({ USD: 1 }); // base USD
+  const [rates, setRates] = useState<{ [key: string]: number }>({ GBP: 1 }); // Changed base to GBP
 
   // Load selected currency from localStorage
   useEffect(() => {
@@ -112,15 +111,23 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Fetch exchange rates from an API
+  // Fetch exchange rates from an API with GBP as base
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        // Fetch rates with GBP as base currency
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/GBP');
         const data = await res.json();
         setRates(data.rates);
       } catch (err) {
-        console.error(err);
+        console.error('Failed to fetch exchange rates:', err);
+        // Fallback rates if API fails
+        setRates({
+          GBP: 1,
+          USD: 1.27,
+          EUR: 1.17,
+          AED: 4.66
+        });
       }
     };
     fetchRates();
@@ -131,7 +138,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('selectedCurrency', newCurrency.code);
   };
 
-  // Convert amount from base USD to selected currency
+  // Convert amount from base GBP to selected currency
   const convert = (amount: number) => {
     const rate = rates[currency.code] || 1;
     return amount * rate;
@@ -157,3 +164,4 @@ export function useCurrency() {
   if (!context) throw new Error('useCurrency must be used within a CurrencyProvider');
   return context;
 }
+
