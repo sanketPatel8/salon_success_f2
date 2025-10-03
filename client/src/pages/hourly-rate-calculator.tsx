@@ -42,6 +42,7 @@ export default function HourlyRateCalculator() {
     hourlyRate: number;
     staffTargetPerPerson: number | null;
   }>({ hourlyRate: 0, staffTargetPerPerson: null });
+  
   const { toast } = useToast();
 
   // Function to parse number with commas and format for display

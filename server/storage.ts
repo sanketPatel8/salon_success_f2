@@ -288,8 +288,10 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    console.log("🚀 createUser called!");
     const id = this.currentUserId++;
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    console.log(insertUser , " 📌 insertUser")
     const user: User = { 
       ...insertUser, 
       id,
@@ -303,6 +305,8 @@ export class MemStorage implements IStorage {
       passwordResetExpires: null,
       createdAt: new Date(),
       updatedAt: new Date(),
+      currency : insertUser.currency || "GBP" , // default to GBP if not provided,
+      currency_current_price : null,
     };
     this.users.set(id, user);
     return user;

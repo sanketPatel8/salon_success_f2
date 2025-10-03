@@ -25,6 +25,7 @@ interface User {
   email: string;
   name: string;
   businessType: string;
+  currency: string;
   subscriptionStatus: string;
   subscriptionEndDate: string | null;
   createdAt: string;

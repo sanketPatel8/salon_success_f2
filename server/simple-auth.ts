@@ -158,12 +158,12 @@ export function setupSimpleAuth(app: express.Application) {
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      console.log("📌 /api/auth/register called");
+      console.log("📌 /auth/register called");
 
-      const { email, password, name, businessType, promoCode } = req.body;
-      console.log("📌 Received body:", { email, name, businessType });
+      const { email, password, name, businessType, currency } = req.body;
+      console.log("📌 Received body:", { email, name, businessType , currency });
 
-      if (!email || !password || !name || !businessType) {
+      if (!email || !password || !name || !businessType || !currency) {
         console.log("❌ Missing required fields");
         return res.status(400).json({ message: "All fields are required" });
       }
@@ -185,6 +185,7 @@ export function setupSimpleAuth(app: express.Application) {
         password,
         name,
         businessType,
+        currency,
       });
       console.log("📌 New user created:", newUser);
 
@@ -378,6 +379,7 @@ export function setupSimpleAuth(app: express.Application) {
       subscriptionStatus: "active" | "trial" | "inactive" | "free";
       createdAt: string; // or Date if you convert it
       businessType: string;
+      currency: string;
     }
     try {
       const users: User[] = await storage.getAllUsers();

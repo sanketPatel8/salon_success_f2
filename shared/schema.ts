@@ -127,6 +127,7 @@ export const insertUserSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   name: z.string().min(1, "Name is required"),
   businessType: z.string().min(1, "Business type is required"),
+  currency: z.string().min(1, "currency type is required"),
 });
 
 export const loginSchema = z.object({

@@ -9,7 +9,7 @@ import {
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 
 export default function CurrencySelector() {
- const {  formatCurrency, currency, setCurrency } = useCurrency();
+  const { formatCurrency, currency, setCurrency } = useCurrency();
 
   return (
     <DropdownMenu>
@@ -19,7 +19,7 @@ export default function CurrencySelector() {
           {currency.symbol} {currency.code}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="">
         {CURRENCIES.map((curr) => (
           <DropdownMenuItem
             key={curr.code}
@@ -28,7 +28,9 @@ export default function CurrencySelector() {
           >
             <div className="flex justify-between w-full">
               <span>{curr.name}</span>
-              <span className="text-muted-foreground">{curr.symbol} {curr.code}</span>
+              <span className="text-muted-foreground">
+                {curr.symbol} {curr.code}
+              </span>
             </div>
           </DropdownMenuItem>
         ))}

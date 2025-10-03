@@ -5,38 +5,62 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertUserSchema } from "@shared/schema";
 import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
+import CurrencySelector from "@/components/currency-selector.tsx";
+import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext.tsx";
 
-const registerFormSchema = insertUserSchema.extend({
-  confirmPassword: z.string().min(8, "Password confirmation is required"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const registerFormSchema = insertUserSchema
+  .extend({
+    confirmPassword: z.string().min(8, "Password confirmation is required"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type RegisterForm = z.infer<typeof registerFormSchema>;
 
 const businessTypes = [
   "Hair Salon",
-  "Beauty Salon", 
+  "Beauty Salon",
   "Nail Salon",
   "Spa & Wellness",
   "Barbershop",
   "Aesthetics Clinic",
   "Training Academy",
   "Mobile Beauty",
-  "Other"
+  "Other",
 ];
 
 export default function Register() {
-  const [, setLocation] = useLocation();
+  const { formatCurrency, currency, setCurrency } = useCurrency();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
@@ -45,11 +69,12 @@ export default function Register() {
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-      name: "",
-      businessType: "",
+      email: "sanketbhuva7@gmail.com",
+      password: "12345678",
+      confirmPassword: "12345678",
+      name: "sanket bhuva",
+      businessType: "Hair Salon",
+      currency: "USD",
     },
   });
 
@@ -57,13 +82,17 @@ export default function Register() {
     mutationFn: (data: RegisterForm) => {
       // Remove confirmPassword before sending to API
       const { confirmPassword, ...registerData } = data;
-      return apiRequest("POST", "/api/auth/register", registerData);
+      return apiRequest("POST", "/api/auth/register", {
+        ...registerData,
+        currency: data.currency, // will send code (e.g. "USD")
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Success",
-        description: "Account created successfully. Complete your subscription to access business tools.",
+        description:
+          "Account created successfully. Complete your subscription to access business tools.",
       });
       setLocation("/subscribe");
     },
@@ -78,13 +107,16 @@ export default function Register() {
 
   const onSubmit = (data: RegisterForm) => {
     registerMutation.mutate(data);
+    // console.log(data, "data");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            Create Account
+          </CardTitle>
           <CardDescription className="text-center">
             Start growing your salon business today
           </CardDescription>
@@ -99,10 +131,7 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Enter your full name"
-                        {...field}
-                      />
+                      <Input placeholder="Enter your full name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,7 +204,9 @@ export default function Register() {
                           variant="ghost"
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4 text-gray-500" />
@@ -214,16 +245,55 @@ export default function Register() {
                 )}
               />
 
+              {/* Currency Dropdown */}
+              <FormField
+                control={form.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Currency</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value); // keeps RHF in sync
+                        const selected = CURRENCIES.find(
+                          (c) => c.code === value
+                        );
+                        if (selected) {
+                          setCurrency(selected); // store full object in state
+                        }
+                      }}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CURRENCIES.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            {currency.symbol} {currency.code} — {currency.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <Button
                 type="submit"
                 className="w-full"
                 disabled={registerMutation.isPending}
               >
-                {registerMutation.isPending ? "Creating account..." : "Create Account"}
+                {registerMutation.isPending
+                  ? "Creating account..."
+                  : "Create Account"}
               </Button>
             </form>
           </Form>
-          
+
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <Link href="/login" className="text-primary hover:underline">
