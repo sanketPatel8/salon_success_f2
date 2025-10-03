@@ -44,13 +44,35 @@ export default function Login() {
       setLocation("/");
     },
     onError: (error: any) => {
-      console.log('New login mutation error:', error);
-      toast({
-        title: "Login Failed",
-        description: error.message || "Invalid credentials",
-        variant: "destructive",
-      });
-    },
+  console.log('Login mutation error:', error);
+  
+  let errorMessage = "Invalid credentials";
+  
+
+    // Error object has message property with format "401: {...}"
+    const errorString = error.message || String(error);
+    console.log('Error string:', errorString); // Debug log
+    
+    if (error) {
+      const jsonPart = errorString.substring(errorString.indexOf('{'));
+      console.log('JSON part:', jsonPart); // Debug log
+      const errorData = JSON.parse(jsonPart);
+      console.log('Parsed error data:', errorData); // Debug log
+      
+      if (errorData.message) {
+        errorMessage = errorData.message; // Make sure this assignment happens
+      }
+    }
+  
+  
+  console.log('Final error message:', errorMessage); // Debug log
+  
+  toast({
+    title: "Login Failed",
+    description: errorMessage,
+    variant: "destructive",
+  });
+},
   });
 
   const onSubmit = (data: LoginForm) => {
