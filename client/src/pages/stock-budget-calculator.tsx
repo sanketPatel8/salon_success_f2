@@ -369,7 +369,7 @@ export default function StockBudgetCalculator() {
               <Button 
                 type="submit" 
                 disabled={createStockPurchaseMutation.isPending}
-                className="w-full"
+                className="w-full hover-bg-[#FFB6C1]"
               >
                 {createStockPurchaseMutation.isPending ? "Adding..." : "Add Purchase"}
               </Button>

@@ -52,6 +52,9 @@ export default function CEONumbers() {
   const [viewMode, setViewMode] = useState<"current" | "comparison">("current");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [comparisonYear, setComparisonYear] = useState(new Date().getFullYear() - 1);
+  
+  // Local state for input values to prevent blinking
+  const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
 
   // Data fetching
   const { data: businesses = [] } = useQuery<Business[]>({
@@ -97,8 +100,11 @@ export default function CEONumbers() {
 
   const createOrUpdateWeeklyIncomeMutation = useMutation({
     mutationFn: (data: WeeklyIncomeForm) => apiRequest("POST", "/api/weekly-incomes", data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/weekly-incomes"] });
+      // Keep the input value after successful submission
+      const key = `${variables.businessId}-${variables.weekStartDate}`;
+      setInputValues(prev => ({ ...prev, [key]: variables.weeklyTotal }));
     },
   });
 
@@ -198,11 +204,23 @@ export default function CEONumbers() {
   const handleWeeklyIncomeSubmit = (businessId: number, value: string) => {
     if (!value.trim()) return;
     
+    const weekStartDate = format(currentWeek, "yyyy-MM-dd");
+    const key = `${businessId}-${weekStartDate}`;
+    
+    // Optimistically update the input value
+    setInputValues(prev => ({ ...prev, [key]: value }));
+    
     createOrUpdateWeeklyIncomeMutation.mutate({
       businessId,
-      weekStartDate: format(currentWeek, "yyyy-MM-dd"),
+      weekStartDate,
       weeklyTotal: value,
     });
+  };
+
+  const handleInputChange = (businessId: number, value: string) => {
+    const weekStartDate = format(currentWeek, "yyyy-MM-dd");
+    const key = `${businessId}-${weekStartDate}`;
+    setInputValues(prev => ({ ...prev, [key]: value }));
   };
 
   const handleBusinessSubmit = (data: BusinessForm) => {
@@ -212,6 +230,20 @@ export default function CEONumbers() {
   const handleGoalSubmit = (data: IncomeGoalForm) => {
     createIncomeGoalMutation.mutate(data);
   };
+
+  // Initialize input values from existing data
+  useEffect(() => {
+    const newInputValues: { [key: string]: string } = {};
+    weeklyIncomes.forEach(income => {
+      const key = `${income.businessId}-${income.weekStartDate}`;
+      if (!inputValues[key]) {
+        newInputValues[key] = income.weeklyTotal;
+      }
+    });
+    if (Object.keys(newInputValues).length > 0) {
+      setInputValues(prev => ({ ...prev, ...newInputValues }));
+    }
+  }, [weeklyIncomes]);
 
   // Auto-save current business when switching
   useEffect(() => {
@@ -428,20 +460,17 @@ export default function CEONumbers() {
           ) : selectedBusiness === "all" ? (
             <div className="space-y-3 sm:space-y-4">
               {businesses.map((business) => {
-                const businessIncome = weeklyIncomes.find(income => 
-                  income.businessId === business.id && 
-                  isSameWeek(new Date(income.weekStartDate), currentWeek, { weekStartsOn: 1 })
-                );
-                const currentValue = businessIncome?.weeklyTotal || "";
+                const weekStartDate = format(currentWeek, "yyyy-MM-dd");
+                const key = `${business.id}-${weekStartDate}`;
+                const currentValue = inputValues[key] || "";
                 
                 return (
                   <div key={business.id} className="bg-white rounded-lg p-3 sm:p-4 border">
                     <form onSubmit={(e) => {
                       e.preventDefault();
-                      const formData = new FormData(e.target as HTMLFormElement);
-                      const amount = formData.get(`businessAmount-${business.id}`) as string;
-                      if (amount) {
-                        handleWeeklyIncomeSubmit(business.id, amount);
+                      const value = inputValues[key];
+                      if (value) {
+                        handleWeeklyIncomeSubmit(business.id, value);
                       }
                     }}>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3">
@@ -449,13 +478,12 @@ export default function CEONumbers() {
                         <div className="flex items-center gap-2 flex-1">
                           <span className="text-lg sm:text-xl font-bold text-slate-600">£</span>
                           <Input
-                            name={`businessAmount-${business.id}`}
                             type="number"
                             step="0.01"
                             placeholder="0.00"
-                            defaultValue={currentValue}
+                            value={currentValue}
+                            onChange={(e) => handleInputChange(business.id, e.target.value)}
                             className="text-lg sm:text-xl font-bold h-10 sm:h-12 flex-1 sm:w-48 text-center border-2"
-                            required
                           />
                         </div>
                         <Button type="submit" size="sm" className="w-full sm:w-auto h-10 sm:h-12 sm:px-6 font-semibold">
@@ -504,10 +532,11 @@ export default function CEONumbers() {
             <div className="bg-white rounded-lg p-4 sm:p-6 border">
               <form onSubmit={(e) => {
                 e.preventDefault();
-                const formData = new FormData(e.target as HTMLFormElement);
-                const amount = formData.get('weeklyAmount') as string;
-                if (amount) {
-                  handleWeeklyIncomeSubmit(selectedBusiness as number, amount);
+                const weekStartDate = format(currentWeek, "yyyy-MM-dd");
+                const key = `${selectedBusiness}-${weekStartDate}`;
+                const value = inputValues[key];
+                if (value) {
+                  handleWeeklyIncomeSubmit(selectedBusiness as number, value);
                 }
               }}>
                 <div className="flex flex-col gap-3 sm:gap-4 mb-4">
@@ -515,13 +544,12 @@ export default function CEONumbers() {
                   <div className="flex items-center justify-center gap-2">
                     <span className="text-2xl sm:text-3xl font-bold text-slate-600">£</span>
                     <Input
-                      name="weeklyAmount"
                       type="number"
                       step="0.01"
                       placeholder="0.00"
-                      defaultValue={currentWeekIncome?.weeklyTotal || ""}
+                      value={inputValues[`${selectedBusiness}-${format(currentWeek, "yyyy-MM-dd")}`] || ""}
+                      onChange={(e) => handleInputChange(selectedBusiness as number, e.target.value)}
                       className="text-2xl sm:text-3xl font-bold h-12 sm:h-16 w-full max-w-xs text-center border-2 border-primary"
-                      required
                     />
                   </div>
                   <Button type="submit" size="lg" className="w-full h-12 sm:h-16 text-base sm:text-lg font-semibold">
@@ -529,26 +557,29 @@ export default function CEONumbers() {
                   </Button>
                 </div>
               </form>
-              {currentWeekIncome?.weeklyTotal && (
+              {inputValues[`${selectedBusiness}-${format(currentWeek, "yyyy-MM-dd")}`] && (
                 <div className="grid gap-3 sm:gap-6 mt-4 sm:mt-6 bg-slate-50 rounded-lg p-3 sm:p-4" style={{ gridTemplateColumns: `repeat(${Math.min(moneyPots.length + (totalAllocatedPercentage < 100 ? 1 : 0), 2)}, 1fr)` }}>
                   {moneyPots.length > 0 ? (
                     <>
-                      {moneyPots.map(pot => (
-                        <div key={pot.id} className="text-center">
-                          <div className="font-semibold text-xs sm:text-sm mb-1 flex items-center justify-center gap-1 sm:gap-2" style={{ color: pot.color || "hsl(var(--primary))" }}>
-                            <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0" style={{ backgroundColor: pot.color || "hsl(var(--primary))" }} />
-                            <span>{pot.name} ({pot.percentage}%)</span>
+                      {moneyPots.map(pot => {
+                        const currentValue = inputValues[`${selectedBusiness}-${format(currentWeek, "yyyy-MM-dd")}`] || "0";
+                        return (
+                          <div key={pot.id} className="text-center">
+                            <div className="font-semibold text-xs sm:text-sm mb-1 flex items-center justify-center gap-1 sm:gap-2" style={{ color: pot.color || "hsl(var(--primary))" }}>
+                              <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0" style={{ backgroundColor: pot.color || "hsl(var(--primary))" }} />
+                              <span>{pot.name} ({pot.percentage}%)</span>
+                            </div>
+                            <div className="text-lg sm:text-2xl font-bold" style={{ color: pot.color || "hsl(var(--primary))" }}>
+                              {formatCurrency((parseFloat(currentValue) * parseFloat(pot.percentage.toString())) / 100)}
+                            </div>
                           </div>
-                          <div className="text-lg sm:text-2xl font-bold" style={{ color: pot.color || "hsl(var(--primary))" }}>
-                            {formatCurrency((parseFloat(currentWeekIncome.weeklyTotal) * parseFloat(pot.percentage.toString())) / 100)}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {totalAllocatedPercentage < 100 && (
                         <div className="text-center">
                           <div className="text-primary font-semibold text-xs sm:text-sm mb-1">Available ({(100 - totalAllocatedPercentage).toFixed(1)}%)</div>
                           <div className="text-lg sm:text-2xl font-bold text-primary">
-                            {formatCurrency(parseFloat(currentWeekIncome.weeklyTotal) * ((100 - totalAllocatedPercentage) / 100))}
+                            {formatCurrency(parseFloat(inputValues[`${selectedBusiness}-${format(currentWeek, "yyyy-MM-dd")}`] || "0") * ((100 - totalAllocatedPercentage) / 100))}
                           </div>
                         </div>
                       )}
@@ -576,7 +607,7 @@ export default function CEONumbers() {
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4 text-sm sm:text-base">
             <div className="flex justify-between">
-              <span>This Week:</span>
+              <span>Selected Week:</span>
               <span className="font-bold">{formatCurrency(weekTotal)}</span>
             </div>
             <div className="flex justify-between">
@@ -831,22 +862,30 @@ export default function CEONumbers() {
                       const growthPercent = comparisonYearTotal > 0 ? ((difference / comparisonYearTotal) * 100) : (currentYearTotal > 0 ? 100 : 0);
                       const availableAmount = currentYearTotal * 0.75;
                       
+                      // Determine which year to show based on which has data
+                      let displayYear = selectedYear;
+                      if (currentYearTotal > 0) {
+                        displayYear = selectedYear;
+                      } else if (comparisonYearTotal > 0) {
+                        displayYear = comparisonYear;
+                      }
+                      
                       if (currentYearTotal === 0 && comparisonYearTotal === 0) return null;
                       
                       return (
                         <Card key={monthIndex}>
                           <CardContent className="p-3 space-y-2">
                             <div className="font-semibold text-sm">
-                              {format(new Date(2025, monthIndex, 1), "MMMM yyyy").replace("2025", selectedYear.toString())}
+                              {format(new Date(displayYear, monthIndex, 1), "MMMM yyyy")}
                             </div>
                             <Separator />
                             <div className="grid grid-cols-2 gap-2 text-xs">
                               <div>
-                                <div className="text-muted-foreground">{selectedYear} Total</div>
+                                <div className="text-muted-foreground">Total</div>
                                 <div className="font-bold text-blue-600">{formatCurrency(currentYearTotal)}</div>
                               </div>
                               <div>
-                                <div className="text-muted-foreground">{selectedYear} Available</div>
+                                <div className="text-muted-foreground">Available</div>
                                 <div className="font-bold text-blue-600">{formatCurrency(availableAmount)}</div>
                               </div>
                               <div>
@@ -872,8 +911,8 @@ export default function CEONumbers() {
                       <thead>
                         <tr className="bg-amber-50 border-b-2 border-amber-300">
                           <th className="text-left py-3 px-4 font-semibold border-r border-amber-300">Month</th>
-                          <th className="text-right py-3 px-4 font-semibold border-r border-amber-300 bg-blue-50">{selectedYear} Total</th>
-                          <th className="text-right py-3 px-4 font-semibold border-r border-amber-300 bg-blue-50">{selectedYear} Available</th>
+                          <th className="text-right py-3 px-4 font-semibold border-r border-amber-300 bg-blue-50">Total</th>
+                          <th className="text-right py-3 px-4 font-semibold border-r border-amber-300 bg-blue-50">Available</th>
                           <th className="text-right py-3 px-4 font-semibold border-r border-amber-300 bg-gray-50">{comparisonYear} Total</th>
                           <th className="text-right py-3 px-4 font-semibold bg-green-50">Growth</th>
                         </tr>
@@ -887,12 +926,20 @@ export default function CEONumbers() {
                           const growthPercent = comparisonYearTotal > 0 ? ((difference / comparisonYearTotal) * 100) : (currentYearTotal > 0 ? 100 : 0);
                           const availableAmount = currentYearTotal * 0.75;
                           
+                          // Determine which year to show based on which has data
+                          let displayYear = selectedYear;
+                          if (currentYearTotal > 0) {
+                            displayYear = selectedYear;
+                          } else if (comparisonYearTotal > 0) {
+                            displayYear = comparisonYear;
+                          }
+                          
                           if (currentYearTotal === 0 && comparisonYearTotal === 0) return null;
                           
                           return (
                             <tr key={monthIndex} className={`border-b hover:bg-slate-50 ${monthIndex % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}>
                               <td className="py-3 px-4 border-r border-slate-200 font-medium">
-                                {format(new Date(2025, monthIndex, 1), "MMMM yyyy").replace("2025", selectedYear.toString())}
+                                {format(new Date(displayYear, monthIndex, 1), "MMMM yyyy")}
                               </td>
                               <td className="text-right py-3 px-4 font-bold border-r border-slate-200 bg-blue-25">
                                 {formatCurrency(currentYearTotal)}

@@ -247,7 +247,7 @@ export default function Dashboard() {
               </div>
 
               <Link href="/hourly-rate">
-                <Button className="w-full bg-primary text-white hover:bg-blue-700">
+                <Button className="w-full bg-primary text-white hover-bg-[#FFB6C1]">
                   Open Calculator
                 </Button>
               </Link>
@@ -278,7 +278,7 @@ export default function Dashboard() {
               </div>
 
               <Link href="/profit-margin">
-                <Button className="w-full bg-success text-white hover:bg-green-700">
+                <Button className="w-full bg-success text-white hover-bg-[#FFB6C1]">
                   Open Calculator
                 </Button>
               </Link>
@@ -373,7 +373,7 @@ export default function Dashboard() {
                         variant={action.primary ? "default" : "outline"}
                         className={`w-full justify-start space-x-3 disabled:opacity-50 ${
                           action.primary 
-                            ? "bg-primary text-white hover:bg-blue-700" 
+                            ? "bg-primary text-white hover-bg-[#FFB6C1]" 
                             : "border-2 border-slate-200 text-slate-700 hover:bg-slate-50"
                         }`}
                       >
@@ -388,7 +388,7 @@ export default function Dashboard() {
                         variant={action.primary ? "default" : "outline"}
                         className={`w-full justify-start space-x-3 mt-4 ${
                           action.primary 
-                            ? "bg-primary text-white hover:bg-blue-700" 
+                            ? "bg-primary text-white hover-bg-[#FFB6C1]" 
                             : "border-2 border-slate-200 text-slate-700 hover:bg-slate-50"
                         }`}
                       >

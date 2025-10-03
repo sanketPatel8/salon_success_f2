@@ -364,7 +364,7 @@ export default function HourlyRateCalculator() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary text-white hover:bg-blue-700"
+                    className="w-full bg-primary text-white hover-bg-[#FFB6C1]"
                     disabled={saveCalculationMutation.isPending || calculatedResults.hourlyRate === 0}
                   >
                     <Save className="h-4 w-4 mr-2" />

@@ -284,26 +284,33 @@ export default function ProfitMarginCalculator() {
                     name="overheadCost"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Overhead Cost (Auto-calculated from hourly rate)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">£</span>
-                            <Input
-                              {...field}
-                              type="number"
-                              className="pl-8 bg-slate-50"
-                              readOnly
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                        <p className="text-xs text-slate-500">
-                          {latestHourlyRate ? 
-                            `Automatically calculated: ${formatCurrency((latestHourlyRate as any)?.calculatedRate || 0)}/hour × treatment duration` :
-                            "Complete the hourly rate calculator first to enable auto-calculation"
-                          }
-                        </p>
-                      </FormItem>
+                      <FormLabel>Overhead Cost (Auto-calculated from hourly rate)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">£</span>
+                          <Input
+                            {...field}
+                            type="number"
+                            className="pl-8 bg-slate-50"
+                            readOnly
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+
+                      {/* 👇 New p tag here */}
+                      <p className="text-xs text-orange-400">
+                        Please configure your Hourly Rate before proceeding if not configured.
+                      </p>
+
+                      <p className="text-xs text-slate-500">
+                        {latestHourlyRate ? 
+                          `Automatically calculated: ${formatCurrency((latestHourlyRate as any)?.calculatedRate || 0)}/hour × treatment duration` :
+                          "Complete the hourly rate calculator first to enable auto-calculation"
+                        }
+                      </p>
+                    </FormItem>
+
                     )}
                   />
 
@@ -330,7 +337,7 @@ export default function ProfitMarginCalculator() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-success text-white hover:bg-green-700"
+                    className="w-full bg-success text-white hover-bg-[#FFB6C1]"
                     disabled={createTreatmentMutation.isPending}
                   >
                     <Plus className="h-4 w-4 mr-2" />

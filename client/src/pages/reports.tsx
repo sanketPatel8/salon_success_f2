@@ -286,7 +286,7 @@ export default function Reports() {
             </div>
             
             <div className="flex flex-wrap gap-4">
-              <Button onClick={handleExportPDF} className="bg-primary text-white hover:bg-blue-700">
+              <Button onClick={handleExportPDF} className="bg-primary text-white hover-bg-[#FFB6C1]">
                 <Download className="h-4 w-4 mr-2" />
                 Export PDF
               </Button>
