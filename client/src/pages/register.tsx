@@ -74,7 +74,7 @@ export default function Register() {
       confirmPassword: "12345678",
       name: "sanket bhuva",
       businessType: "Hair Salon",
-      currency: "USD",
+      currency: "",
     },
   });
 
@@ -84,7 +84,7 @@ export default function Register() {
       const { confirmPassword, ...registerData } = data;
       return apiRequest("POST", "/api/auth/register", {
         ...registerData,
-        currency: data.currency, // will send code (e.g. "USD")
+        currency: data.currency , // will send code (e.g. "USD")
       });
     },
     onSuccess: () => {

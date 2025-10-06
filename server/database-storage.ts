@@ -35,20 +35,21 @@ import type { IStorage } from "./storage";
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      businessType: users.businessType,
-      subscriptionStatus: users.subscriptionStatus,
-      subscriptionEndDate: users.subscriptionEndDate,
-      stripeCustomerId: users.stripeCustomerId,
-      stripeSubscriptionId: users.stripeSubscriptionId,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-    }).from(users).where(eq(users.id, id));
-    return user;
-  }
+  const [user] = await db.select({
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    businessType: users.businessType,
+    currency: users.currency, // ADD THIS LINE
+    subscriptionStatus: users.subscriptionStatus,
+    subscriptionEndDate: users.subscriptionEndDate,
+    stripeCustomerId: users.stripeCustomerId,
+    stripeSubscriptionId: users.stripeSubscriptionId,
+    createdAt: users.createdAt,
+    updatedAt: users.updatedAt,
+  }).from(users).where(eq(users.id, id));
+  return user;
+}
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
@@ -63,6 +64,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         ...userData,
         password: hashedPassword,
+        currency: userData.currency || "USD",
         subscriptionStatus: "inactive", // Will be updated when Stripe subscription is created
       })
       .returning();

@@ -305,7 +305,7 @@ export class MemStorage implements IStorage {
       passwordResetExpires: null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      currency : insertUser.currency || "GBP" , // default to GBP if not provided,
+      currency : insertUser.currency || "USD",
       currency_current_price : null,
     };
     this.users.set(id, user);

@@ -20,6 +20,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   businessType: text("business_type").notNull(),
+  currency: varchar("currency", { length: 10 }).default("USD"), // Add this field
+  currencyCurrentPrice: decimal("currency_current_price", { precision: 10, scale: 2 }), // Optional: if you want to store exchange rates
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   subscriptionStatus: text("subscription_status").default("trial"),

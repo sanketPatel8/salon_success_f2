@@ -73,49 +73,50 @@ export function setupSimpleAuth(app: express.Application) {
 
   // Login endpoint
   app.post("/api/v2/auth/login", async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      console.log(`SIMPLE AUTH: Login attempt for email: ${email}`);
+  try {
+    const { email, password } = req.body;
+    console.log(`SIMPLE AUTH: Login attempt for email: ${email}`);
 
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email and password required" });
-      }
-
-      const user = await storage.verifyPassword(email, password);
-      if (!user) {
-        console.log(`SIMPLE AUTH: Invalid credentials for ${email}`);
-        return res.status(401).json({ message: "Invalid email or password" });
-      }
-
-      // Create new session with timestamp
-      req.session.userId = user.id;
-      req.session.createdAt = Date.now();
-      req.session.save((err: any) => {
-        if (err) {
-          console.error(`SIMPLE AUTH: Session save error:`, err);
-          return res.status(500).json({ message: "Session creation failed" });
-        }
-
-        console.log(
-          `SIMPLE AUTH: Login successful for user ${user.id}, session: ${req.sessionID}`
-        );
-        res.json({
-          message: "Login successful",
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            businessType: user.businessType,
-            subscriptionStatus: user.subscriptionStatus,
-            subscriptionEndDate: user.subscriptionEndDate,
-          },
-        });
-      });
-    } catch (error) {
-      console.error("SIMPLE AUTH: Login error:", error);
-      res.status(500).json({ message: "Login failed" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
     }
-  });
+
+    const user = await storage.verifyPassword(email, password);
+    if (!user) {
+      console.log(`SIMPLE AUTH: Invalid credentials for ${email}`);
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // Create new session with timestamp
+    req.session.userId = user.id;
+    req.session.createdAt = Date.now();
+    req.session.save((err: any) => {
+      if (err) {
+        console.error(`SIMPLE AUTH: Session save error:`, err);
+        return res.status(500).json({ message: "Session creation failed" });
+      }
+
+      console.log(
+        `SIMPLE AUTH: Login successful for user ${user.id}, session: ${req.sessionID}`
+      );
+      res.json({
+        message: "Login successful",
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          businessType: user.businessType,
+          currency: user.currency, // ADD THIS LINE
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionEndDate: user.subscriptionEndDate,
+        },
+      });
+    });
+  } catch (error) {
+    console.error("SIMPLE AUTH: Login error:", error);
+    res.status(500).json({ message: "Login failed" });
+  }
+});
 
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -190,74 +191,77 @@ export function setupSimpleAuth(app: express.Application) {
 
   // Register endpoint (v2)
   app.post("/api/v2/auth/register", async (req, res) => {
-    try {
-      const { email, password, name, businessType, promoCode } = req.body;
-      console.log(`SIMPLE AUTH: Registration attempt for email: ${email}`);
+  try {
+    const { email, password, name, businessType, currency } = req.body; // Add currency here
+    console.log(`SIMPLE AUTH: Registration attempt for email: ${email}`);
 
-      if (!email || !password || !name || !businessType) {
-        return res.status(400).json({ message: "All fields are required" });
-      }
-
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res
-          .status(400)
-          .json({ message: "User already exists with this email" });
-      }
-
-      const newUser = await storage.createUser({
-        email,
-        password,
-        name,
-        businessType,
-      });
-
-      req.session.userId = newUser.id;
-      req.session.createdAt = Date.now();
-      req.session.save((err: any) => {
-        if (err) {
-          console.error(`SIMPLE AUTH: Session save error:`, err);
-          return res.status(500).json({ message: "Session creation failed" });
-        }
-
-        console.log(
-          `SIMPLE AUTH: Registration successful for user ${newUser.id}, session: ${req.sessionID}`
-        );
-        res.json({
-          message: "Registration successful",
-          user: {
-            id: newUser.id,
-            email: newUser.email,
-            name: newUser.name,
-            businessType: newUser.businessType,
-            subscriptionStatus: newUser.subscriptionStatus,
-            subscriptionEndDate: newUser.subscriptionEndDate,
-          },
-        });
-      });
-    } catch (error) {
-      console.error("SIMPLE AUTH: Registration error:", error);
-      res.status(500).json({ message: "Registration failed" });
+    if (!email || !password || !name || !businessType) {
+      return res.status(400).json({ message: "All fields are required" });
     }
-  });
+
+    const existingUser = await storage.getUserByEmail(email);
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "User already exists with this email" });
+    }
+
+    const newUser = await storage.createUser({
+      email,
+      password,
+      name,
+      businessType,
+      currency: currency || "USD", // Add currency with default
+    });
+
+    req.session.userId = newUser.id;
+    req.session.createdAt = Date.now();
+    req.session.save((err: any) => {
+      if (err) {
+        console.error(`SIMPLE AUTH: Session save error:`, err);
+        return res.status(500).json({ message: "Session creation failed" });
+      }
+
+      console.log(
+        `SIMPLE AUTH: Registration successful for user ${newUser.id}, session: ${req.sessionID}`
+      );
+      res.json({
+        message: "Registration successful",
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          businessType: newUser.businessType,
+          currency: newUser.currency, // ADD THIS LINE
+          subscriptionStatus: newUser.subscriptionStatus,
+          subscriptionEndDate: newUser.subscriptionEndDate,
+        },
+      });
+    });
+  } catch (error) {
+    console.error("SIMPLE AUTH: Registration error:", error);
+    res.status(500).json({ message: "Registration failed" });
+  }
+});
 
   // Get current user
   app.get("/api/v2/auth/user", requireAuth, async (req: any, res) => {
-    try {
-      console.log(`SIMPLE AUTH: Getting user data for user ${req.user.id}`);
-      res.json({
-        id: req.user.id,
-        email: req.user.email,
-        name: req.user.name,
-        businessType: req.user.businessType,
-        subscriptionStatus: req.user.subscriptionStatus,
-        subscriptionEndDate: req.user.subscriptionEndDate,
-      });
-    } catch (error) {
-      console.error("SIMPLE AUTH: Get user error:", error);
-      res.status(500).json({ message: "Failed to get user data" });
-    }
-  });
+  try {
+    console.log(`SIMPLE AUTH: Getting user data for user ${req.user.id}`);
+    res.json({
+      id: req.user.id,
+      email: req.user.email,
+      name: req.user.name,
+      businessType: req.user.businessType,
+      currency: req.user.currency, // ADD THIS LINE
+      subscriptionStatus: req.user.subscriptionStatus,
+      subscriptionEndDate: req.user.subscriptionEndDate,
+    });
+  } catch (error) {
+    console.error("SIMPLE AUTH: Get user error:", error);
+    res.status(500).json({ message: "Failed to get user data" });
+  }
+});
  
   // Logout endpoint
   app.post("/api/v2/auth/logout", (req: any, res) => {
