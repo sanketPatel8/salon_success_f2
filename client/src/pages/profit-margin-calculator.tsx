@@ -25,7 +25,7 @@ const treatmentSchema = z.object({
 type TreatmentForm = z.infer<typeof treatmentSchema>;
 
 export default function ProfitMarginCalculator() {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, formatSymbol } = useCurrency();
   const { data: subscriptionStatus, isLoading: subscriptionLoading } = useQuery({
     queryKey: ["/api/subscription-status"],
   });
@@ -37,6 +37,51 @@ export default function ProfitMarginCalculator() {
     autoOverheadCost: 0,
   });
   const { toast } = useToast();
+
+  // Check for session cookie and handle API 401 responses
+    useEffect(() => {
+      console.log('🔍 Dashboard mounted - checking authentication...');
+      
+      const checkSession = async () => {
+        try {
+          // Make an API call to verify session is valid
+          const response = await fetch('/api/v2/auth/user', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          console.log('🔍 Auth check response status:', response.status);
+          if (response.status === 401) {
+            console.log('❌ Session invalid or expired - redirecting to login');
+  
+            toast({
+              title: "Session Expired",
+              description: "Please log in to continue",
+              variant: "destructive",
+            });
+            
+            // Wait 2 seconds before redirecting so toast is visible
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+            
+          } else if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Session valid for user:', data.email);
+          }
+        } catch (error) {
+          console.error('❌ Error checking session:', error);
+        }
+      };
+  
+      // Check immediately on mount
+      checkSession();
+      
+      // Set up periodic check every 30 seconds
+      const intervalId = setInterval(checkSession, 30000);
+      
+      return () => clearInterval(intervalId);
+    }, [toast]);
 
   const { data: treatments, isLoading } = useQuery({
     queryKey: ["/api/treatments"],
@@ -242,7 +287,7 @@ export default function ProfitMarginCalculator() {
                           <FormLabel>Treatment Price</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">£</span>
+                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">{formatSymbol()}</span>
                               <Input
                                 {...field}
                                 type="number"
@@ -287,7 +332,7 @@ export default function ProfitMarginCalculator() {
                       <FormLabel>Overhead Cost (Auto-calculated from hourly rate)</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">£</span>
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">{formatSymbol()}</span>
                           <Input
                             {...field}
                             type="number"

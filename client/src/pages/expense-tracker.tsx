@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +43,7 @@ const categories = [
 ];
 
 export default function ExpenseTracker() {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, formatSymbol } = useCurrency();
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [expenseToDelete, setExpenseToDelete] = useState<number | null>(null);
   
@@ -52,6 +52,51 @@ export default function ExpenseTracker() {
   });
 
   const { toast } = useToast();
+
+  // Check for session cookie and handle API 401 responses
+    useEffect(() => {
+      console.log('🔍 Dashboard mounted - checking authentication...');
+      
+      const checkSession = async () => {
+        try {
+          // Make an API call to verify session is valid
+          const response = await fetch('/api/v2/auth/user', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          console.log('🔍 Auth check response status:', response.status);
+          if (response.status === 401) {
+            console.log('❌ Session invalid or expired - redirecting to login');
+  
+            toast({
+              title: "Session Expired",
+              description: "Please log in to continue",
+              variant: "destructive",
+            });
+            
+            // Wait 2 seconds before redirecting so toast is visible
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+            
+          } else if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Session valid for user:', data.email);
+          }
+        } catch (error) {
+          console.error('❌ Error checking session:', error);
+        }
+      };
+  
+      // Check immediately on mount
+      checkSession();
+      
+      // Set up periodic check every 30 seconds
+      const intervalId = setInterval(checkSession, 30000);
+      
+      return () => clearInterval(intervalId);
+    }, [toast]);
 
   const { data: expenses, isLoading } = useQuery({
     queryKey: ["/api/expenses"],
@@ -277,7 +322,7 @@ export default function ExpenseTracker() {
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">£</span>
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">{formatSymbol()}</span>
                             <Input
                               {...field}
                               type="number"

@@ -30,7 +30,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertUserSchema } from "@shared/schema";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import CurrencySelector from "@/components/currency-selector.tsx";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext.tsx";
@@ -112,7 +112,15 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 left-3 z-10"
+          onClick={() => setLocation("/")}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
             Create Account

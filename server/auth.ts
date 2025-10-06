@@ -29,29 +29,17 @@ export function setupActiveCampaignTest(app: express.Application) {
   });
 }
 
-export function setupSession(app: express.Application) {
-  app.use(session({
-    store: new pgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
-    }),
-    secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
-    resave: false,
-    saveUninitialized: false,
-    name: 'sessionId', // Explicit session name
-    cookie: {
-      secure: false, // Set to true in production with HTTPS
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: 'lax', // Prevent cross-site issues
-    },
-  }));
-}
+
 
 export function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
   console.log('requireAuth called - Session exists:', !!req.session, 'Session data:', req.session);
   if (!req.session?.userId) {
     console.log('No userId in session - rejecting');
+    res.clearCookie('sessionId', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax'
+    });
     return res.status(401).json({ message: "Authentication required" });
   }
   console.log('requireAuth - User ID from session:', req.session.userId, 'Session ID:', req.sessionID);
@@ -165,6 +153,7 @@ export function setupAuthRoutes(app: express.Application) {
         }
         
         req.session.userId = user.id;
+        req.session.createdAt = Date.now(); // Set creation timestamp
         console.log('Registration successful - User ID:', user.id, 'Session ID:', req.sessionID, 'Email:', user.email);
         
         req.session.save(async (err) => {
@@ -211,8 +200,9 @@ export function setupAuthRoutes(app: express.Application) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Store user ID directly in session
+      // Store user ID and creation time in session
       req.session.userId = user.id;
+      req.session.createdAt = Date.now(); // Set creation timestamp
       console.log('LOGIN SUCCESS - User ID:', user.id, 'Session ID:', req.sessionID, 'Email:', user.email);
       
       // Force session save and verify
@@ -256,8 +246,17 @@ export function setupAuthRoutes(app: express.Application) {
         console.error('Session destroy error:', err);
         return res.status(500).json({ message: "Could not log out" });
       }
-      res.clearCookie('sessionId'); // Match the session name we set
-      res.clearCookie('connect.sid'); // Clear default cookie too
+      // Clear cookies properly
+      res.clearCookie('sessionId', {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax'
+      });
+      res.clearCookie('connect.sid', {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax'
+      });
       console.log('Logout successful - session destroyed');
       res.json({ message: "Logged out successfully" });
     });
@@ -284,10 +283,4 @@ export function setupAuthRoutes(app: express.Application) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-}
-
-declare module "express-session" {
-  interface SessionData {
-    userId?: number;
-  }
 }

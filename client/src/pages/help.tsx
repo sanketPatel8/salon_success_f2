@@ -4,10 +4,57 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MessageCircle, Book, Video, FileText, Calculator, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, Crown } from "lucide-react";
 import Header from "@/components/header";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast.ts";
 
 export default function Help() {
   const [activeTab, setActiveTab] = useState("getting-started");
+  const { toast } = useToast();
+
+  // Check for session cookie and handle API 401 responses
+    useEffect(() => {
+      console.log('🔍 Dashboard mounted - checking authentication...');
+      
+      const checkSession = async () => {
+        try {
+          // Make an API call to verify session is valid
+          const response = await fetch('/api/v2/auth/user', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          console.log('🔍 Auth check response status:', response.status);
+          if (response.status === 401) {
+            console.log('❌ Session invalid or expired - redirecting to login');
+  
+            toast({
+              title: "Session Expired",
+              description: "Please log in to continue",
+              variant: "destructive",
+            });
+            
+            // Wait 2 seconds before redirecting so toast is visible
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+            
+          } else if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Session valid for user:', data.email);
+          }
+        } catch (error) {
+          console.error('❌ Error checking session:', error);
+        }
+      };
+  
+      // Check immediately on mount
+      checkSession();
+      
+      // Set up periodic check every 30 seconds
+      const intervalId = setInterval(checkSession, 30000);
+      
+      return () => clearInterval(intervalId);
+    }, [toast]);
 
   return (
     <div className="flex-1 space-y-4 sm:space-y-6 pb-6">
@@ -308,14 +355,14 @@ export default function Help() {
                   <Badge variant="outline" className="text-xs">24-48 hours</Badge>
                 </div>
                 
-                <div className="pt-4 border-t">
+               
                   <Button 
                     className="w-full text-sm"
                     onClick={() => window.open('mailto:help@salonsuccessmanager.com?subject=Salon Success Manager Support Request', '_blank')}
                   >
                     Send Email
                   </Button>
-                </div>
+                
               </CardContent>
             </Card>
           </div>

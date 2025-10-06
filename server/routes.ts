@@ -1,7 +1,10 @@
+import 'dotenv/config';
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { storage } from "./storage";
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 import { activeCampaign } from "./activecampaign";
 import { TrialManager } from "./trial-manager";
 import { requireAuth } from "./simple-auth";
@@ -33,52 +36,239 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Password reset request
   app.post("/api/v2/auth/reset-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Email is required" 
+      });
+    }
+    
+    const user = await storage.getUserByEmail(email);
+    
+    
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    
+    // Store reset token in database
+    await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
+    
+    // Create reset URL
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+    console.log('🔍 Checking environment variables:', {
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT,
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASSWORD: process.env.SMTP_PASSWORD ? '***set***' : 'MISSING',
+});
+    
+    // Email configuration for Ionos
+    const emailConfig = {
+      host: process.env.SMTP_HOST ,
+      port: parseInt(process.env.SMTP_PORT ),
+      secure: false, // true for 465, false for 587
+      auth: {
+        user: process.env.SMTP_USER ,
+        pass: process.env.SMTP_PASSWORD 
+      },
+      tls: {
+        rejectUnauthorized: process.env.NODE_ENV === 'production'
+      }
+    };
+    
+    console.log('📧 Attempting to send email with config:', {
+      host: emailConfig.host,
+      port: emailConfig.port,
+      user: emailConfig.auth.user,
+      to: email
+    });
+    
+    const transporter = nodemailer.createTransport(emailConfig);
+    
+    // Verify transporter configuration
     try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: "Email is required" });
-      }
-      
-      const user = await storage.getUserByEmail(email);
-      if (!user) {
-        // Don't reveal if email exists for security
-        return res.json({ message: "If that email exists, you'll receive reset instructions" });
-      }
-      
-      // Generate reset token
-      const crypto = await import('crypto');
-      const resetToken = crypto.randomBytes(32).toString('hex');
-      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-      
-      // Store reset token in database
-      await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
-      
-      // Send automated password reset email via Gmail
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      
-      // Ionos email configuration
-      const gmailConfig = {
-        email: process.env.GMAIL_EMAIL || 'Info@kgbusinessmentor.com', // Your Ionos email address
-        password: process.env.GMAIL_PASSWORD || 'Katielola15!' // Your Ionos email password
-      };
-      
-      // Log reset request for monitoring
-      console.log(`✓ Password reset requested for: ${email}`);
-      
-      // Return reset link directly for immediate use
-      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
-      res.json({ 
-        message: "Password reset link generated", 
-        resetLink: resetUrl,
-        expires: resetExpires.toISOString()
+      await transporter.verify();
+      console.log('✓ SMTP connection verified successfully');
+    } catch (verifyError) {
+      console.error('✗ SMTP verification failed:', verifyError);
+      return res.json({ 
+        success: true, // Still return success for security
+        message: "Password reset processed",
+        emailSent: false,
+        error: process.env.NODE_ENV === 'development' ? verifyError.message : undefined
+      });
+    }
+    
+    // Email template
+    const mailOptions = {
+      from: `"Katie Godfrey Business Coach" <${emailConfig.auth.user}>`,
+      to: email,
+      subject: 'Reset Your Password - Katie Godfrey Business Coach',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; 
+              line-height: 1.6; 
+              color: #333; 
+              margin: 0;
+              padding: 0;
+              background-color: #f5f5f5;
+            }
+            .container { 
+              max-width: 600px; 
+              margin: 0 auto; 
+              background: white;
+            }
+            .header { 
+              text-align: center; 
+              padding: 40px 20px 20px; 
+              background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 100%);
+            }
+            .header h1 {
+              color: #ec4899;
+              margin: 0;
+              font-size: 28px;
+            }
+            .content { 
+              padding: 40px 30px; 
+            }
+            .button-container {
+              text-align: center;
+              margin: 30px 0;
+            }
+            .button { 
+              display: inline-block; 
+              padding: 14px 40px; 
+              background: #ec4899; 
+              color: white !important; 
+              text-decoration: none; 
+              border-radius: 8px; 
+              font-weight: 600;
+              font-size: 16px;
+            }
+            .footer { 
+              text-align: center; 
+              padding: 30px 20px; 
+              font-size: 13px; 
+              color: #6b7280;
+              background: #f9fafb;
+              border-top: 1px solid #e5e7eb;
+            }
+            .warning {
+              background: #fef3c7;
+              border-left: 4px solid #f59e0b;
+              padding: 12px 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+              font-size: 14px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Password Reset Request</h1>
+            </div>
+            <div class="content">
+              <p style="font-size: 16px; margin-bottom: 10px;">Hello,</p>
+              <p style="font-size: 15px; color: #4b5563;">
+                You requested to reset your password for your Katie Godfrey Business Coach account.
+              </p>
+              <p style="font-size: 15px; color: #4b5563;">
+                Click the button below to create a new password:
+              </p>
+              <div class="button-container">
+                <a href="${resetUrl}" class="button">Reset My Password</a>
+              </div>
+              <div class="warning">
+                <strong>⏰ Important:</strong> This link will expire in 1 hour for security reasons.
+              </div>
+              <p style="font-size: 14px; color: #6b7280; margin-top: 25px;">
+                If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+              </p>
+            </div>
+            <div class="footer">
+              <p style="margin: 5px 0;">© ${new Date().getFullYear()} Katie Godfrey Business Coach</p>
+              <p style="margin: 5px 0;">
+                Need help? Contact us at 
+                <a href="mailto:help@salonsuccessmanager.com" style="color: #ec4899; text-decoration: none;">
+                  help@salonsuccessmanager.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Password Reset Request
+
+Hello,
+
+You requested to reset your password for your Katie Godfrey Business Coach account.
+
+This link will expire in 1 hour for security reasons.
+
+If you didn't request this password reset, please ignore this email.
+
+© ${new Date().getFullYear()} Katie Godfrey Business Coach
+Need help? Contact us at help@salonsuccessmanager.com
+      `
+    };
+    
+    // Send email with detailed error handling
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('✓ Password reset email sent successfully:', {
+        messageId: info.messageId,
+        accepted: info.accepted,
+        rejected: info.rejected,
+        response: info.response,
+        to: email
       });
       
-    } catch (error) {
-      console.error('Password reset error:', error);
-      res.status(500).json({ message: "Password reset failed" });
+      // Return detailed success response
+      res.json({ 
+        success: true,
+        message: "Password reset link sent successfully",
+        emailSent: true
+      });
+      
+    } catch (emailError) {
+      console.error('✗ Failed to send email:', {
+        error: emailError.message,
+        code: emailError.code,
+        command: emailError.command,
+        response: emailError.response
+      });
+      
+      // Still return success for security, but flag that email wasn't sent
+      return res.json({ 
+        success: true,
+        message: "Password reset processed",
+        emailSent: false
+      });
     }
-  });
+    
+  } catch (error) {
+    console.error('✗ Password reset error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: "Password reset failed",
+      emailSent: false
+    });
+  }
+});
 
   // Handle password reset form submission
   app.post("/api/v2/auth/confirm-reset", async (req, res) => {

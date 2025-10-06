@@ -20,6 +20,8 @@ import Header from "@/components/header";
 import Paywall from "@/components/paywall";
 import type { Business, WeeklyIncome, IncomeGoal, MoneyPot } from "@shared/schema";
 import { insertBusinessSchema } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast.ts";
+
 
 const weeklyIncomeSchema = z.object({
   businessId: z.number(),
@@ -40,10 +42,11 @@ type WeeklyIncomeForm = z.infer<typeof weeklyIncomeSchema>;
 type IncomeGoalForm = z.infer<typeof incomeGoalSchema>;
 
 export default function CEONumbers() {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, formatSymbol } = useCurrency();
   const { data: subscriptionStatus, isLoading: subscriptionLoading } = useQuery({
     queryKey: ["/api/subscription-status"],
   });
+  const { toast } = useToast();
 
   const [selectedBusiness, setSelectedBusiness] = useState<number | "all">("all");
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -55,6 +58,51 @@ export default function CEONumbers() {
   
   // Local state for input values to prevent blinking
   const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
+
+  // Check for session cookie and handle API 401 responses
+  useEffect(() => {
+    console.log('🔍 Dashboard mounted - checking authentication...');
+    
+    const checkSession = async () => {
+      try {
+        // Make an API call to verify session is valid
+        const response = await fetch('/api/v2/auth/user', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        console.log('🔍 Auth check response status:', response.status);
+        if (response.status === 401) {
+          console.log('❌ Session invalid or expired - redirecting to login');
+
+          toast({
+            title: "Session Expired",
+            description: "Please log in to continue",
+            variant: "destructive",
+          });
+          
+          // Wait 2 seconds before redirecting so toast is visible
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+          
+        } else if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Session valid for user:', data.email);
+        }
+      } catch (error) {
+        console.error('❌ Error checking session:', error);
+      }
+    };
+
+    // Check immediately on mount
+    checkSession();
+    
+    // Set up periodic check every 30 seconds
+    const intervalId = setInterval(checkSession, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [toast]);
 
   // Data fetching
   const { data: businesses = [] } = useQuery<Business[]>({
@@ -542,7 +590,7 @@ export default function CEONumbers() {
                 <div className="flex flex-col gap-3 sm:gap-4 mb-4">
                   <Label className="font-semibold text-base sm:text-xl text-center">This Week's Total Takings:</Label>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-2xl sm:text-3xl font-bold text-slate-600">£</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-slate-600">{formatSymbol()}</span>
                     <Input
                       type="number"
                       step="0.01"

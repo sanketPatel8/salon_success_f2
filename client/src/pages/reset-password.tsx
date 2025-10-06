@@ -54,10 +54,10 @@ export default function ResetPassword() {
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length <= 8) {
       toast({
         title: "Password too short",
-        description: "Password must be at least 6 characters long",
+        description: "Password must be at least 8 characters long",
         variant: "destructive",
       });
       return;

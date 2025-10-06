@@ -7,6 +7,14 @@ import { setupActiveCampaignTest } from "./auth.ts";
 
 const MemStoreSession = MemoryStore(session);
 
+// Extend session data type
+declare module 'express-session' {
+  interface SessionData {
+    createdAt?: number;
+    userId?: number;
+  }
+}
+
 // Simple, secure session configuration
 export const sessionConfig = session({
   store: new MemStoreSession({
@@ -18,10 +26,12 @@ export const sessionConfig = session({
   cookie: {
     secure: false, // Set to true in production with HTTPS
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    maxAge: 30 * 24 * 60 * 60 * 1000, 
   },
   name: "sessionId",
 });
+
+
 
 // Authentication middleware - simple and secure
 export const requireAuth = async (req: any, res: any, next: any) => {
@@ -55,6 +65,9 @@ export const requireAuth = async (req: any, res: any, next: any) => {
 export function setupSimpleAuth(app: express.Application) {
   console.log("SIMPLE AUTH: Setting up authentication routes");
 
+  // Add session expiration check middleware AFTER session middleware
+  app.use(sessionConfig);
+
   // Setup ActiveCampaign test endpoint
   setupActiveCampaignTest(app);
 
@@ -74,8 +87,9 @@ export function setupSimpleAuth(app: express.Application) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
-      // Create new session
+      // Create new session with timestamp
       req.session.userId = user.id;
+      req.session.createdAt = Date.now();
       req.session.save((err: any) => {
         if (err) {
           console.error(`SIMPLE AUTH: Session save error:`, err);
@@ -102,59 +116,6 @@ export function setupSimpleAuth(app: express.Application) {
       res.status(500).json({ message: "Login failed" });
     }
   });
-
-  // Register endpoint (legacy)
-  // app.post('/api/auth/register', async (req, res) => {
-  //   try {
-  //     const { email, password, name, businessType, promoCode } = req.body;
-  //     console.log(`SIMPLE AUTH: Registration attempt for email: ${email}`);
-
-  //     if (!email || !password || !name || !businessType) {
-  //       return res.status(400).json({ message: 'All fields are required' });
-  //     }
-
-  //     // Check if user already exists
-  //     const existingUser = await storage.getUserByEmail(email);
-  //     if (existingUser) {
-  //       return res.status(400).json({ message: 'User already exists with this email' });
-  //     }
-
-  //     console.log(existingUser , "existingUser")
-
-  //     // Create new user
-  //     const newUser = await storage.createUser({
-  //       email,
-  //       password,
-  //       name,
-  //       businessType
-  //     });
-
-  //     // Set trial period subscription status
-  //     await storage.updateSubscriptionStatus(newUser.id, 'trial');
-
-  //     // Create session
-  //     req.session.userId = newUser.id;
-  //     req.session.save((err: any) => {
-  //       if (err) {
-  //         console.error(`SIMPLE AUTH: Session save error:`, err);
-  //         return res.status(500).json({ message: 'Session creation failed' });
-  //       }
-
-  //       console.log(`SIMPLE AUTH: Registration successful for user ${newUser.id}, session: ${req.sessionID}`);
-  //       res.status(201).json({
-  //         id: newUser.id,
-  //         email: newUser.email,
-  //         name: newUser.name,
-  //         businessType: newUser.businessType,
-  //         subscriptionStatus: 'trial',
-  //         subscriptionEndDate: newUser.subscriptionEndDate
-  //       });
-  //     });
-  //   } catch (error) {
-  //     console.error('SIMPLE AUTH: Registration error:', error);
-  //     res.status(500).json({ message: 'Registration failed' });
-  //   }
-  // });
 
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -194,6 +155,7 @@ export function setupSimpleAuth(app: express.Application) {
 
       console.log("📌 Creating session...");
       req.session.userId = newUser.id;
+      req.session.createdAt = Date.now();
       req.session.save((err: any) => {
         if (err) {
           console.error("❌ Session save error:", err);
@@ -213,7 +175,6 @@ export function setupSimpleAuth(app: express.Application) {
     } catch (error: unknown) {
       console.error("❌ Registration error:", error);
 
-      // Check if error is an object with 'code'
       if (typeof error === "object" && error !== null && "code" in error) {
         const errObj = error as { code: string };
         if (errObj.code === "28P01") {
@@ -237,7 +198,6 @@ export function setupSimpleAuth(app: express.Application) {
         return res.status(400).json({ message: "All fields are required" });
       }
 
-      // Check if user already exists
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res
@@ -245,7 +205,6 @@ export function setupSimpleAuth(app: express.Application) {
           .json({ message: "User already exists with this email" });
       }
 
-      // Create new user
       const newUser = await storage.createUser({
         email,
         password,
@@ -253,8 +212,8 @@ export function setupSimpleAuth(app: express.Application) {
         businessType,
       });
 
-      // Create session
       req.session.userId = newUser.id;
+      req.session.createdAt = Date.now();
       req.session.save((err: any) => {
         if (err) {
           console.error(`SIMPLE AUTH: Session save error:`, err);
@@ -325,7 +284,7 @@ export function setupSimpleAuth(app: express.Application) {
   // Admin authentication middleware
   const requireAdmin = async (req: any, res: any, next: any) => {
     const adminPassword = req.headers["x-admin-password"];
-    const expectedPassword = process.env.ADMIN_PASSWORD || "admin123"; // Default for development
+    const expectedPassword = process.env.ADMIN_PASSWORD || "admin123";
 
     if (adminPassword !== expectedPassword) {
       return res.status(401).json({ message: "Admin access required" });
@@ -342,7 +301,6 @@ export function setupSimpleAuth(app: express.Application) {
 
       const users = await storage.getAllUsers();
 
-      // Filter users by search term
       let filteredUsers = users;
       if (search) {
         filteredUsers = users.filter(
@@ -353,7 +311,6 @@ export function setupSimpleAuth(app: express.Application) {
         );
       }
 
-      // Paginate results
       const startIndex = (page - 1) * limit;
       const endIndex = startIndex + limit;
       const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
@@ -370,14 +327,13 @@ export function setupSimpleAuth(app: express.Application) {
     }
   });
 
-  // Get user statistics
   app.get("/api/admin/stats", requireAdmin, async (req: any, res) => {
     interface User {
       id: number;
       email: string;
       name: string;
       subscriptionStatus: "active" | "trial" | "inactive" | "free";
-      createdAt: string; // or Date if you convert it
+      createdAt: string;
       businessType: string;
       currency: string;
     }
@@ -417,7 +373,6 @@ export function setupSimpleAuth(app: express.Application) {
     }
   });
 
-  // Update user subscription status (for support)
   app.put(
     "/api/admin/users/:userId/subscription",
     requireAdmin,
@@ -443,7 +398,6 @@ export function setupSimpleAuth(app: express.Application) {
     }
   );
 
-  // Get individual user details
   app.get("/api/admin/users/:userId", requireAdmin, async (req: any, res) => {
     try {
       const { userId } = req.params;
@@ -460,7 +414,6 @@ export function setupSimpleAuth(app: express.Application) {
     }
   });
 
-  // Delete user (admin only)
   app.delete(
     "/api/admin/users/:userId",
     requireAdmin,
@@ -468,13 +421,11 @@ export function setupSimpleAuth(app: express.Application) {
       try {
         const { userId } = req.params;
 
-        // Check if user exists first
         const user = await storage.getUser(parseInt(userId));
         if (!user) {
           return res.status(404).json({ message: "User not found" });
         }
 
-        // Delete the user (this will cascade delete all related data in database)
         const success = await storage.deleteUser(parseInt(userId));
 
         if (!success) {

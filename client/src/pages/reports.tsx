@@ -8,13 +8,58 @@ import { FileText, Download, Mail, TrendingUp, DollarSign, Percent, Clock } from
 import jsPDF from 'jspdf';
 import Paywall from "@/components/paywall";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Treatment, Expense, HourlyRateCalculation } from "@shared/schema";
 
 export default function Reports() {
   const { toast } = useToast();
   const { formatCurrency } = useCurrency();
   const [isEmailPending, setIsEmailPending] = useState(false);
+
+  // Check for session cookie and handle API 401 responses
+    useEffect(() => {
+      console.log('🔍 Dashboard mounted - checking authentication...');
+      
+      const checkSession = async () => {
+        try {
+          // Make an API call to verify session is valid
+          const response = await fetch('/api/v2/auth/user', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          console.log('🔍 Auth check response status:', response.status);
+          if (response.status === 401) {
+            console.log('❌ Session invalid or expired - redirecting to login');
+  
+            toast({
+              title: "Session Expired",
+              description: "Please log in to continue",
+              variant: "destructive",
+            });
+            
+            // Wait 2 seconds before redirecting so toast is visible
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+            
+          } else if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Session valid for user:', data.email);
+          }
+        } catch (error) {
+          console.error('❌ Error checking session:', error);
+        }
+      };
+  
+      // Check immediately on mount
+      checkSession();
+      
+      // Set up periodic check every 30 seconds
+      const intervalId = setInterval(checkSession, 30000);
+      
+      return () => clearInterval(intervalId);
+    }, [toast]);
 
   const { data: subscriptionStatus, isLoading: subscriptionLoading } = useQuery({
     queryKey: ["/api/subscription-status"],

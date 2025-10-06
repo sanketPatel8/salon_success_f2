@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +36,51 @@ export default function StockBudgetCalculator() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedPeriod, setSelectedPeriod] = useState("3");
+
+  // Check for session cookie and handle API 401 responses
+    useEffect(() => {
+      console.log('🔍 Dashboard mounted - checking authentication...');
+      
+      const checkSession = async () => {
+        try {
+          // Make an API call to verify session is valid
+          const response = await fetch('/api/v2/auth/user', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          
+          console.log('🔍 Auth check response status:', response.status);
+          if (response.status === 401) {
+            console.log('❌ Session invalid or expired - redirecting to login');
+  
+            toast({
+              title: "Session Expired",
+              description: "Please log in to continue",
+              variant: "destructive",
+            });
+            
+            // Wait 2 seconds before redirecting so toast is visible
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+            
+          } else if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Session valid for user:', data.email);
+          }
+        } catch (error) {
+          console.error('❌ Error checking session:', error);
+        }
+      };
+  
+      // Check immediately on mount
+      checkSession();
+      
+      // Set up periodic check every 30 seconds
+      const intervalId = setInterval(checkSession, 30000);
+      
+      return () => clearInterval(intervalId);
+    }, [toast]);
 
   // Check subscription status
   const { data: subscriptionStatus, isLoading: subscriptionLoading } = useQuery<{ active: boolean }>({
@@ -308,7 +353,7 @@ export default function StockBudgetCalculator() {
                   name="totalAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Total Amount (£)</FormLabel>
+                      <FormLabel>Total Amount </FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 

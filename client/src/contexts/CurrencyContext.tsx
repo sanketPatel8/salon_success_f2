@@ -160,9 +160,13 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }).format(convert(amount));
   };
 
+  const formatSymbol = () => {
+    return currency.symbol;
+  };
+
   return (
     <CurrencyContext.Provider
-      value={{ currency, setCurrency, convert, formatCurrency }}
+      value={{ currency, setCurrency, convert, formatCurrency, formatSymbol }}
     >
       {children}
     </CurrencyContext.Provider>

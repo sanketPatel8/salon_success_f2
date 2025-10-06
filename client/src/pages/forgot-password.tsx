@@ -13,10 +13,9 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [resetLink, setResetLink] = useState("");
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!email) {
@@ -34,20 +33,34 @@ export default function ForgotPassword() {
       const response = await apiRequest("POST", "/api/v2/auth/reset-password", { email });
       const data = await response.json();
       
-      if (data.resetLink) {
-        setResetLink(data.resetLink);
+      console.log('Reset password response:', data);
+      
+      // Check if the request was successful
+      if (data.success) {
         setIsSuccess(true);
-        toast({
-          title: "Reset link generated",
-          description: "Your password reset link is ready below",
-        });
+        
+        // Show appropriate message based on whether email was actually sent
+        if (data.emailSent) {
+          toast({
+            title: "Reset link sent",
+            description: "Check your email for reset instructions",
+          });
+        } else {
+          toast({
+            title: "Request processed",
+            description: "If the email exists, you'll receive instructions",
+          });
+        }
       } else {
+        // Only show error if success is false
         toast({
-          title: "Reset link sent",
-          description: "If that email exists, you'll receive reset instructions",
+          title: "Error",
+          description: data.message || "Failed to process reset request",
+          variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Reset password error:', error);
       toast({
         title: "Error",
         description: "Failed to send reset link. Please try again.",
@@ -113,39 +126,24 @@ export default function ForgotPassword() {
                 </form>
               ) : (
                 <div className="text-center space-y-4">
-                  {resetLink ? (
-                    <div className="space-y-4">
-                      <div className="text-green-600 text-sm font-medium">
-                        Your password reset link is ready!
-                      </div>
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                          Click the link below to reset your password:
-                        </p>
-                        <div className="space-y-3">
-                          <button
-                            onClick={() => window.open(resetLink, '_self')}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
-                          >
-                            Reset Password Now
-                          </button>
-                          <div className="text-xs text-gray-600 dark:text-gray-400 break-all bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                            <strong>Or copy this link:</strong><br/>
-                            <span className="font-mono">{resetLink}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                          This link expires in 1 hour for security
-                        </p>
-                      </div>
+                  <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="flex justify-center mb-4">
+                      <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
                     </div>
-                  ) : (
-                    <div className="text-green-600 text-sm">
-                      If an account with that email exists, you'll receive reset instructions shortly.
-                    </div>
-                  )}
-                  <div className="text-sm text-gray-600">
-                    Need to try a different email address?
+                    <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
+                      Reset Link Sent Successfully!
+                    </h3>
+                    <p className="text-green-700 dark:text-green-300 text-sm">
+                      We've sent a password reset link to <strong>{email}</strong>
+                    </p>
+                    <p className="text-green-600 dark:text-green-400 text-sm mt-3">
+                      Please check your email inbox (and spam folder) for the reset link.
+                    </p>
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+                    Didn't receive the email? try again with a different email address.
                   </div>
                 </div>
               )}
