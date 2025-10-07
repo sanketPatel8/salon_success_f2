@@ -34,6 +34,8 @@ export function setupStripeRoutes(app: Express) {
         await storage.updateUserStripeInfo(user.id, subscription.customer, subscription.id);
       }
 
+      // 🔹 Define now for date calculations
+      const now = new Date();
 
       // 🔹 Handle free access
       if (user.subscriptionStatus === 'free_access') {
@@ -77,11 +79,12 @@ export function setupStripeRoutes(app: Express) {
             };
             const normalizedStatus = statusMap[subscription.status] || 'inactive';
             console.log('📊 Stripe status → normalizedStatus:', subscription.status, '→', normalizedStatus);
+            
             const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
             const endDate = new Date(stripeEndUnix * 1000);
             const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-            await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate);
+            await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
 
             const isTrial = normalizedStatus === 'trial';
 
@@ -101,15 +104,22 @@ export function setupStripeRoutes(app: Express) {
         }
       }
 
-      // 🔹 If status is trial but no subscription found, give access anyway
+      // 🔹 If status is trial but no subscription found, calculate trial end date
       if (user.subscriptionStatus === 'trial') {
         console.log('⚠️ Trial status in DB but no Stripe subscription found, granting access');
+        
+        // Calculate trial end date (15 days from creation)
+        const createdAt = user.createdAt ? new Date(user.createdAt) : now;
+        const trialEndDate = new Date(createdAt);
+        trialEndDate.setDate(trialEndDate.getDate() + 15);
+        const daysLeft = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        
         return res.json({
           status: 'trial',
           hasAccess: true,
-          endDate: endDate,
+          endDate: trialEndDate,
           isTrial: true,
-          daysLeft: daysLeft > 0 ? daysLeft : 15,
+          daysLeft: daysLeft,
         });
       }
 
@@ -142,16 +152,25 @@ export function setupStripeRoutes(app: Express) {
 
       const isTrial = normalizedStatus === 'trial';
 
+      // Calculate end date from Stripe subscription
+      const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+      const endDate = new Date(stripeEndUnix * 1000);
+      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      console.log("💾 Ending Date full", subscription.trial_end);
+
       // 🔹 Update local database
       console.log('💾 Updating subscription in DB...');
-      await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate);
+      await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
 
       console.log(`✅ Subscription retrieved for user ${user.email}: status=${normalizedStatus}, endDate=${endDate.toISOString()}`);
 
       res.json({
         status: normalizedStatus,
         hasAccess: ['active', 'trial'].includes(normalizedStatus),
+        endDate: endDate,
         isTrial: isTrial,
+        daysLeft: daysLeft,
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
         amount: subscription.items.data[0]?.price.unit_amount,
         currency: subscription.items.data[0]?.price.currency,
@@ -198,8 +217,6 @@ export function setupStripeRoutes(app: Express) {
       console.log('📅 User createdAt:', createdAt.toISOString());
       console.log('⏰ Current time:', now.toISOString());
 
-      
-
       // 🔹 Handle free access
       if (user.subscriptionStatus === 'free_access') {
         console.log('🎁 User has free_access status');
@@ -214,13 +231,24 @@ export function setupStripeRoutes(app: Express) {
       // 🔹 If no Stripe customer ID, return current status
       if (!user.stripeCustomerId) {
         console.log('⚠️ No Stripe customer ID found');
+        
+        // Calculate trial end date if user has trial status
+        let trialEndDate = null;
+        let daysLeft = null;
+        
+        if (user.subscriptionStatus === 'trial') {
+          trialEndDate = new Date(createdAt);
+          trialEndDate.setDate(trialEndDate.getDate() + 15);
+          daysLeft = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        }
+        
         return res.json({
           success: true,
           status: user.subscriptionStatus || 'inactive',
           hasAccess: user.subscriptionStatus === 'trial',
-          endDate: user.subscriptionStatus === 'trial' ,
+          endDate: trialEndDate,
           isTrial: user.subscriptionStatus === 'trial',
-          daysLeft: user.subscriptionStatus === 'trial',
+          daysLeft: daysLeft,
         });
       }
 
@@ -265,14 +293,11 @@ export function setupStripeRoutes(app: Express) {
             const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
             console.log("days left in end subscription", daysLeft);
-            
-
             console.log("📊 Stripe end date :", endDate);
             
             await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
 
             const isTrial = normalizedStatus === 'trial';
-          
 
             return res.json({
               success: true,
@@ -290,11 +315,17 @@ export function setupStripeRoutes(app: Express) {
             console.log('⚠️ No subscriptions found in Stripe');
             // Return trial status if user has it
             if (user.subscriptionStatus === 'trial') {
+              const trialEndDate = new Date(createdAt);
+              trialEndDate.setDate(trialEndDate.getDate() + 15);
+              const daysLeft = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+              
               return res.json({
                 success: true,
                 status: 'trial',
                 hasAccess: true,
+                endDate: trialEndDate,
                 isTrial: true,
+                daysLeft: daysLeft,
               });
             }
             
@@ -309,14 +340,25 @@ export function setupStripeRoutes(app: Express) {
           }
         } catch (stripeError) {
           console.error('❌ Error fetching subscriptions from Stripe:', stripeError);
+          
+          // Calculate trial dates for fallback
+          let trialEndDate = null;
+          let daysLeft = null;
+          
+          if (user.subscriptionStatus === 'trial') {
+            trialEndDate = new Date(createdAt);
+            trialEndDate.setDate(trialEndDate.getDate() + 15);
+            daysLeft = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+          }
+          
           // Return current status on error
           return res.json({
             success: true,
             status: user.subscriptionStatus || 'inactive',
             hasAccess: user.subscriptionStatus === 'trial',
-            endDate: user.subscriptionStatus === 'trial' ,
+            endDate: trialEndDate,
             isTrial: user.subscriptionStatus === 'trial',
-            daysLeft: user.subscriptionStatus === 'trial',
+            daysLeft: daysLeft,
           });
         }
       }
@@ -343,9 +385,11 @@ export function setupStripeRoutes(app: Express) {
       const endDate = new Date(stripeEndUnix * 1000);
       const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
+      console.log("💾 Ending Date full", subscription.trial_end);
+
       // 🔹 Update subscription in DB
       console.log('💾 Updating subscription in DB...');
-      await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString);
+      await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
 
       console.log(`✅ Subscription updated for user ${user.email}: status=${normalizedStatus}, endDate=${endDate.toISOString()}`);
 
@@ -412,8 +456,6 @@ export function setupStripeRoutes(app: Express) {
           message: 'No active subscription found' 
         });
       }
-
-      
 
       const subscription = await stripe.subscriptions.update(
         user.stripeSubscriptionId,
@@ -522,7 +564,7 @@ export function setupStripeRoutes(app: Express) {
       const endDate = new Date(stripeEndUnix * 1000);
       const status = activeSubscription.status === 'trialing' ? 'trial' : activeSubscription.status;
       
-      await storage.updateSubscriptionStatus(user.id, status, endDate);
+      await storage.updateSubscriptionStatus(user.id, status, endDate.toISOString());
 
       res.json({
         success: true,
