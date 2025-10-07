@@ -20,6 +20,7 @@ import {
   insertMoneyPotSchema
 } from "@shared/schema";
 import { z } from "zod";
+import { setupStripeRoutes } from './stripe.routes.ts';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -30,9 +31,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
-  // Remove old auth setup completely
-  // setupSession(app);
-  // setupAuthRoutes(app);
+  
 
   // Password reset request
   app.post("/api/v2/auth/reset-password", async (req, res) => {
@@ -471,6 +470,8 @@ Need help? Contact us at help@salonsuccessmanager.com
     const trialStatus = TrialManager.getAccessStatus(user);
     res.json(trialStatus);
   });
+
+  setupStripeRoutes(app);
 
   // Hourly rate calculations - NEW AUTH
   app.post("/api/hourly-rate-calculations", requireAuth, async (req, res) => {

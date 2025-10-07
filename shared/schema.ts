@@ -24,7 +24,7 @@ export const users = pgTable("users", {
   currencyCurrentPrice: decimal("currency_current_price", { precision: 10, scale: 2 }), // Optional: if you want to store exchange rates
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
-  subscriptionStatus: text("subscription_status").default("trial"),
+  subscriptionStatus: text("subscription_status").default("inactive"),
   subscriptionEndDate: timestamp("subscription_end_date"),
   emailVerified: boolean("email_verified").default(false),
   passwordResetToken: text("password_reset_token"),

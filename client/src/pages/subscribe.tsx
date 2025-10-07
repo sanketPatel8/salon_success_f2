@@ -1,279 +1,399 @@
-import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { useEffect, useState } from 'react';
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Header from "@/components/header";
-import { Check, Crown, Zap, Tag, Calendar, Gift } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/useAuth";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, CheckCircle2, XCircle, RefreshCw, Crown, Zap, Calendar, Gift } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+interface SubscriptionData {
+  status: string;
+  hasAccess: boolean;
+  endDate: string | null;
+  isTrial: boolean;
+  daysLeft: number | null;
+  cancelAtPeriodEnd?: boolean;
+  amount?: number;
+  currency?: string;
 }
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
-const SubscribeForm = () => {
-  const stripe = useStripe();
-  const elements = useElements();
+export default function Subscription() {
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  useEffect(() => {
+    fetchSubscription();
+  }, []);
 
-    if (!stripe || !elements) {
-      setIsLoading(false);
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetch('/api/stripe/subscription', {
+        credentials: 'include',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSubscription(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch subscription:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create checkout session',
+        variant: 'destructive',
+      });
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm('Are you sure you want to cancel your subscription? You will retain access until the end of your billing period.')) {
       return;
     }
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/`,
-      },
-    });
-
-    if (error) {
-      toast({
-        title: "Payment Failed",
-        description: error.message,
-        variant: "destructive",
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/stripe/cancel-subscription', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
       });
-    } else {
-      toast({
-        title: "Subscription Successful!",
-        description: "Welcome to Salon Success Manager Pro! You now have full access to all business tools.",
-      });
-    }
-    setIsLoading(false);
-  };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
-      <Button 
-        type="submit" 
-        className="w-full bg-primary text-white hover:bg-pink-600"
-        disabled={!stripe || isLoading}
-      >
-        {isLoading ? "Processing..." : "Subscribe Now - £23.97/month"}
-      </Button>
-      <p className="text-xs text-center text-slate-500 mt-2">
-        Cancel anytime • Secure payment via Stripe
-      </p>
-    </form>
-  );
-};
-
-const PromoCodeForm = () => {
-  const { toast } = useToast();
-  const [promoCode, setPromoCode] = useState("");
-  const [, setLocation] = useLocation();
-  const queryClient = useQueryClient();
-  
-  const promoMutation = useMutation({
-    mutationFn: async (code: string) => {
-      const response = await apiRequest("POST", "/api/apply-promo-code", { code });
-      return response.json();
-    },
-    onSuccess: (data, originalCode) => {
-      if (data.success) {
-        toast({
-          title: "Promo Code Applied!",
-          description: data.message,
-        });
-        
-        // If CLIENT6FREE code was used, simply refresh auth data
-        // The auth hook will detect free_access status and App.tsx will route correctly
-        if (originalCode.toUpperCase() === 'CLIENT6FREE') {
-          // Invalidate and refetch auth data immediately
-          queryClient.invalidateQueries({ queryKey: ["/api/v2/auth/user"] });
-          queryClient.refetchQueries({ queryKey: ["/api/v2/auth/user"] });
-          
-          // No redirect needed - let React routing handle this automatically
-          toast({
-            title: "Redirecting to Dashboard...",
-            description: "Setting up your free access now!",
-          });
-        } else {
-          // For other promo codes, refresh the page
-          window.location.reload();
-        }
-      } else {
-        toast({
-          title: "Invalid Promo Code",
-          description: data.message || "Please check your code and try again.",
-          variant: "destructive",
-        });
+      if (!res.ok) {
+        throw new Error('Failed to cancel subscription');
       }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: "Failed to apply promo code. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (promoCode.trim()) {
-      promoMutation.mutate(promoCode.trim());
+      const data = await res.json();
+      toast({
+        title: 'Subscription Cancelled',
+        description: data.message,
+      });
+      
+      await fetchSubscription();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to cancel subscription',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="promoCode">Promo Code</Label>
-        <Input
-          id="promoCode"
-          type="text"
-          placeholder="Enter your promo code"
-          value={promoCode}
-          onChange={(e) => setPromoCode(e.target.value)}
-          className="mt-1"
-        />
-      </div>
-      <Button 
-        type="submit" 
-        variant="outline"
-        className="w-full"
-        disabled={promoMutation.isPending || !promoCode.trim()}
-      >
-        {promoMutation.isPending ? "Applying..." : "Apply Promo Code"}
-      </Button>
-    </form>
-  );
-};
-
-export default function Subscribe() {
-  const [clientSecret, setClientSecret] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Create PaymentIntent as soon as the page loads
-    apiRequest("POST", "/api/create-subscription")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Subscription response:", data);
-        if (data.clientSecret) {
-          setClientSecret(data.clientSecret);
-        } else {
-          console.log("No client secret received:", data);
-        }
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Subscription creation error:", error);
-        setIsLoading(false);
+  const handleReactivateSubscription = async () => {
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/stripe/reactivate-subscription', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
       });
-  }, []);
+
+      if (!res.ok) {
+        throw new Error('Failed to reactivate subscription');
+      }
+
+      const data = await res.json();
+      toast({
+        title: 'Subscription Reactivated',
+        description: data.message,
+      });
+      
+      await fetchSubscription();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to reactivate subscription',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleSyncSubscription = async () => {
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/stripe/sync-subscription', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+
+      toast({
+        title: 'Subscription Synced',
+        description: 'Your subscription has been synced with Stripe',
+      });
+      
+      await fetchSubscription();
+    } catch (error: any) {
+      toast({
+        title: 'Sync Failed',
+        description: error.message || 'Failed to sync subscription',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const getStatusBadge = () => {
+    if (!subscription) return null;
+
+    if (subscription.status === 'free_access') {
+      return <Badge className="bg-green-500 hover:bg-green-600">Free Access</Badge>;
+    }
+
+    if (subscription.isTrial) {
+      return <Badge className="bg-blue-500 hover:bg-blue-600">Trial Active</Badge>;
+    }
+
+    if (subscription.status === 'active') {
+      return <Badge className="bg-green-500 hover:bg-green-600">Active</Badge>;
+    }
+
+    if (subscription.status === 'past_due') {
+      return <Badge variant="destructive">Payment Failed</Badge>;
+    }
+
+    if (subscription.status === 'canceled') {
+      return <Badge variant="secondary">Cancelled</Badge>;
+    }
+
+    return <Badge variant="outline">Inactive</Badge>;
+  };
 
   const features = [
-    "Unlimited hourly rate calculations",
-    "Advanced profit margin analysis", 
+    "Treatment pricing & profit margin analysis",
+    "Expense tracking & financial reporting",
     "Multi-business management",
-    "CEO numbers tracking & money pots",
-    "Revenue projections & forecasting",
-    "Comprehensive expense tracking",
+    "Weekly income tracking & goals",
+    "Money pot budgeting system",
+    "CEO numbers tracking & forecasting",
     "Professional reports & exports",
     "Priority email support"
   ];
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <>
-        <Header 
-          title="Complete Your Subscription" 
-          description="Choose your preferred payment method" 
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
-        </div>
-      </>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+      </div>
     );
   }
 
   return (
-    <>
-      <Header 
-        title="Complete Your Subscription" 
-        description="Choose your preferred payment method" 
-      />
-      
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-800 mb-2">Subscription Management</h1>
+          <p className="text-slate-600">Manage your Salon Success Manager subscription</p>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-8">
           
-          {/* Payment Options */}
+          {/* Current Status Card */}
           <div className="space-y-6">
-            
-            {/* Stripe Payment Card */}
-            <Card>
+            <Card className="border-slate-200 shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="h-5 w-5 text-primary" />
-                  Subscribe with Payment Card
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center mb-6">
-                  <div className="text-3xl font-bold text-slate-800">£23.97<span className="text-lg font-normal text-slate-600">/month</span></div>
-                  <p className="text-sm text-slate-600 mt-1">Cancel anytime • Secure payment via Stripe</p>
+                <div className="flex items-center justify-between mb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <Crown className="h-5 w-5 text-pink-500" />
+                    Current Status
+                  </CardTitle>
+                  {getStatusBadge()}
                 </div>
-                
-                {clientSecret ? (
-                  <Elements stripe={stripePromise} options={{ clientSecret }}>
-                    <SubscribeForm />
-                  </Elements>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {subscription?.hasAccess ? (
+                  <>
+                    <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-slate-800">
+                          {subscription.isTrial 
+                            ? `Trial Active`
+                            : subscription.status === 'free_access'
+                            ? 'Free Access Active'
+                            : 'Full Access Active'}
+                        </p>
+                        {subscription.isTrial && subscription.daysLeft !== null && (
+                          <p className="text-sm text-slate-600">{subscription.daysLeft} days remaining</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {subscription.endDate && (
+                      <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                        <Calendar className="w-5 h-5 text-slate-600" />
+                        <div className="text-sm">
+                          <p className="font-medium text-slate-700">
+                            {subscription.cancelAtPeriodEnd ? 'Access ends' : 'Next billing'}
+                          </p>
+                          <p className="text-slate-600">
+                            {new Date(subscription.endDate).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {subscription.amount && subscription.currency && (
+                      <div className="p-3 bg-slate-50 rounded-lg">
+                        <p className="text-sm text-slate-600">Monthly Price</p>
+                        <p className="text-2xl font-bold text-slate-800">
+                          {new Intl.NumberFormat('en-GB', {
+                            style: 'currency',
+                            currency: subscription.currency.toUpperCase(),
+                          }).format(subscription.amount / 100)}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-3 pt-4 border-t">
+                      {subscription.status !== 'free_access' && (
+                        subscription.cancelAtPeriodEnd ? (
+                          <Button
+                            onClick={handleReactivateSubscription}
+                            disabled={actionLoading}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                          >
+                            {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+                            Reactivate Subscription
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={handleCancelSubscription}
+                            disabled={actionLoading}
+                            variant="destructive"
+                            className="w-full"
+                          >
+                            {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+                            Cancel Subscription
+                          </Button>
+                        )
+                      )}
+                      
+                      <Button
+                        onClick={handleSyncSubscription}
+                        disabled={actionLoading}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <RefreshCw className={`mr-2 w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
+                        Sync with Stripe
+                      </Button>
+                    </div>
+                  </>
                 ) : (
-                  <div className="text-center py-4">
-                    <p className="text-slate-600">Setting up payment form...</p>
-                    <Button 
-                      onClick={() => window.location.reload()} 
-                      variant="outline" 
-                      className="mt-2"
-                    >
-                      Retry Payment Setup
-                    </Button>
-                  </div>
+                  <>
+                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <XCircle className="w-6 h-6 text-slate-400 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-slate-800">No Active Subscription</p>
+                        <p className="text-sm text-slate-600">Subscribe to access all features</p>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-2">
+                      <Button
+                        onClick={handleSyncSubscription}
+                        disabled={actionLoading}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <RefreshCw className={`mr-2 w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
+                        Check Stripe Status
+                      </Button>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
 
-            {/* Promo Code Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5 text-green-600" />
-                  Have a Promo Code?
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-slate-600 mb-4">
-                  Enter your promo code to get special access to all business tools.
-                </p>
-                <PromoCodeForm />
-              </CardContent>
-            </Card>
+            {/* Pricing Card - Only show when no access */}
+            {!subscription?.hasAccess && (
+              <Card className="border-pink-200 shadow-lg bg-gradient-to-br from-pink-50 to-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-pink-500" />
+                    Salon Success Manager Pro
+                  </CardTitle>
+                  <CardDescription>
+                    Complete business management tools for salon professionals
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-pink-600">
+                      £23.97
+                      <span className="text-lg font-normal text-slate-600">/month</span>
+                    </div>
+                    <p className="text-sm text-slate-600 mt-2">
+                      15-day free trial • Cancel anytime
+                    </p>
+                  </div>
+
+                  <Button
+                    onClick={handleSubscribe}
+                    disabled={actionLoading}
+                    className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+                    size="lg"
+                  >
+                    {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+                    {subscription?.isTrial || subscription?.status === 'canceled' 
+                      ? 'Subscribe Now - £23.97/month' 
+                      : 'Start 15-Day Free Trial'}
+                  </Button>
+
+                  <p className="text-xs text-slate-500 text-center">
+                    {subscription?.isTrial || subscription?.status === 'canceled'
+                      ? 'Secure payment via Stripe • Cancel anytime'
+                      : 'No credit card required for trial. Cancel anytime during trial without charge.'}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {/* Features List */}
+          {/* Features List - Always visible */}
           <div className="lg:sticky lg:top-8 lg:h-fit">
-            <Card>
+            <Card className="shadow-lg border-slate-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-primary" />
+                  <Gift className="h-5 w-5 text-pink-500" />
                   What's Included
                 </CardTitle>
               </CardHeader>
@@ -281,7 +401,7 @@ export default function Subscribe() {
                 <ul className="space-y-3">
                   {features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
                       <span className="text-sm text-slate-700">{feature}</span>
                     </li>
                   ))}
@@ -297,6 +417,6 @@ export default function Subscribe() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

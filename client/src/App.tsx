@@ -25,11 +25,14 @@ import ResetPassword from "@/pages/reset-password";
 import Privacy from "@/pages/privacy";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
+import Subscription from "@/pages/subscription";
+import SubscriptionSuccess from "@/pages/subscription-success";
 import Sidebar from "@/components/sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import SubscriptionGuard from "./pages/subscriptionGuard.tsx";
 
 function Router() {
-  const { isAuthenticated, isLoading, hasAccess } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -42,6 +45,7 @@ function Router() {
     );
   }
 
+  // Public routes (not authenticated)
   if (!isAuthenticated) {
     return (
       <Switch>
@@ -60,38 +64,74 @@ function Router() {
     );
   }
 
-  // If authenticated but no subscription access, show subscribe page
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen flex bg-slate-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Switch>
-            <Route path="/subscribe" component={Subscribe} />
-            <Route path="/help" component={Help} />
-            <Route component={Subscribe} />
-          </Switch>
-        </div>
-      </div>
-    );
-  }
-
+  // Authenticated routes with sidebar
   return (
     <div className="min-h-screen flex bg-slate-50">
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/hourly-rate" component={HourlyRateCalculator} />
-          <Route path="/profit-margin" component={ProfitMarginCalculator} />
-          <Route path="/expenses" component={ExpenseTracker} />
-          <Route path="/stock-budget" component={StockBudgetCalculator} />
-          <Route path="/revenue" component={RevenueProjections} />
-          <Route path="/ceo-numbers" component={CEONumbers} />
-          <Route path="/money-pots" component={MoneyPots} />
-          <Route path="/reports" component={Reports} />
+          {/* Subscription management pages - accessible without active subscription */}
+          <Route path="/subscription" component={Subscription} />
+          <Route path="/subscription/success" component={SubscriptionSuccess} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/help" component={Help} />
+
+          {/* Protected routes - require subscription (trial or paid) */}
+          <Route path="/">
+            <SubscriptionGuard>
+              <Dashboard />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/hourly-rate">
+            <SubscriptionGuard>
+              <HourlyRateCalculator />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/profit-margin">
+            <SubscriptionGuard>
+              <ProfitMarginCalculator />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/expenses">
+            <SubscriptionGuard>
+              <ExpenseTracker />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/stock-budget">
+            <SubscriptionGuard>
+              <StockBudgetCalculator />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/revenue">
+            <SubscriptionGuard>
+              <RevenueProjections />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/ceo-numbers">
+            <SubscriptionGuard>
+              <CEONumbers />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/money-pots">
+            <SubscriptionGuard>
+              <MoneyPots />
+            </SubscriptionGuard>
+          </Route>
+
+          {/* Reports - requires PAID subscription (no trial) */}
+          <Route path="/reports">
+            <SubscriptionGuard requireActive={true}>
+              <Reports />
+            </SubscriptionGuard>
+          </Route>
+
           <Route component={NotFound} />
         </Switch>
       </div>

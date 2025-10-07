@@ -35,40 +35,43 @@ import type { IStorage } from "./storage";
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-  const [user] = await db.select({
-    id: users.id,
-    email: users.email,
-    name: users.name,
-    businessType: users.businessType,
-    currency: users.currency, // ADD THIS LINE
-    subscriptionStatus: users.subscriptionStatus,
-    subscriptionEndDate: users.subscriptionEndDate,
-    stripeCustomerId: users.stripeCustomerId,
-    stripeSubscriptionId: users.stripeSubscriptionId,
-    createdAt: users.createdAt,
-    updatedAt: users.updatedAt,
-  }).from(users).where(eq(users.id, id));
-  return user;
-}
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
 
-  async createUser(userData: InsertUser): Promise<User> {
-    const hashedPassword = await bcrypt.hash(userData.password, 12);
-    
-    const [user] = await db
-      .insert(users)
-      .values({
-        ...userData,
-        password: hashedPassword,
-        currency: userData.currency || "USD",
-        subscriptionStatus: "inactive", // Will be updated when Stripe subscription is created
-      })
-      .returning();
-    return user;
+  async createUser(insertUser: InsertUser): Promise<User> {
+    try {
+      const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+      
+      const [user] = await db
+        .insert(users)
+        .values({
+          ...insertUser,
+          password: hashedPassword,
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          subscriptionStatus: "inactive", 
+          subscriptionEndDate: null,
+          emailVerified: false,
+          passwordResetToken: null,
+          passwordResetExpires: null,
+          currency: insertUser.currency || "USD",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      
+      console.log("✅ User created with INACTIVE status (no trial until payment)");
+      return user;
+    } catch (error) {
+      console.error('❌ Error creating user:', error);
+      throw error;
+    }
   }
 
   async verifyPassword(email: string, password: string): Promise<User | null> {
@@ -83,45 +86,95 @@ export class DatabaseStorage implements IStorage {
     return userWithoutPassword as User;
   }
 
-  async updateUserStripeInfo(userId: number, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User | undefined> {
+  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
     const [user] = await db
-      .update(users)
-      .set({
-        stripeCustomerId,
-        stripeSubscriptionId,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId))
-      .returning();
+      .select()
+      .from(users)
+      .where(eq(users.stripeCustomerId, stripeCustomerId))
+      .limit(1);
     return user;
   }
 
-  async updateSubscriptionStatus(userId: number, status: string, endDate?: Date): Promise<User | undefined> {
-    const [user] = await db
-      .update(users)
-      .set({
+  async updateUserStripeInfo(
+    userId: number, 
+    stripeCustomerId: string, 
+    stripeSubscriptionId?: string
+  ): Promise<User | undefined> {
+    try {
+      if (stripeSubscriptionId) {
+        // Update both customer ID and subscription ID
+        const [updatedUser] = await db
+          .update(users)
+          .set({
+            stripeCustomerId: stripeCustomerId,
+            stripeSubscriptionId: stripeSubscriptionId,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId))
+          .returning();
+        
+        console.log(`✅ DatabaseStorage: Updated Stripe info for user ${userId}:`, {
+          customerId: stripeCustomerId,
+          subscriptionId: stripeSubscriptionId,
+        });
+        
+        return updatedUser;
+      } else {
+        // Update only customer ID
+        const [updatedUser] = await db
+          .update(users)
+          .set({
+            stripeCustomerId: stripeCustomerId,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId))
+          .returning();
+        
+        console.log(`✅ DatabaseStorage: Updated Stripe customer ID for user ${userId}:`, stripeCustomerId);
+        
+        return updatedUser;
+      }
+    } catch (error) {
+      console.error('❌ Error updating user Stripe info:', error);
+      throw error;
+    }
+  }
+
+  async updateSubscriptionStatus(
+    userId: number,
+    status: string,
+    endDate?: Date
+  ): Promise<User | undefined> {
+    try {
+      console.log(`\n🧩 [updateSubscriptionStatus] Starting for user ${userId}`);
+      console.log(`📦 Incoming status →`, status);
+      console.log(`⏰ Provided endDate →`, endDate);
+
+      const updateData: any = {
         subscriptionStatus: status,
-        subscriptionEndDate: endDate,
+        subscriptionEndDate: endDate ? new Date(endDate) : undefined,
         updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
+      };
+
+      console.log(`📤 Preparing DB update with →`, updateData);
+
+      const [updatedUser] = await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, userId))
+        .returning();
+
+      console.log(`✅ DB update complete for user ${userId}`);
+      console.log(`🧾 Stored values:`, updateData);
+
+      return updatedUser;
+    } catch (error: any) {
+      console.error(`❌ Error in updateSubscriptionStatus for user ${userId}:`, error);
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
-    const allUsers = await db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      businessType: users.businessType,
-      subscriptionStatus: users.subscriptionStatus,
-      subscriptionEndDate: users.subscriptionEndDate,
-      stripeCustomerId: users.stripeCustomerId,
-      stripeSubscriptionId: users.stripeSubscriptionId,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-    }).from(users).orderBy(desc(users.createdAt));
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
     return allUsers;
   }
 
@@ -146,20 +199,17 @@ export class DatabaseStorage implements IStorage {
 
   // Hourly rate calculation operations
   async createHourlyRateCalculation(calculation: InsertHourlyRateCalculation): Promise<HourlyRateCalculation> {
-    // First, insert the new calculation
     const [result] = await db
       .insert(hourlyRateCalculations)
       .values(calculation)
       .returning();
 
-    // Then, keep only the last 5 calculations for this user
     const allCalculations = await db
       .select()
       .from(hourlyRateCalculations)
       .where(eq(hourlyRateCalculations.userId, calculation.userId))
       .orderBy(desc(hourlyRateCalculations.createdAt));
 
-    // If we have more than 5 calculations, delete the oldest ones
     if (allCalculations.length > 5) {
       const calculationsToDelete = allCalculations.slice(5);
       const idsToDelete = calculationsToDelete.map(calc => calc.id);
@@ -195,7 +245,6 @@ export class DatabaseStorage implements IStorage {
 
   // Treatment operations
   async createTreatment(treatment: InsertTreatment): Promise<Treatment> {
-    // Calculate profit margin (product cost is now included in overhead cost)
     const price = parseFloat(treatment.price.toString());
     const overheadCost = parseFloat(treatment.overheadCost.toString());
     const profit = price - overheadCost;

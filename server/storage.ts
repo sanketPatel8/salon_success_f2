@@ -42,6 +42,7 @@ export interface IStorage {
   updateSubscriptionStatus(userId: number, status: string, endDate?: Date): Promise<User | undefined>;
   updateSubscriptionEndDate(userId: number, endDate: Date): Promise<User | undefined>;
   deleteUser(userId: number): Promise<boolean>;
+  getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
 
   // Password reset operations
   setPasswordResetToken(userId: number, token: string, expires: Date): Promise<User | undefined>;
@@ -184,6 +185,8 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
 
+  
+
   async verifyPassword(email: string, password: string): Promise<User | null> {
     const user = await this.getUserByEmail(email);
     if (!user) return null;
@@ -214,6 +217,8 @@ export class MemStorage implements IStorage {
     );
   }
 
+  
+
   async clearPasswordResetToken(userId: number): Promise<User | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
@@ -228,6 +233,12 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
+  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
+  return Array.from(this.users.values()).find(
+    (user) => user.stripeCustomerId === stripeCustomerId
+  );
+}
+
   async updatePassword(userId: number, hashedPassword: string): Promise<User | undefined> {
     const user = this.users.get(userId);
     if (!user) return undefined;
@@ -241,34 +252,60 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
-  async updateUserStripeInfo(userId: number, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User | undefined> {
-    const user = this.users.get(userId);
-    if (!user) return undefined;
-    
-    const updatedUser = {
-      ...user,
-      stripeCustomerId,
-      stripeSubscriptionId: stripeSubscriptionId || user.stripeSubscriptionId,
-      updatedAt: new Date(),
-    };
-    this.users.set(userId, updatedUser);
-    return updatedUser;
-  }
+  
 
-  async updateSubscriptionStatus(userId: number, status: string, endDate?: Date): Promise<User | undefined> {
-    const user = this.users.get(userId);
-    if (!user) return undefined;
-    
-    const updatedUser = {
-      ...user,
-      subscriptionStatus: status,
-      subscriptionEndDate: endDate || user.subscriptionEndDate,
-      updatedAt: new Date(),
-    };
-    
-    this.users.set(userId, updatedUser);
-    return updatedUser;
-  }
+  // Add these methods to your MemStorage class (after the updatePassword method)
+
+async updateUserStripeInfo(
+  userId: number, 
+  stripeCustomerId: string, 
+  stripeSubscriptionId?: string
+): Promise<User | undefined> {
+  const user = this.users.get(userId);
+  if (!user) return undefined;
+  
+  const updatedUser: User = {
+    ...user,
+    stripeCustomerId: stripeCustomerId,
+    stripeSubscriptionId: stripeSubscriptionId || user.stripeSubscriptionId,
+    updatedAt: new Date(),
+  };
+  
+  this.users.set(userId, updatedUser);
+  
+  console.log(`✅ MemStorage: Updated Stripe info for user ${userId}:`, {
+    customerId: stripeCustomerId,
+    subscriptionId: stripeSubscriptionId,
+  });
+  
+  return updatedUser;
+}
+
+async updateSubscriptionStatus(
+  userId: number, 
+  status: string, 
+  endDate?: Date
+): Promise<User | undefined> {
+  const user = this.users.get(userId);
+  if (!user) return undefined;
+  
+  const updatedUser: User = {
+    ...user,
+    subscriptionStatus: status,
+    subscriptionEndDate: endDate || user.subscriptionEndDate,
+    updatedAt: new Date(),
+  };
+  
+  this.users.set(userId, updatedUser);
+  
+  console.log(`✅ MemStorage: Updated subscription status for user ${userId}:`, {
+    status,
+    endDate: endDate?.toISOString(),
+  });
+  
+  return updatedUser;
+}
+  
 
   async updateSubscriptionEndDate(userId: number, endDate: Date): Promise<User | undefined> {
     const user = this.users.get(userId);
@@ -288,29 +325,32 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    console.log("🚀 createUser called!");
-    const id = this.currentUserId++;
-    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    console.log(insertUser , " 📌 insertUser")
-    const user: User = { 
-      ...insertUser, 
-      id,
-      password: hashedPassword,
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      subscriptionStatus: "trial",
-      subscriptionEndDate: null,
-      emailVerified: false,
-      passwordResetToken: null,
-      passwordResetExpires: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      currency : insertUser.currency || "USD",
-      currency_current_price : null,
-    };
-    this.users.set(id, user);
-    return user;
-  }
+  console.log("🚀 createUser called!");
+  const id = this.currentUserId++;
+  const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+  console.log(insertUser, " 📌 insertUser");
+  
+  const user: User = { 
+    ...insertUser, 
+    id,
+    password: hashedPassword,
+    stripeCustomerId: null,
+    stripeSubscriptionId: null,
+    subscriptionStatus: "inactive", 
+    subscriptionEndDate: null,
+    emailVerified: false,
+    passwordResetToken: null,
+    passwordResetExpires: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    currency: insertUser.currency || "USD",
+    currency_current_price: null,
+  };
+  
+  this.users.set(id, user);
+  console.log("✅ User created with INACTIVE status (no trial until payment)");
+  return user;
+}
 
   async createHourlyRateCalculation(calculation: InsertHourlyRateCalculation): Promise<HourlyRateCalculation> {
     const id = this.currentHourlyRateId++;

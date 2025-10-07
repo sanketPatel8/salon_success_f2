@@ -152,7 +152,7 @@ export function setupSimpleAuth(app: express.Application) {
       console.log("📌 New user created:", newUser);
 
       console.log("📌 Updating subscription status...");
-      await storage.updateSubscriptionStatus(newUser.id, "trial");
+      await storage.updateSubscriptionStatus(newUser.id, "inactive");
 
       console.log("📌 Creating session...");
       req.session.userId = newUser.id;
@@ -169,7 +169,7 @@ export function setupSimpleAuth(app: express.Application) {
           email: newUser.email,
           name: newUser.name,
           businessType: newUser.businessType,
-          subscriptionStatus: "trial",
+          subscriptionStatus: "inactive",
           subscriptionEndDate: newUser.subscriptionEndDate,
         });
       });

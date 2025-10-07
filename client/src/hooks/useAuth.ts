@@ -5,7 +5,7 @@ type User = {
   email: string;
   name: string;
   businessType: string;
-  subscriptionStatus: 'trial' | 'active' | 'free_access' | 'cancelled';
+  subscriptionStatus: 'inactive' | 'trial' | 'active' | 'free_access' | 'cancelled';
   subscriptionEndDate: string | null;
 };
 
