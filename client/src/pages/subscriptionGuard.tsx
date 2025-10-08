@@ -28,6 +28,7 @@ export default function SubscriptionGuard({
 
   const checkSubscription = async () => {
     try {
+      // Use the route from routes.ts
       const res = await fetch('/api/stripe/subscription', {
         credentials: 'include',
       });
@@ -131,19 +132,13 @@ export default function SubscriptionGuard({
 
           <div className="flex gap-3">
             <Button
-              onClick={() => navigateTo('/subscription')}
+              onClick={() => navigateTo('/subscribe')}
               className="flex-1 bg-pink-600 hover:bg-pink-700"
               size="lg"
             >
               {subscription?.isTrial ? 'Upgrade Now' : 'Start Free Trial'}
             </Button>
-            <Button
-              onClick={() => navigateTo('/dashboard')}
-              variant="outline"
-              size="lg"
-            >
-              Go Back
-            </Button>
+            
           </div>
         </CardContent>
       </Card>

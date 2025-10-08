@@ -14,7 +14,11 @@ interface SubscriptionData {
   cancelAtPeriodEnd?: boolean;
   amount?: number;
   currency?: string;
+  subscriptionId?: string;
 }
+
+
+
 
 export default function Subscription() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
@@ -22,82 +26,111 @@ export default function Subscription() {
   const [actionLoading, setActionLoading] = useState(false);
   const { toast } = useToast();
 
+  const priceId = import.meta.env.VITE_PRICE_ID;
+
   useEffect(() => {
-    fetchSubscription();
+    fetchSubscriptionStatus();
   }, []);
 
-  const fetchSubscription = async () => {
+  const fetchSubscriptionStatus = async () => {
     try {
-      const res = await fetch('/api/stripe/subscription', {
-        credentials: 'include',
+      setLoading(true);
+      // Replace with your actual user data endpoint
+      const response = await fetch(`/subscription-status`, {
+        credentials: 'include', // Include cookies
       });
-
-      if (res.ok) {
-        const data = await res.json();
+      
+      if (response.ok) {
+        const data = await response.json();
         setSubscription(data);
       }
     } catch (error) {
-      console.error('Failed to fetch subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch subscription status",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubscribe = async () => {
-    setActionLoading(true);
-    try {
-      const res = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
+  // Handle subscription/checkout
+const handleSubscribe = async (priceId: string): Promise<void> => {
+  try {
+    console.log('Starting checkout for price:', priceId);
+    
+    const response = await fetch(`/api/stripe/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ priceId }),
+    });
 
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message);
-      }
+    console.log('Response status:', response.status);
 
-      const { url } = await res.json();
-      window.location.href = url;
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create checkout session',
-        variant: 'destructive',
-      });
-      setActionLoading(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error response:', errorData);
+      throw new Error(errorData.error || 'Failed to create checkout session');
     }
-  };
+
+    const session: CheckoutSession = await response.json();
+    console.log('Session created:', session);
+    
+    // Redirect to Stripe checkout
+    if (session.url) {
+      window.location.href = session.url;
+    } else {
+      throw new Error('No checkout URL received from server');
+    }
+  } catch (error) {
+    console.error('Checkout error:', error);
+    // Handle error (show toast, alert, etc.)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    alert(`Failed to start checkout process: ${errorMessage}. Please try again.`);
+  }
+};
 
   const handleCancelSubscription = async () => {
-    if (!confirm('Are you sure you want to cancel your subscription? You will retain access until the end of your billing period.')) {
+    if (!subscription?.subscriptionId) {
+      toast({
+        title: "Error",
+        description: "No subscription ID found",
+        variant: "destructive",
+      });
       return;
     }
 
-    setActionLoading(true);
     try {
-      const res = await fetch('/api/stripe/cancel-subscription', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to cancel subscription');
-      }
-
-      const data = await res.json();
-      toast({
-        title: 'Subscription Cancelled',
-        description: data.message,
-      });
+      setActionLoading(true);
       
-      await fetchSubscription();
+      const response = await fetch(`/cancel-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies
+        body: JSON.stringify({
+          subscriptionId: subscription.subscriptionId,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.status) {
+        toast({
+          title: "Success",
+          description: "Subscription cancelled successfully",
+        });
+        await fetchSubscriptionStatus();
+      }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to cancel subscription',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to cancel subscription",
+        variant: "destructive",
       });
     } finally {
       setActionLoading(false);
@@ -105,30 +138,41 @@ export default function Subscription() {
   };
 
   const handleReactivateSubscription = async () => {
-    setActionLoading(true);
-    try {
-      const res = await fetch('/api/stripe/reactivate-subscription', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to reactivate subscription');
-      }
-
-      const data = await res.json();
+    if (!subscription?.subscriptionId) {
       toast({
-        title: 'Subscription Reactivated',
-        description: data.message,
+        title: "Error",
+        description: "No subscription ID found",
+        variant: "destructive",
       });
+      return;
+    }
+
+    try {
+      setActionLoading(true);
       
-      await fetchSubscription();
+      const response = await fetch(`/reactivate-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies
+        body: JSON.stringify({
+          subscriptionId: subscription.subscriptionId,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Subscription reactivated successfully",
+        });
+        await fetchSubscriptionStatus();
+      }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to reactivate subscription',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to reactivate subscription",
+        variant: "destructive",
       });
     } finally {
       setActionLoading(false);
@@ -136,30 +180,18 @@ export default function Subscription() {
   };
 
   const handleSyncSubscription = async () => {
-    setActionLoading(true);
     try {
-      const res = await fetch('/api/stripe/sync-subscription', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message);
-      }
-
+      setActionLoading(true);
+      await fetchSubscriptionStatus();
       toast({
-        title: 'Subscription Synced',
-        description: 'Your subscription has been synced with Stripe',
+        title: "Success",
+        description: "Subscription synced with Stripe",
       });
-      
-      await fetchSubscription();
-    } catch (error: any) {
+    } catch (error) {
       toast({
-        title: 'Sync Failed',
-        description: error.message || 'Failed to sync subscription',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to sync subscription",
+        variant: "destructive",
       });
     } finally {
       setActionLoading(false);
@@ -367,7 +399,7 @@ export default function Subscription() {
                   </div>
 
                   <Button
-                    onClick={handleSubscribe}
+                    onClick={() => handleSubscribe(priceId)}
                     disabled={actionLoading}
                     className="w-full bg-pink-600 hover:bg-pink-700 text-white"
                     size="lg"

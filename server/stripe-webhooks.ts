@@ -4,15 +4,22 @@ import Stripe from 'stripe';
 import { storage } from './storage';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-05-28.basil',
+  apiVersion: '2025-09-30.clover',
 });
 
 export function setupStripeWebhooks(app: Express) {
+  console.log('🔧 Setting up Stripe webhook endpoint...');
+  
   // Stripe webhook endpoint - MUST use raw body
   app.post(
     '/api/stripe/webhook',
     express.raw({ type: 'application/json' }),
     async (req, res) => {
+      console.log('🎯 WEBHOOK RECEIVED! Starting processing...');
+      console.log('📦 Request headers:', JSON.stringify(req.headers, null, 2));
+      console.log('📦 Body type:', typeof req.body);
+      console.log('📦 Body length:', req.body?.length || 0);
+      
       const sig = req.headers['stripe-signature'];
 
       if (!sig) {
@@ -20,10 +27,14 @@ export function setupStripeWebhooks(app: Express) {
         return res.status(400).send('No signature');
       }
 
+      console.log('✓ Stripe signature present:', sig.substring(0, 20) + '...');
+
       if (!process.env.STRIPE_WEBHOOK_SECRET) {
         console.error('❌ STRIPE_WEBHOOK_SECRET not configured');
         return res.status(500).send('Webhook secret not configured');
       }
+
+      console.log('✓ Webhook secret configured');
 
       let event: Stripe.Event;
 
@@ -33,7 +44,9 @@ export function setupStripeWebhooks(app: Express) {
           sig,
           process.env.STRIPE_WEBHOOK_SECRET
         );
-        console.log('✅ Webhook signature verified:', event.type);
+        console.log('✅ Webhook signature verified successfully!');
+        console.log('📧 Event type:', event.type);
+        console.log('🆔 Event ID:', event.id);
       } catch (err: any) {
         console.error('❌ Webhook signature verification failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -41,6 +54,8 @@ export function setupStripeWebhooks(app: Express) {
 
       // Handle the event
       try {
+        console.log(`🔄 Processing event: ${event.type}`);
+        
         switch (event.type) {
           case 'checkout.session.completed': {
             const session = event.data.object as Stripe.Checkout.Session;
@@ -102,7 +117,7 @@ export function setupStripeWebhooks(app: Express) {
 
           case 'invoice.payment_failed': {
             const invoice = event.data.object as Stripe.Invoice;
-            console.log('💔 Payment failed:', invoice.id);
+            console.log(' Payment failed:', invoice.id);
             if (invoice.subscription) {
               await handlePaymentFailed(invoice);
             }
@@ -113,43 +128,63 @@ export function setupStripeWebhooks(app: Express) {
             console.log('ℹ️ Unhandled event type:', event.type);
         }
 
+        console.log('✅ Event processed successfully');
         res.json({ received: true });
       } catch (error) {
-        console.error('Error handling webhook:', error);
+        console.error('❌ Error handling webhook:', error);
         res.status(500).json({ error: 'Webhook handler failed' });
       }
     }
   );
+  
+  console.log('✅ Stripe webhook endpoint registered at /api/stripe/webhook');
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   console.log('📝 Processing subscription creation:', subscription.id);
   
-  // Try to find user by metadata first
-  let userId = subscription.metadata?.userId;
-  let user = null;
-
-  if (userId) {
-    user = await storage.getUser(parseInt(userId));
-    console.log('👤 Found user from metadata:', user?.email);
-  }
-
-  // If no user found from metadata, try to find by customer ID
-  if (!user) {
-    const users = await storage.getAllUsers();
-    user = users.find(u => u.stripeCustomerId === subscription.customer);
-    console.log('👤 Found user from customer ID:', user?.email);
-  }
-
-  if (!user) {
-    console.error('❌ No user found for subscription:', subscription.id);
+  // Get the checkout session to access client_reference_id
+  const checkoutSessionId = subscription.metadata?.checkout_session_id;
+  
+  if (!checkoutSessionId) {
+    console.error('❌ No checkout_session_id found in subscription metadata:', subscription.id);
     return;
   }
-
+  
+  let userId: string | null = null;
+  
+  try {
+    // Retrieve the checkout session to get client_reference_id
+    const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+    userId = session.client_reference_id;
+    
+    console.log('✅ Retrieved checkout session:', {
+      sessionId: checkoutSessionId,
+      clientReferenceId: userId
+    });
+  } catch (error) {
+    console.error('❌ Failed to retrieve checkout session:', error);
+    return;
+  }
+  
+  if (!userId) {
+    console.error('❌ No client_reference_id found in checkout session:', checkoutSessionId);
+    return;
+  }
+  
+  const user = await storage.getUser(parseInt(userId));
+  
+  if (!user) {
+    console.error('❌ No user found for userId:', userId);
+    return;
+  }
+  
+  console.log('👤 Found user from client_reference_id:', user.email);
+  
   const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
   const endDate = new Date(stripeEndUnix * 1000);
   const status = subscription.status === 'trialing' ? 'trial' : subscription.status;
-
+  
   // Update Stripe info if not already set
   if (!user.stripeSubscriptionId) {
     await storage.updateUserStripeInfo(
@@ -158,10 +193,10 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       subscription.id
     );
   }
-
+  
   // Update subscription status
   await storage.updateSubscriptionStatus(user.id, status, endDate);
-
+  
   console.log(`✅ Subscription created for user ${user.email}:`, {
     status,
     endDate: endDate.toISOString(),
@@ -170,7 +205,6 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  // Find user by Stripe subscription ID
   const users = await storage.getAllUsers();
   const user = users.find(u => u.stripeSubscriptionId === subscription.id);
 
@@ -183,7 +217,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const endDate = new Date(stripeEndUnix * 1000);
   let status = subscription.status;
 
-  // Map Stripe status to our system
   if (subscription.status === 'trialing') {
     status = 'trial';
   } else if (subscription.status === 'active') {
@@ -226,11 +259,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
     return;
   }
 
-  // You can send an email notification here
   console.log(`⏰ Trial ending soon for user ${user.email}`);
-  
-  // Optional: Send email notification using your email service
-  // await sendTrialEndingEmail(user.email, user.name);
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
@@ -245,7 +274,4 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   await storage.updateSubscriptionStatus(user.id, 'past_due');
 
   console.log(`💔 Payment failed for user ${user.email}`);
-  
-  // Optional: Send payment failed email
-  // await sendPaymentFailedEmail(user.email, user.name);
 }

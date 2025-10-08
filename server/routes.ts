@@ -20,17 +20,504 @@ import {
   insertMoneyPotSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { setupStripeRoutes } from './stripe.routes.ts';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-05-28.basil",
+  apiVersion: "2025-09-30.clover",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+
+  app.post('/api/stripe/create-checkout-session', async (req, res) => {
+    try {
+      const { priceId } = req.body;
+
+      console.log('=== Create Checkout Session Called ===');
+      console.log('Request body:', req.body);
+      console.log('Price ID:', priceId);
+
+      // Validate priceId
+      if (!priceId) {
+        console.error('❌ No priceId provided');
+        return res.status(400).json({ error: 'Price ID is required' });
+      }
+
+      // Get user from session if authenticated
+      const userId = req.session?.userId;
+      const user = userId ? await storage.getUser(userId) : null;
+
+      console.log('✅ Using Stripe Payment Link');
+      console.log('User ID:', userId || 'Guest');
+
+      // Your Stripe Payment Link (with trial configured in Stripe Dashboard)
+      let paymentLinkUrl = process.env.NEXT_PUBLIC_PAYMENT_LINK;
+
+      // ✅ METHOD 1: Add client_reference_id as URL parameter
+      // This will be passed to the checkout session
+      if (user) {
+        const params = new URLSearchParams({
+          client_reference_id: userId.toString(),
+          prefilled_email: user.email,
+        });
+        
+        paymentLinkUrl = `${paymentLinkUrl}?${params.toString()}`;
+        
+        console.log('✅ Payment link with user tracking:', paymentLinkUrl);
+      }
+
+      return res.status(200).json({ 
+        url: paymentLinkUrl
+      });
+
+    } catch (error: any) {
+      console.error('=== Stripe Checkout Error ===');
+      console.error('Error type:', error.type);
+      console.error('Error message:', error.message);
+      console.error('Full error:', error);
+      
+      return res.status(500).json({ 
+        error: error.message || 'Failed to create checkout session',
+        details: error.type || 'unknown_error'
+      });
+    }
+  });
+
+  // Test route for Stripe checkout
+  app.get('/api/stripe/test', (req, res) => {
+    res.json({ 
+      message: 'Stripe routes are working!',
+      stripeConfigured: !!process.env.STRIPE_SECRET_KEY,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  app.get('/api/stripe/subscription', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          hasAccess: false,
+          status: 'not_found',
+          isTrial: false,
+          daysLeft: null
+        });
+      }
+
+      // Check for free access (promo code)
+      if (user.subscriptionStatus === 'free_access') {
+        const daysLeft = user.subscriptionEndDate 
+          ? Math.ceil((new Date(user.subscriptionEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          : null;
+        
+        return res.json({
+          hasAccess: true,
+          status: 'free_access',
+          isTrial: false,
+          daysLeft: daysLeft
+        });
+      }
+
+      // Check for active paid subscription
+      if (user.subscriptionStatus === 'active') {
+        return res.json({
+          hasAccess: true,
+          status: 'active',
+          isTrial: false,
+          daysLeft: null
+        });
+      }
+
+      // Check for trial subscription
+      if (user.subscriptionStatus === 'trial' && user.subscriptionEndDate) {
+        const now = new Date();
+        const trialEnd = new Date(user.subscriptionEndDate);
+        
+        if (now <= trialEnd) {
+          const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return res.json({
+            hasAccess: true,
+            status: 'trial',
+            isTrial: true,
+            daysLeft: daysLeft
+          });
+        } else {
+          // Trial expired
+          await storage.updateSubscriptionStatus(user.id, 'expired');
+          return res.json({
+            hasAccess: false,
+            status: 'expired',
+            isTrial: false,
+            daysLeft: 0
+          });
+        }
+      }
+
+      // No valid subscription
+      return res.json({
+        hasAccess: false,
+        status: user.subscriptionStatus || 'none',
+        isTrial: false,
+        daysLeft: null
+      });
+
+    } catch (error) {
+      console.error('Subscription check error:', error);
+      return res.status(500).json({ 
+        hasAccess: false,
+        status: 'error',
+        isTrial: false,
+        daysLeft: null
+      });
+    }
+  });
+
+  app.get('/subscription-status', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          hasAccess: false,
+          status: 'not_found',
+          isTrial: false,
+          daysLeft: null
+        });
+      }
+
+      // Check for free access (promo code)
+      if (user.subscriptionStatus === 'free_access') {
+        const daysLeft = user.subscriptionEndDate 
+          ? Math.ceil((new Date(user.subscriptionEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          : null;
+        
+        return res.json({
+          hasAccess: true,
+          status: 'free_access',
+          isTrial: false,
+          daysLeft: daysLeft,
+          endDate: user.subscriptionEndDate,
+          cancelAtPeriodEnd: false
+        });
+      }
+
+      // Check for active paid subscription with Stripe
+      if (user.stripeSubscriptionId) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+          const endDate = new Date(subscription.current_period_end * 1000);
+          
+          // Update local storage
+          await storage.updateSubscriptionStatus(user.id, subscription.status, endDate);
+          
+          return res.json({
+            hasAccess: subscription.status === 'active' || subscription.status === 'trialing',
+            status: subscription.status,
+            isTrial: subscription.status === 'trialing',
+            daysLeft: subscription.status === 'trialing' 
+              ? Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+              : null,
+            endDate: endDate.toISOString(),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            amount: subscription.items.data[0]?.price?.unit_amount,
+            currency: subscription.items.data[0]?.price?.currency,
+            subscriptionId: subscription.id
+          });
+        } catch (stripeError) {
+          console.error('Error fetching Stripe subscription:', stripeError);
+          // Fall through to local status check
+        }
+      }
+
+      // Check for trial subscription (local only)
+      if (user.subscriptionStatus === 'trial' && user.subscriptionEndDate) {
+        const now = new Date();
+        const trialEnd = new Date(user.subscriptionEndDate);
+        
+        if (now <= trialEnd) {
+          const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return res.json({
+            hasAccess: true,
+            status: 'trial',
+            isTrial: true,
+            daysLeft: daysLeft,
+            endDate: trialEnd.toISOString(),
+            cancelAtPeriodEnd: false
+          });
+        } else {
+          // Trial expired
+          await storage.updateSubscriptionStatus(user.id, 'expired');
+          return res.json({
+            hasAccess: false,
+            status: 'expired',
+            isTrial: false,
+            daysLeft: 0,
+            endDate: trialEnd.toISOString(),
+            cancelAtPeriodEnd: false
+          });
+        }
+      }
+
+      // Check for active subscription (backward compatibility)
+      if (user.subscriptionStatus === 'active') {
+        return res.json({
+          hasAccess: true,
+          status: 'active',
+          isTrial: false,
+          daysLeft: null,
+          endDate: user.subscriptionEndDate,
+          cancelAtPeriodEnd: false
+        });
+      }
+
+      // No valid subscription
+      return res.json({
+        hasAccess: false,
+        status: user.subscriptionStatus || 'none',
+        isTrial: false,
+        daysLeft: null,
+        endDate: null,
+        cancelAtPeriodEnd: false
+      });
+
+    } catch (error) {
+      console.error('Subscription status check error:', error);
+      return res.status(500).json({ 
+        hasAccess: false,
+        status: 'error',
+        isTrial: false,
+        daysLeft: null,
+        endDate: null,
+        cancelAtPeriodEnd: false
+      });
+    }
+  });
+
+  // Cancel subscription endpoint
+  app.post('/cancel-subscription', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { subscriptionId } = req.body;
+      
+      if (!subscriptionId) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Subscription ID is required' 
+        });
+      }
+
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.stripeSubscriptionId !== subscriptionId) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Subscription not found' 
+        });
+      }
+
+      // Cancel the subscription at period end (don't immediately revoke access)
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true
+      });
+
+      // Update local status
+      const endDate = new Date(subscription.current_period_end * 1000);
+      await storage.updateSubscriptionStatus(userId, subscription.status, endDate);
+
+      console.log(`✓ Subscription ${subscriptionId} cancelled at period end for user: ${user.email}`);
+
+      res.json({ 
+        success: true,
+        status: subscription.status,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        endDate: endDate.toISOString(),
+        message: 'Subscription will be cancelled at the end of the billing period'
+      });
+
+    } catch (error: any) {
+      console.error('Cancel subscription error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: error.message || 'Failed to cancel subscription'
+      });
+    }
+  });
+
+  // Reactivate subscription endpoint
+  app.post('/reactivate-subscription', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { subscriptionId } = req.body;
+      
+      if (!subscriptionId) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Subscription ID is required' 
+        });
+      }
+
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.stripeSubscriptionId !== subscriptionId) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Subscription not found' 
+        });
+      }
+
+      // Reactivate the subscription (remove cancel_at_period_end)
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: false
+      });
+
+      // Update local status
+      const endDate = new Date(subscription.current_period_end * 1000);
+      await storage.updateSubscriptionStatus(userId, subscription.status, endDate);
+
+      console.log(`✓ Subscription ${subscriptionId} reactivated for user: ${user.email}`);
+
+      res.json({ 
+        success: true,
+        status: subscription.status,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        endDate: endDate.toISOString(),
+        message: 'Subscription reactivated successfully'
+      });
+
+    } catch (error: any) {
+      console.error('Reactivate subscription error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: error.message || 'Failed to reactivate subscription'
+      });
+    }
+  });
+
+  // Webhook endpoint for Stripe events (place this BEFORE body parsing middleware)
+  app.post('/webhook/stripe', async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('⚠️  Webhook secret not configured');
+      return res.status(500).send('Webhook secret not configured');
+    }
+
+    let event;
+
+    try {
+      // Get raw body for signature verification
+      const rawBody = req.body;
+      event = stripe.webhooks.constructEvent(rawBody, sig as string, webhookSecret);
+    } catch (err: any) {
+      console.error('⚠️  Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    console.log('✓ Stripe webhook event received:', event.type);
+
+    // Handle the event
+    try {
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object;
+          console.log('Checkout completed:', session.id);
+          
+          // Get user from client_reference_id
+          const userId = session.client_reference_id;
+          if (userId) {
+            const user = await storage.getUser(parseInt(userId));
+            if (user) {
+              // Update user with subscription info
+              await storage.updateUserStripeInfo(
+                user.id, 
+                session.customer as string, 
+                session.subscription as string
+              );
+              
+              // Mark as trialing if it's a trial subscription
+              if (session.mode === 'subscription' && session.subscription) {
+                const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+                const endDate = new Date(subscription.current_period_end * 1000);
+                await storage.updateSubscriptionStatus(user.id, subscription.status, endDate);
+              }
+              
+              console.log(`✓ User ${user.email} subscription activated`);
+            }
+          }
+          break;
+        }
+
+        case 'customer.subscription.updated': {
+          const subscription = event.data.object;
+          const customerId = subscription.customer as string;
+          
+          // Find user by Stripe customer ID
+          const user = await storage.getUserByStripeCustomerId(customerId);
+          if (user) {
+            const endDate = new Date(subscription.current_period_end * 1000);
+            await storage.updateSubscriptionStatus(user.id, subscription.status, endDate);
+            console.log(`✓ Subscription updated for user ${user.email}: ${subscription.status}`);
+          }
+          break;
+        }
+
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object;
+          const customerId = subscription.customer as string;
+          
+          // Find user by Stripe customer ID
+          const user = await storage.getUserByStripeCustomerId(customerId);
+          if (user) {
+            await storage.updateSubscriptionStatus(user.id, 'canceled');
+            console.log(`✓ Subscription cancelled for user ${user.email}`);
+          }
+          break;
+        }
+
+        case 'invoice.payment_succeeded': {
+          const invoice = event.data.object;
+          const customerId = invoice.customer as string;
+          
+          // Find user and update subscription status
+          const user = await storage.getUserByStripeCustomerId(customerId);
+          if (user && invoice.subscription) {
+            const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+            const endDate = new Date(subscription.current_period_end * 1000);
+            await storage.updateSubscriptionStatus(user.id, 'active', endDate);
+            console.log(`✓ Payment succeeded for user ${user.email}`);
+          }
+          break;
+        }
+
+        case 'invoice.payment_failed': {
+          const invoice = event.data.object;
+          const customerId = invoice.customer as string;
+          
+          // Find user and mark subscription as past_due
+          const user = await storage.getUserByStripeCustomerId(customerId);
+          if (user) {
+            await storage.updateSubscriptionStatus(user.id, 'past_due');
+            console.log(`⚠️  Payment failed for user ${user.email}`);
+          }
+          break;
+        }
+
+        default:
+          console.log(`Unhandled event type: ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error('Error processing webhook:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  });
   
 
   // Password reset request
@@ -471,7 +958,6 @@ Need help? Contact us at help@salonsuccessmanager.com
     res.json(trialStatus);
   });
 
-  setupStripeRoutes(app);
 
   // Hourly rate calculations - NEW AUTH
   app.post("/api/hourly-rate-calculations", requireAuth, async (req, res) => {
@@ -1022,7 +1508,7 @@ Need help? Contact us at help@salonsuccessmanager.com
       console.log('Price ID:', process.env.STRIPE_PRICE_ID);
       
       const testStripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-        apiVersion: "2025-05-28.basil",
+        apiVersion: "2025-09-30.clover",
       });
       
       const price = await testStripe.prices.retrieve(process.env.STRIPE_PRICE_ID!);
@@ -1048,7 +1534,7 @@ Need help? Contact us at help@salonsuccessmanager.com
       }
 
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-05-28.basil",
+        apiVersion: "2025-09-30.clover",
       });
 
       const userId = req.session.userId!;
@@ -1172,7 +1658,7 @@ Need help? Contact us at help@salonsuccessmanager.com
       if (user.stripeSubscriptionId) {
         try {
           const testStripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-            apiVersion: "2025-05-28.basil",
+            apiVersion: "2025-09-30.clover",
           });
           
           const subscription = await testStripe.subscriptions.retrieve(user.stripeSubscriptionId);
@@ -1225,7 +1711,7 @@ Need help? Contact us at help@salonsuccessmanager.com
   app.post('/api/create-promo-code', async (req, res) => {
     try {
       const testStripe = new Stripe('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', {
-        apiVersion: "2025-05-28.basil",
+        apiVersion: "2025-09-30.clover",
       });
 
       // First create a coupon for 100% off for 6 months
@@ -1260,6 +1746,8 @@ Need help? Contact us at help@salonsuccessmanager.com
     }
   });
 
+  
+
   app.post('/api/subscription-status', async (req, res) => {
     try {
       const { subscriptionId, status } = req.body;
@@ -1281,29 +1769,7 @@ Need help? Contact us at help@salonsuccessmanager.com
     }
   });
 
-  app.get('/api/subscription', async (req, res) => {
-    try {
-      const user = await storage.getUser(1); // Demo user
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      if (!user.stripeSubscriptionId) {
-        return res.json({ subscriptionStatus: 'inactive' });
-      }
-
-      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-      
-      res.json({
-        subscriptionStatus: subscription.status,
-        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      });
-    } catch (error: any) {
-      console.error('Get subscription error:', error);
-      res.status(400).json({ error: { message: error.message } });
-    }
-  });
+  
 
   // Email report endpoint
   app.post('/api/email-report', requireAuth, async (req, res) => {
