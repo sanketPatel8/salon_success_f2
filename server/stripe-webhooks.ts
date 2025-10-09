@@ -141,66 +141,78 @@ export function setupStripeWebhooks(app: Express) {
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
-  console.log('📝 Processing subscription creation:', subscription.id);
+  console.log('📝 Subscription created:', subscription.id);
+
+  const customerId = subscription.customer as string;
+  let user = null;
   
-  // Get the checkout session to access client_reference_id
-  const checkoutSessionId = subscription.metadata?.checkout_session_id;
-  
-  if (!checkoutSessionId) {
-    console.error('❌ No checkout_session_id found in subscription metadata:', subscription.id);
-    return;
-  }
-  
-  let userId: string | null = null;
-  
+  // METHOD 1: Try to get userId from customer metadata (Best method)
   try {
-    // Retrieve the checkout session to get client_reference_id
-    const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
-    userId = session.client_reference_id;
+    const customer = await stripe.customers.retrieve(customerId);
     
-    console.log('✅ Retrieved checkout session:', {
-      sessionId: checkoutSessionId,
-      clientReferenceId: userId
-    });
+    if (customer.deleted) {
+      console.error('❌ Customer has been deleted:', customerId);
+      return;
+    }
+    
+    const userId = customer.metadata?.userId;
+    
+    if (userId) {
+      console.log('✅ Found userId in customer metadata:', userId);
+      user = await storage.getUser(parseInt(userId));
+    }
+    
+    // METHOD 2: Fallback - Find user by email if metadata doesn't have userId
+    if (!user && customer.email) {
+      console.log('⚠️ No userId in metadata, trying email:', customer.email);
+      user = await storage.getUserByEmail(customer.email);
+    }
+    
   } catch (error) {
-    console.error('❌ Failed to retrieve checkout session:', error);
+    console.error('❌ Failed to retrieve customer from Stripe:', error);
     return;
   }
-  
-  if (!userId) {
-    console.error('❌ No client_reference_id found in checkout session:', checkoutSessionId);
-    return;
-  }
-  
-  const user = await storage.getUser(parseInt(userId));
   
   if (!user) {
-    console.error('❌ No user found for userId:', userId);
+    console.error('❌ No user found for customer:', customerId);
     return;
   }
-  
-  console.log('👤 Found user from client_reference_id:', user.email);
-  
+
+  console.log('✅ Found user:', {
+    userId: user.id,
+    email: user.email
+  });
+
   const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
   const endDate = new Date(stripeEndUnix * 1000);
-  const status = subscription.status === 'trialing' ? 'trial' : subscription.status;
   
-  // Update Stripe info if not already set
-  if (!user.stripeSubscriptionId) {
-    await storage.updateUserStripeInfo(
-      user.id,
-      subscription.customer as string,
-      subscription.id
-    );
+  // Map Stripe status to your app's status
+  let status = subscription.status;
+  if (subscription.status === 'trialing') {
+    status = 'trial';
   }
+
+  // Update Stripe info
+  await storage.updateUserStripeInfo(
+    user.id,
+    customerId,
+    subscription.id
+  );
   
+  console.log('✅ Updated Stripe info:', {
+    userId: user.id,
+    customerId,
+    subscriptionId: subscription.id
+  });
+
   // Update subscription status
   await storage.updateSubscriptionStatus(user.id, status, endDate);
-  
-  console.log(`✅ Subscription created for user ${user.email}:`, {
+
+  console.log('✅ Subscription status updated:', {
+    userId: user.id,
+    email: user.email,
     status,
-    endDate: endDate.toISOString(),
-    subscriptionId: subscription.id,
+    endDate: endDate.toISOString()
   });
 }
 
