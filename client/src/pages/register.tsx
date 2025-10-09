@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,8 +32,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { insertUserSchema } from "@shared/schema";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { z } from "zod";
-import CurrencySelector from "@/components/currency-selector.tsx";
-import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext.tsx";
+import { CURRENCIES } from "@/contexts/CurrencyContext.tsx";
 
 const registerFormSchema = insertUserSchema
   .extend({
@@ -59,8 +58,6 @@ const businessTypes = [
 ];
 
 export default function Register() {
-  const { formatCurrency, currency, setCurrency } = useCurrency();
-  const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
@@ -84,17 +81,20 @@ export default function Register() {
       const { confirmPassword, ...registerData } = data;
       return apiRequest("POST", "/api/auth/register", {
         ...registerData,
-        currency: data.currency , // will send code (e.g. "USD")
+        currency: data.currency,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Success",
         description:
-          "Account created successfully. Complete your subscription to access business tools.",
+          "Account created successfully. Redirecting to subscription...",
       });
-      setLocation("/subscribe");
+      
+      // Force a full page reload to refresh auth state
+      setTimeout(() => {
+        window.location.href = "/subscribe";
+      }, 500);
     },
     onError: (error: any) => {
       toast({
@@ -107,7 +107,6 @@ export default function Register() {
 
   const onSubmit = (data: RegisterForm) => {
     registerMutation.mutate(data);
-    // console.log(data, "data");
   };
 
   return (
@@ -117,7 +116,7 @@ export default function Register() {
           variant="ghost"
           size="icon"
           className="absolute top-4 left-3 z-10"
-          onClick={() => setLocation("/")}
+          onClick={() => window.location.href = "/"}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -261,15 +260,7 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Currency</FormLabel>
                     <Select
-                      onValueChange={(value) => {
-                        field.onChange(value); // keeps RHF in sync
-                        const selected = CURRENCIES.find(
-                          (c) => c.code === value
-                        );
-                        if (selected) {
-                          setCurrency(selected); // store full object in state
-                        }
-                      }}
+                      onValueChange={field.onChange}
                       value={field.value}
                     >
                       <FormControl>

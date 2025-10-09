@@ -110,14 +110,7 @@ export default function Subscription() {
   };
 
   const handleCancelSubscription = async () => {
-    if (!subscription?.subscriptionId) {
-      toast({
-        title: "Error",
-        description: "No subscription ID found",
-        variant: "destructive",
-      });
-      return;
-    }
+    
 
     try {
       setActionLoading(true);
@@ -129,7 +122,7 @@ export default function Subscription() {
         },
         credentials: 'include', // Include cookies
         body: JSON.stringify({
-          subscriptionId: subscription.subscriptionId,
+          
         }),
       });
 
@@ -154,14 +147,6 @@ export default function Subscription() {
   };
 
   const handleReactivateSubscription = async () => {
-    if (!subscription?.subscriptionId) {
-      toast({
-        title: "Error",
-        description: "No subscription ID found",
-        variant: "destructive",
-      });
-      return;
-    }
 
     try {
       setActionLoading(true);
@@ -173,7 +158,7 @@ export default function Subscription() {
         },
         credentials: 'include', // Include cookies
         body: JSON.stringify({
-          subscriptionId: subscription.subscriptionId,
+          
         }),
       });
 

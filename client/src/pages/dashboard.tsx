@@ -197,22 +197,7 @@ export default function Dashboard() {
       />
       
       <main className="flex-1 p-8  overflow-y-auto">
-        {/* Trial Status Banner */}
-        {trialStatus && trialStatus.status === "trial" && (
-          <Alert className="border-amber-200 bg-amber-50 text-amber-800 mb-6">
-            <Crown className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>
-                <strong>Free Trial Active:</strong> {trialStatus.message}
-              </span>
-              <Link href="/subscribe">
-                <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
-                  Subscribe Now
-                </Button>
-              </Link>
-            </AlertDescription>
-          </Alert>
-        )}
+        
 
         {trialStatus && trialStatus.status === "expired" && (
           <Alert className="border-red-200 bg-red-50 text-red-800 mb-6">

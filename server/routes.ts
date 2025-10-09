@@ -192,7 +192,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasAccess: false,
           status: 'not_found',
           isTrial: false,
-          daysLeft: null
+          daysLeft: null,
+          cancelAtPeriodEnd: false
         });
       }
 
@@ -212,14 +213,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Check for active paid subscription with Stripe
+      // Check for active paid subscription with Stripe - ALWAYS check Stripe first if ID exists
       if (user.stripeSubscriptionId) {
         try {
           const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-          const endDate = new Date(subscription.current_period_end * 1000);
+          const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+          const endDate = new Date(stripeEndUnix * 1000);
           
-          // Update local storage
+          // Update local storage with current Stripe status
           await storage.updateSubscriptionStatus(user.id, subscription.status, endDate);
+          
+          console.log('✓ Stripe subscription retrieved:', {
+            id: subscription.id,
+            status: subscription.status,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            endDate: endDate.toISOString()
+          });
           
           return res.json({
             hasAccess: subscription.status === 'active' || subscription.status === 'trialing',
@@ -229,14 +238,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ? Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
               : null,
             endDate: endDate.toISOString(),
-            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end, // This is the critical field
             amount: subscription.items.data[0]?.price?.unit_amount,
             currency: subscription.items.data[0]?.price?.currency,
             subscriptionId: subscription.id
           });
         } catch (stripeError) {
           console.error('Error fetching Stripe subscription:', stripeError);
-          // Fall through to local status check
+          // Fall through to local status check only if Stripe fails
         }
       }
 
@@ -306,75 +315,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Cancel subscription endpoint
   app.post('/cancel-subscription', requireAuth, async (req, res) => {
-    try {
-      const userId = req.session.userId!;
-      const { subscriptionId } = req.body;
-      
-      if (!subscriptionId) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Subscription ID is required' 
-        });
-      }
-
-      const user = await storage.getUser(userId);
-      
-      if (!user || user.stripeSubscriptionId !== subscriptionId) {
-        return res.status(404).json({ 
-          success: false,
-          message: 'Subscription not found' 
-        });
-      }
-
-      // Cancel the subscription at period end (don't immediately revoke access)
-      const subscription = await stripe.subscriptions.update(subscriptionId, {
-        cancel_at_period_end: true
-      });
-
-      // Update local status
-      const endDate = new Date(subscription.current_period_end * 1000);
-      await storage.updateSubscriptionStatus(userId, subscription.status, endDate);
-
-      console.log(`✓ Subscription ${subscriptionId} cancelled at period end for user: ${user.email}`);
-
-      res.json({ 
-        success: true,
-        status: subscription.status,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-        endDate: endDate.toISOString(),
-        message: 'Subscription will be cancelled at the end of the billing period'
-      });
-
-    } catch (error: any) {
-      console.error('Cancel subscription error:', error);
-      res.status(500).json({ 
+  try {
+    const userId = req.session.userId!;
+    
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      return res.status(404).json({ 
         success: false,
-        message: error.message || 'Failed to cancel subscription'
+        message: 'User not found' 
       });
     }
-  });
+
+    // Get subscriptionId from database
+    const subscriptionId = user.stripeSubscriptionId;
+    
+    if (!subscriptionId) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'No active subscription found' 
+      });
+    }
+
+    // Cancel the subscription at period end (don't immediately revoke access)
+    const subscription = await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: true
+    });
+
+    // Update local status
+    const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+    const endDate = new Date(stripeEndUnix * 1000);
+
+    console.log(`✓ Subscription ${subscriptionId} cancelled at period end for user: ${user.email}`);
+
+    res.json({ 
+      success: true,
+      status: subscription.status,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      endDate: endDate.toISOString(),
+      message: 'Subscription will be cancelled at the end of the billing period'
+    });
+
+  } catch (error: any) {
+    console.error('Cancel subscription error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message || 'Failed to cancel subscription'
+    });
+  }
+});
 
   // Reactivate subscription endpoint
   app.post('/reactivate-subscription', requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const { subscriptionId } = req.body;
       
-      if (!subscriptionId) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Subscription ID is required' 
-        });
-      }
+      
 
       const user = await storage.getUser(userId);
       
-      if (!user || user.stripeSubscriptionId !== subscriptionId) {
-        return res.status(404).json({ 
-          success: false,
-          message: 'Subscription not found' 
-        });
-      }
+      if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+
+    // Get subscriptionId from database
+    const subscriptionId = user.stripeSubscriptionId;
+    
+    if (!subscriptionId) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'No active subscription found' 
+      });
+    }
 
       // Reactivate the subscription (remove cancel_at_period_end)
       const subscription = await stripe.subscriptions.update(subscriptionId, {
@@ -382,8 +397,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Update local status
-      const endDate = new Date(subscription.current_period_end * 1000);
-      await storage.updateSubscriptionStatus(userId, subscription.status, endDate);
+      const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+      const endDate = new Date(stripeEndUnix * 1000);
+     
 
       console.log(`✓ Subscription ${subscriptionId} reactivated for user: ${user.email}`);
 

@@ -29,7 +29,7 @@ export default function SubscriptionGuard({
   const checkSubscription = async () => {
     try {
       // Use the route from routes.ts
-      const res = await fetch('/api/stripe/subscription', {
+      const res = await fetch('/subscription-status', {
         credentials: 'include',
       });
 

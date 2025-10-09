@@ -53,7 +53,6 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
-        <Route path="/subscribe" component={Subscribe} />
         <Route path="/trial-demo" component={TrialDemo} />
         <Route path="/privacy" component={Privacy} />
         <Route path="/admin" component={AdminLogin} />
@@ -70,8 +69,6 @@ function Router() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Switch>
-          {/* Subscription management pages - accessible without active subscription */}
-          <Route path="/subscription" component={Subscription} />
           <Route path="/subscription/success" component={SubscriptionSuccess} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/help" component={Help} />
@@ -127,7 +124,7 @@ function Router() {
 
           {/* Reports - requires PAID subscription (no trial) */}
           <Route path="/reports">
-            <SubscriptionGuard requireActive={true}>
+            <SubscriptionGuard>
               <Reports />
             </SubscriptionGuard>
           </Route>
