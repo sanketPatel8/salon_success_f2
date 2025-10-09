@@ -72,42 +72,42 @@ export default function Subscription() {
   };
 
   // Handle subscription/checkout
-const handleSubscribe = async (priceId: string): Promise<void> => {
-  try {
-    console.log('Starting checkout for price:', priceId);
-    
-    const response = await fetch(`/api/stripe/create-checkout-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ priceId }),
-    });
+  const handleSubscribe = async (priceId: string): Promise<void> => {
+    try {
+      console.log('Starting checkout for price:', priceId);
+      
+      const response = await fetch(`/api/stripe/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ priceId }),
+      });
 
-    console.log('Response status:', response.status);
+      console.log('Response status:', response.status);
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Error response:', errorData);
-      throw new Error(errorData.error || 'Failed to create checkout session');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(errorData.error || 'Failed to create checkout session');
+      }
+
+      const session: CheckoutSession = await response.json();
+      console.log('Session created:', session);
+      
+      // Redirect to Stripe checkout
+      if (session.url) {
+        window.open(session.url, '_blank');
+      } else {
+        throw new Error('No checkout URL received from server');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      // Handle error (show toast, alert, etc.)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to start checkout process: ${errorMessage}. Please try again.`);
     }
-
-    const session: CheckoutSession = await response.json();
-    console.log('Session created:', session);
-    
-    // Redirect to Stripe checkout
-    if (session.url) {
-      window.location.href = session.url;
-    } else {
-      throw new Error('No checkout URL received from server');
-    }
-  } catch (error) {
-    console.error('Checkout error:', error);
-    // Handle error (show toast, alert, etc.)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    alert(`Failed to start checkout process: ${errorMessage}. Please try again.`);
-  }
-};
+  };
 
   const handleCancelSubscription = async () => {
     if (!subscription?.subscriptionId) {
