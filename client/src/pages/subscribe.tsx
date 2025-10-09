@@ -24,13 +24,29 @@ export default function Subscription() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [priceId, setPriceId] = useState<string>('');
   const { toast } = useToast();
 
-  const priceId = import.meta.env.VITE_PRICE_ID;
+  
 
   useEffect(() => {
     fetchSubscriptionStatus();
+    fetchPriceId();
   }, []);
+
+  const fetchPriceId = async () => {
+    try {
+      const response = await fetch('/api/config/price-id', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPriceId(data.priceId);
+      }
+    } catch (error) {
+      console.error('Failed to fetch price ID:', error);
+    }
+  };
 
   const fetchSubscriptionStatus = async () => {
     try {
@@ -242,6 +258,9 @@ const handleSubscribe = async (priceId: string): Promise<void> => {
       </div>
     );
   }
+
+  console.log("priceID", priceId);
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">

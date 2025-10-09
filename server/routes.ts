@@ -29,6 +29,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+
+  // In your Express server (e.g., server/index.ts or routes file)
+  app.get('/api/config/price-id', (req, res) => {
+    res.json({ priceId: process.env.VITE_PRICE_ID });
+  });
   
 
   app.post('/api/stripe/create-checkout-session', async (req, res) => {
