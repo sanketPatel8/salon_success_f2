@@ -565,8 +565,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
     
     // Create reset URL
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
-    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+    
+    const resetUrl = `salonsuccessmanager.com/reset-password?token=${resetToken}`;
 
     console.log('🔍 Checking environment variables:', {
   SMTP_HOST: process.env.SMTP_HOST,
