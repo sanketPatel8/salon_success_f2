@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2, XCircle, RefreshCw, Crown, Zap, Calendar, Gift } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Loader2, CheckCircle2, XCircle, RefreshCw, Crown, Zap, Calendar, Gift, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SubscriptionData {
@@ -17,17 +18,14 @@ interface SubscriptionData {
   subscriptionId?: string;
 }
 
-
-
-
 export default function Subscription() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [priceId, setPriceId] = useState<string>('');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const { toast } = useToast();
-
-  
 
   useEffect(() => {
     fetchSubscriptionStatus();
@@ -51,9 +49,8 @@ export default function Subscription() {
   const fetchSubscriptionStatus = async () => {
     try {
       setLoading(true);
-      // Replace with your actual user data endpoint
       const response = await fetch(`/subscription-status`, {
-        credentials: 'include', // Include cookies
+        credentials: 'include',
       });
       
       if (response.ok) {
@@ -71,7 +68,6 @@ export default function Subscription() {
     }
   };
 
-  // Handle subscription/checkout
   const handleSubscribe = async (priceId: string): Promise<void> => {
     try {
       console.log('Starting checkout for price:', priceId);
@@ -92,10 +88,9 @@ export default function Subscription() {
         throw new Error(errorData.error || 'Failed to create checkout session');
       }
 
-      const session: CheckoutSession = await response.json();
+      const session = await response.json();
       console.log('Session created:', session);
       
-      // Redirect to Stripe checkout
       if (session.url) {
         window.open(session.url, '_blank');
       } else {
@@ -103,15 +98,12 @@ export default function Subscription() {
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      // Handle error (show toast, alert, etc.)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       alert(`Failed to start checkout process: ${errorMessage}. Please try again.`);
     }
   };
 
   const handleCancelSubscription = async () => {
-    
-
     try {
       setActionLoading(true);
       
@@ -120,10 +112,8 @@ export default function Subscription() {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Include cookies
-        body: JSON.stringify({
-          
-        }),
+        credentials: 'include',
+        body: JSON.stringify({}),
       });
 
       const data = await response.json();
@@ -143,11 +133,11 @@ export default function Subscription() {
       });
     } finally {
       setActionLoading(false);
+      setShowCancelDialog(false);
     }
   };
 
   const handleReactivateSubscription = async () => {
-
     try {
       setActionLoading(true);
       
@@ -156,10 +146,8 @@ export default function Subscription() {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Include cookies
-        body: JSON.stringify({
-          
-        }),
+        credentials: 'include',
+        body: JSON.stringify({}),
       });
 
       if (response.ok) {
@@ -177,6 +165,7 @@ export default function Subscription() {
       });
     } finally {
       setActionLoading(false);
+      setShowReactivateDialog(false);
     }
   };
 
@@ -245,7 +234,6 @@ export default function Subscription() {
   }
 
   console.log("priceID", priceId);
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
@@ -322,7 +310,7 @@ export default function Subscription() {
                       {subscription.status !== 'free_access' && (
                         subscription.cancelAtPeriodEnd ? (
                           <Button
-                            onClick={handleReactivateSubscription}
+                            onClick={() => setShowReactivateDialog(true)}
                             disabled={actionLoading}
                             className="w-full bg-green-600 hover:bg-green-700"
                           >
@@ -331,7 +319,7 @@ export default function Subscription() {
                           </Button>
                         ) : (
                           <Button
-                            onClick={handleCancelSubscription}
+                            onClick={() => setShowCancelDialog(true)}
                             disabled={actionLoading}
                             variant="destructive"
                             className="w-full"
@@ -453,6 +441,92 @@ export default function Subscription() {
           </div>
         </div>
       </div>
+
+      {/* Cancel Subscription Confirmation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent className="bg-white border-pink-200">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-red-100 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <AlertDialogTitle className="text-slate-800">Cancel Subscription?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-600">
+              Are you sure you want to cancel your subscription? You'll continue to have access until{' '}
+              {subscription?.endDate && (
+                <span className="font-semibold text-slate-700">
+                  {new Date(subscription.endDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </span>
+              )}
+              , after which you'll lose access to all premium features.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              className="border-slate-300 hover:bg-slate-100"
+              disabled={actionLoading}
+            >
+              Keep Subscription
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelSubscription}
+              disabled={actionLoading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              Yes, Cancel Subscription
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reactivate Subscription Confirmation Dialog */}
+      <AlertDialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
+        <AlertDialogContent className="bg-white border-pink-200">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-green-100 rounded-full">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
+              <AlertDialogTitle className="text-slate-800">Reactivate Subscription?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-600">
+              Welcome back! By reactivating your subscription, you'll continue to have uninterrupted access to all premium features. Your subscription will automatically renew on{' '}
+              {subscription?.endDate && (
+                <span className="font-semibold text-slate-700">
+                  {new Date(subscription.endDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </span>
+              )}
+              .
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              className="border-slate-300 hover:bg-slate-100"
+              disabled={actionLoading}
+            >
+              Not Now
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReactivateSubscription}
+              disabled={actionLoading}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              Yes, Reactivate Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
