@@ -1797,6 +1797,8 @@ Need help? Contact us at help@salonsuccessmanager.com
   app.post('/api/email-report', requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
+      const { currencySymbol } = req.body; // Get currency symbol from request body with fallback
+      
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -1817,7 +1819,7 @@ Need help? Contact us at help@salonsuccessmanager.com
         : 0;
       const totalMonthlyRevenue = weeklyIncomes.reduce((sum, w) => sum + parseFloat(w.weeklyTotal.toString()), 0) * 4.33;
 
-      // Generate HTML email content
+      // Generate HTML email content with dynamic currency
       const emailHTML = `
         <!DOCTYPE html>
         <html>
@@ -1845,15 +1847,15 @@ Need help? Contact us at help@salonsuccessmanager.com
           
           <div class="metrics">
             <div class="metric-card">
-              <div class="metric-value">£${hourlyRateCalc?.calculatedRate || '0'}/hr</div>
+              <div class="metric-value">${currencySymbol}${hourlyRateCalc?.calculatedRate || '0'}/hr</div>
               <div class="metric-label">Current Hourly Rate</div>
             </div>
             <div class="metric-card">
-              <div class="metric-value">£${totalMonthlyRevenue.toFixed(2)}</div>
+              <div class="metric-value">${currencySymbol}${totalMonthlyRevenue.toFixed(2)}</div>
               <div class="metric-label">Monthly Revenue</div>
             </div>
             <div class="metric-card">
-              <div class="metric-value">£${totalExpenses.toFixed(2)}</div>
+              <div class="metric-value">${currencySymbol}${totalExpenses.toFixed(2)}</div>
               <div class="metric-label">Total Expenses</div>
             </div>
             <div class="metric-card">
@@ -1877,7 +1879,7 @@ Need help? Contact us at help@salonsuccessmanager.com
                 ${treatments.map(t => `
                   <tr>
                     <td>${t.name}</td>
-                    <td>£${parseFloat(t.price?.toString() || '0').toFixed(2)}</td>
+                    <td>${currencySymbol}${parseFloat(t.price?.toString() || '0').toFixed(2)}</td>
                     <td>${t.duration || 0} min</td>
                     <td>${parseFloat(t.profitMargin?.toString() || '0').toFixed(1)}%</td>
                   </tr>
@@ -1901,7 +1903,7 @@ Need help? Contact us at help@salonsuccessmanager.com
                 ${expenses.slice(0, 10).map(e => `
                   <tr>
                     <td>${e.category}</td>
-                    <td>£${parseFloat(e.amount.toString()).toFixed(2)}</td>
+                    <td>${currencySymbol}${parseFloat(e.amount.toString()).toFixed(2)}</td>
                     <td>${new Date(e.date).toLocaleDateString()}</td>
                     <td>${e.description || ''}</td>
                   </tr>
@@ -1933,7 +1935,7 @@ Need help? Contact us at help@salonsuccessmanager.com
             fallback: true,
             emailData: {
               subject: `Business Report - ${new Date().toLocaleDateString()}`,
-              body: `Please find your business performance report below:\n\nKey Metrics:\n- Current Hourly Rate: £${hourlyRateCalc?.calculatedRate || '0'}/hr\n- Monthly Revenue: £${totalMonthlyRevenue.toFixed(2)}\n- Total Treatments: ${treatments.length}\n- Total Expenses: £${totalExpenses.toFixed(2)}\n\nGenerated on ${new Date().toLocaleDateString()}`
+              body: `Please find your business performance report below:\n\nKey Metrics:\n- Current Hourly Rate: ${currencySymbol}${hourlyRateCalc?.calculatedRate || '0'}/hr\n- Monthly Revenue: ${currencySymbol}${totalMonthlyRevenue.toFixed(2)}\n- Total Treatments: ${treatments.length}\n- Total Expenses: ${currencySymbol}${totalExpenses.toFixed(2)}\n\nGenerated on ${new Date().toLocaleDateString()}`
             }
           });
         }
@@ -1946,7 +1948,7 @@ Need help? Contact us at help@salonsuccessmanager.com
           fallback: true,
           emailData: {
             subject: `Business Report - ${new Date().toLocaleDateString()}`,
-            body: `Please find your business performance report below:\n\nKey Metrics:\n- Current Hourly Rate: £${hourlyRateCalc?.calculatedRate || '0'}/hr\n- Monthly Revenue: £${totalMonthlyRevenue.toFixed(2)}\n- Total Treatments: ${treatments.length}\n- Total Expenses: £${totalExpenses.toFixed(2)}\n\nGenerated on ${new Date().toLocaleDateString()}`
+            body: `Please find your business performance report below:\n\nKey Metrics:\n- Current Hourly Rate: ${currencySymbol}${hourlyRateCalc?.calculatedRate || '0'}/hr\n- Monthly Revenue: ${currencySymbol}${totalMonthlyRevenue.toFixed(2)}\n- Total Treatments: ${treatments.length}\n- Total Expenses: ${currencySymbol}${totalExpenses.toFixed(2)}\n\nGenerated on ${new Date().toLocaleDateString()}`
           }
         });
       }

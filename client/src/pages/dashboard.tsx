@@ -15,7 +15,7 @@ const hasActiveSubscription = false;
 
 export default function Dashboard() {
   const { toast } = useToast();
-  const { formatCurrency, setCurrencyFromUser  } = useCurrency();
+  const { formatCurrency, setCurrencyFromUser, formatSymbol } = useCurrency();
   const [isEmailPending, setIsEmailPending] = useState(false);
   const [, setLocation] = useLocation();
 
@@ -88,6 +88,9 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({
+          currencySymbol: formatSymbol()
+        })
       });
 
       const data = await response.json();
