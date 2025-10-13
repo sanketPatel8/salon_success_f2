@@ -53,7 +53,7 @@ export function setupStripeWebhooks(app: Express) {
             console.log('🎉 Checkout completed:', session.id);
             
             if (session.subscription) {
-              // CRITICAL: Retrieve the full subscription with ALL fields expanded
+              // CRITICAL: Retrieve the full subscription with ALL fields expanded INCLUDING items
               const subscription = await stripe.subscriptions.retrieve(
                 session.subscription as string,
                 { 
@@ -64,6 +64,7 @@ export function setupStripeWebhooks(app: Express) {
                 id: subscription.id,
                 current_period_end: subscription.current_period_end,
                 current_period_start: subscription.current_period_start,
+                items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
                 trial_end: subscription.trial_end,
                 billing_cycle_anchor: subscription.billing_cycle_anchor,
                 status: subscription.status,
@@ -93,6 +94,7 @@ export function setupStripeWebhooks(app: Express) {
               id: subscription.id,
               current_period_end: subscription.current_period_end,
               current_period_start: subscription.current_period_start,
+              items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
               trial_end: subscription.trial_end,
               billing_cycle_anchor: subscription.billing_cycle_anchor,
               status: subscription.status,
@@ -122,6 +124,7 @@ export function setupStripeWebhooks(app: Express) {
               id: subscription.id,
               current_period_end: subscription.current_period_end,
               current_period_start: subscription.current_period_start,
+              items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
               trial_end: subscription.trial_end,
               billing_cycle_anchor: subscription.billing_cycle_anchor,
               status: subscription.status,
@@ -159,6 +162,7 @@ export function setupStripeWebhooks(app: Express) {
                 id: subscription.id,
                 current_period_end: subscription.current_period_end,
                 current_period_start: subscription.current_period_start,
+                items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
                 trial_end: subscription.trial_end,
                 billing_cycle_anchor: subscription.billing_cycle_anchor,
                 status: subscription.status,
@@ -200,12 +204,17 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   console.log('📅 Raw dates from Stripe:', {
     current_period_end: subscription.current_period_end,
     current_period_start: subscription.current_period_start,
+    items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
     trial_end: subscription.trial_end,
     billing_cycle_anchor: subscription.billing_cycle_anchor,
     status: subscription.status,
   });
 
-  const customerId = subscription.customer as string;
+  // CRITICAL FIX: Extract customer ID properly
+  const customerId = typeof subscription.customer === 'string' 
+    ? subscription.customer 
+    : subscription.customer.id;
+  
   let user = null;
   
   try {
@@ -240,7 +249,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   console.log('✅ Found user:', user.id, user.email);
 
-  // Calculate end date with proper priority and fallback
+  // Calculate end date with proper priority and fallback - SAME AS WORKING ENDPOINT
   let endDateTimestamp: number | undefined;
   let dateSource = 'none';
   
@@ -251,6 +260,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   } else if (subscription.items?.data?.[0]?.current_period_end) {
     endDateTimestamp = subscription.items.data[0].current_period_end;
     dateSource = 'items[0].current_period_end';
+    console.log('Using items[0].current_period_end:', endDateTimestamp);
   } else if (subscription.trial_end) {
     endDateTimestamp = subscription.trial_end;
     dateSource = 'trial_end';
@@ -318,6 +328,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   console.log('📅 Raw dates from Stripe:', {
     current_period_end: subscription.current_period_end,
     current_period_start: subscription.current_period_start,
+    items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
     trial_end: subscription.trial_end,
     billing_cycle_anchor: subscription.billing_cycle_anchor,
     status: subscription.status,
@@ -333,7 +344,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   console.log('✅ Found user:', user.id, user.email);
 
-  // Calculate end date with proper priority and fallback
+  // Calculate end date with proper priority and fallback - SAME AS WORKING ENDPOINT
   let endDateTimestamp: number | undefined;
   let dateSource = 'none';
   
@@ -344,6 +355,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   } else if (subscription.items?.data?.[0]?.current_period_end) {
     endDateTimestamp = subscription.items.data[0].current_period_end;
     dateSource = 'items[0].current_period_end';
+    console.log('Using items[0].current_period_end:', endDateTimestamp);
   } else if (subscription.trial_end) {
     endDateTimestamp = subscription.trial_end;
     dateSource = 'trial_end';
