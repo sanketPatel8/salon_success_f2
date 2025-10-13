@@ -99,7 +99,7 @@ export default function Subscription() {
       console.log('Session created:', session);
       
       if (session.url) {
-        window.open(session.url, '_blank');
+        window.location.href = session.url;
       } else {
         throw new Error('No checkout URL received from server');
       }

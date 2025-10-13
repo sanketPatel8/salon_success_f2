@@ -157,6 +157,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.get('/api/stripe/verify-session/:sessionId', requireAuth, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.session.userId!;
+      const user = await storage.getUser(userId);
+
+      if (!user) return res.status(404).json({ message: 'User not found' });
+
+      console.log(`\n🧩 [verify-session] Starting for user ${userId}, session ${sessionId}`);
+      console.log('👤 User:', { id: user.id, email: user.email, stripeCustomerId: user.stripeCustomerId });
+
+      // 🔹 Retrieve Stripe checkout session
+      let session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['subscription'] });
+      console.log('📡 Stripe session retrieved:', session);
+
+      // 🔹 Normalize subscription object
+      let subscription: any = session.subscription;
+      if (typeof subscription === 'string') {
+        subscription = await stripe.subscriptions.retrieve(subscription);
+        console.log('🔄 Fetched subscription object from Stripe:', subscription);
+      }
+
+      // 🔹 Update Stripe info if missing
+      if (!user.stripeCustomerId || !user.stripeSubscriptionId) {
+        console.log('🔧 Updating Stripe info in DB');
+        await storage.updateUserStripeInfo(user.id, subscription.customer, subscription.id);
+      }
+
+      // 🔹 Define now for date calculations
+      const now = new Date();
+
+      // 🔹 Handle free access
+      if (user.subscriptionStatus === 'free_access') {
+        console.log('🎁 User has free_access status');
+        return res.json({
+          status: 'free_access',
+          hasAccess: true,
+          isTrial: false,
+        });
+      }
+
+      // 🔹 If user has trial status but no subscription ID yet, check with Stripe
+      if (!user.stripeSubscriptionId && user.stripeCustomerId) {
+        console.log('⏳ No subscription ID, checking Stripe for customer subscriptions...');
+        try {
+          const subscriptions = await stripe.subscriptions.list({
+            customer: user.stripeCustomerId,
+            limit: 1,
+            status: 'all',
+          });
+
+          if (subscriptions.data.length > 0) {
+            const subscription = subscriptions.data[0];
+            console.log('✅ Found subscription in Stripe:', subscription.id);
+
+            // Update database with the subscription ID
+            await storage.updateUserStripeInfo(
+              user.id,
+              user.stripeCustomerId,
+              subscription.id
+            );
+
+            // Normalize status
+            const statusMap: Record<string, string> = {
+              trialing: 'trial',
+              active: 'active',
+              past_due: 'past_due',
+              canceled: 'canceled',
+              incomplete: 'incomplete',
+              incomplete_expired: 'incomplete',
+            };
+            const normalizedStatus = statusMap[subscription.status] || 'inactive';
+            console.log('📊 Stripe status → normalizedStatus:', subscription.status, '→', normalizedStatus);
+            
+            const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+            const endDate = new Date(stripeEndUnix * 1000);
+            const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+            await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
+
+            const isTrial = normalizedStatus === 'trial';
+
+            return res.json({
+              status: normalizedStatus,
+              hasAccess: ['active', 'trial'].includes(normalizedStatus),
+              endDate: endDate,
+              isTrial: isTrial,
+              daysLeft: daysLeft,
+              cancelAtPeriodEnd: subscription.cancel_at_period_end,
+              amount: subscription.items.data[0]?.price.unit_amount,
+              currency: subscription.items.data[0]?.price.currency,
+            });
+          }
+        } catch (stripeError) {
+          console.error('❌ Error fetching subscriptions from Stripe:', stripeError);
+        }
+      }
+
+      // 🔹 If status is trial but no subscription found, calculate trial end date
+      if (user.subscriptionStatus === 'trial') {
+        console.log('⚠️ Trial status in DB but no Stripe subscription found, granting access');
+        
+        // Calculate trial end date (15 days from creation)
+        const createdAt = user.createdAt ? new Date(user.createdAt) : now;
+        const trialEndDate = new Date(createdAt);
+        trialEndDate.setDate(trialEndDate.getDate() + 15);
+        const daysLeft = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        
+        return res.json({
+          status: 'trial',
+          hasAccess: true,
+          endDate: trialEndDate,
+          isTrial: true,
+          daysLeft: daysLeft,
+        });
+      }
+
+      // 🔹 If no subscription ID exists
+      if (!user.stripeSubscriptionId) {
+        console.log('❌ No subscription ID found');
+        return res.json({
+          status: user.subscriptionStatus || 'none',
+          hasAccess: false,
+          endDate: null,
+          isTrial: false,
+          daysLeft: null,
+        });
+      }
+
+      // 🔹 Get subscription from Stripe
+      console.log('🔍 Fetching subscription from Stripe:', user.stripeSubscriptionId);
+
+      // Normalize status
+      const statusMap: Record<string, string> = {
+        trialing: 'trial',
+        active: 'active',
+        past_due: 'past_due',
+        canceled: 'canceled',
+        incomplete: 'incomplete',
+        incomplete_expired: 'incomplete',
+      };
+      const normalizedStatus = statusMap[subscription.status] || 'inactive';
+      console.log('📊 Stripe status → normalizedStatus:', subscription.status, '→', normalizedStatus);
+
+      const isTrial = normalizedStatus === 'trial';
+
+      // Calculate end date from Stripe subscription
+      const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+      const endDate = new Date(stripeEndUnix * 1000);
+      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      console.log("💾 Ending Date full", subscription.trial_end);
+
+      // 🔹 Update local database
+      console.log('💾 Updating subscription in DB...');
+      await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
+
+      console.log(`✅ Subscription retrieved for user ${user.email}: status=${normalizedStatus}, endDate=${endDate.toISOString()}`);
+
+      res.json({
+        status: normalizedStatus,
+        hasAccess: ['active', 'trial'].includes(normalizedStatus),
+        endDate: endDate,
+        isTrial: isTrial,
+        daysLeft: daysLeft,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        amount: subscription.items.data[0]?.price.unit_amount,
+        currency: subscription.items.data[0]?.price.currency,
+      });
+
+    } catch (error: any) {
+      console.error('❌ [verify-session] Fatal error:', error);
+      res.status(500).json({
+        message: 'Failed to verify session',
+        error: error.message
+      });
+    }
+  });
+
   app.get('/api/stripe/subscription', requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
