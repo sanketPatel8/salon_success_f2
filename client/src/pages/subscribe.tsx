@@ -73,9 +73,10 @@ export default function Subscription() {
       console.log('Starting checkout for price:', priceId);
       
       // Determine the endpoint based on subscription status
-      const endpoint = subscription?.status === 'canceled' 
-        ? '/api/stripe/create-session'
-        : '/api/stripe/create-checkout-session';
+      const endpoint = (subscription?.status === 'canceled' || subscription?.status === 'past_due')
+      ? '/api/stripe/create-session'
+      : '/api/stripe/create-checkout-session';
+
       
       console.log('Using endpoint:', endpoint);
       
@@ -243,7 +244,7 @@ export default function Subscription() {
   console.log("priceID", priceId);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 md:mt-[0px] mt-[65px]">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-800 mb-2">Subscription Management</h1>
