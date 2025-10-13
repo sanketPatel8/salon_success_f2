@@ -72,7 +72,14 @@ export default function Subscription() {
     try {
       console.log('Starting checkout for price:', priceId);
       
-      const response = await fetch(`/api/stripe/create-checkout-session`, {
+      // Determine the endpoint based on subscription status
+      const endpoint = subscription?.status === 'canceled' 
+        ? '/api/stripe/create-session'
+        : '/api/stripe/create-checkout-session';
+      
+      console.log('Using endpoint:', endpoint);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

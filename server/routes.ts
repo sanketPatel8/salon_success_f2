@@ -91,6 +91,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/stripe/create-session', async (req, res) => {
+    try {
+      const { priceId } = req.body;
+
+      console.log('=== Create Checkout Session Called ===');
+      console.log('Request body:', req.body);
+      console.log('Price ID:', priceId);
+
+      // Validate priceId
+      if (!priceId) {
+        console.error('❌ No priceId provided');
+        return res.status(400).json({ error: 'Price ID is required' });
+      }
+
+      // Get user from session if authenticated
+      const userId = req.session?.userId;
+      const user = userId ? await storage.getUser(userId) : null;
+
+      console.log('✅ Creating Stripe Checkout Session');
+      console.log('User ID:', userId || 'Guest');
+
+      // Create Stripe Checkout Session
+      const session = await stripe.checkout.sessions.create({
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        success_url: `${process.env.BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.BASE_URL}/cancel`,
+        client_reference_id: userId?.toString(),
+        customer_email: user?.email,
+      });
+
+      console.log('✅ Checkout session created:', session.id);
+      console.log('Session URL:', session.url);
+
+      return res.status(200).json({ 
+        url: session.url
+      });
+
+    } catch (error: any) {
+      console.error('=== Stripe Checkout Error ===');
+      console.error('Error type:', error.type);
+      console.error('Error message:', error.message);
+      console.error('Full error:', error);
+      
+      return res.status(500).json({ 
+        error: error.message || 'Failed to create checkout session',
+        details: error.type || 'unknown_error'
+      });
+    }
+  });
+
   // Test route for Stripe checkout
   app.get('/api/stripe/test', (req, res) => {
     res.json({ 
@@ -217,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user.stripeSubscriptionId) {
         try {
           const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-          const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+          const stripeEndUnix = subscription.current_period_end != null ? subscription.current_period_end : subscription.trial_end;
           const endDate = new Date(stripeEndUnix * 1000);
           
           // Update local storage with current Stripe status
@@ -343,7 +400,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     // Update local status
-    const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+    const stripeEndUnix = subscription.current_period_end != null 
+  ? subscription.current_period_end 
+  : subscription.trial_end;
     const endDate = new Date(stripeEndUnix * 1000);
 
     console.log(`✓ Subscription ${subscriptionId} cancelled at period end for user: ${user.email}`);
@@ -397,7 +456,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Update local status
-      const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+      const stripeEndUnix = subscription.current_period_end != null 
+  ? subscription.current_period_end 
+  : subscription.trial_end;
       const endDate = new Date(stripeEndUnix * 1000);
      
 
@@ -420,126 +481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Webhook endpoint for Stripe events (place this BEFORE body parsing middleware)
-  app.post('/webhook/stripe', async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    if (!webhookSecret) {
-      console.error('⚠️  Webhook secret not configured');
-      return res.status(500).send('Webhook secret not configured');
-    }
-
-    let event;
-
-    try {
-      // Get raw body for signature verification
-      const rawBody = req.body;
-      event = stripe.webhooks.constructEvent(rawBody, sig as string, webhookSecret);
-    } catch (err: any) {
-      console.error('⚠️  Webhook signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    console.log('✓ Stripe webhook event received:', event.type);
-
-    // Handle the event
-    try {
-      switch (event.type) {
-        case 'checkout.session.completed': {
-          const session = event.data.object;
-          console.log('Checkout completed:', session.id);
-          
-          // Get user from client_reference_id
-          const userId = session.client_reference_id;
-          if (userId) {
-            const user = await storage.getUser(parseInt(userId));
-            if (user) {
-              // Update user with subscription info
-              await storage.updateUserStripeInfo(
-                user.id, 
-                session.customer as string, 
-                session.subscription as string
-              );
-              
-              // Mark as trialing if it's a trial subscription
-              if (session.mode === 'subscription' && session.subscription) {
-                const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-                const endDate = new Date(subscription.current_period_end * 1000);
-                await storage.updateSubscriptionStatus(user.id, subscription.status, endDate);
-              }
-              
-              console.log(`✓ User ${user.email} subscription activated`);
-            }
-          }
-          break;
-        }
-
-        case 'customer.subscription.updated': {
-          const subscription = event.data.object;
-          const customerId = subscription.customer as string;
-          
-          // Find user by Stripe customer ID
-          const user = await storage.getUserByStripeCustomerId(customerId);
-          if (user) {
-            const endDate = new Date(subscription.current_period_end * 1000);
-            await storage.updateSubscriptionStatus(user.id, subscription.status, endDate);
-            console.log(`✓ Subscription updated for user ${user.email}: ${subscription.status}`);
-          }
-          break;
-        }
-
-        case 'customer.subscription.deleted': {
-          const subscription = event.data.object;
-          const customerId = subscription.customer as string;
-          
-          // Find user by Stripe customer ID
-          const user = await storage.getUserByStripeCustomerId(customerId);
-          if (user) {
-            await storage.updateSubscriptionStatus(user.id, 'canceled');
-            console.log(`✓ Subscription cancelled for user ${user.email}`);
-          }
-          break;
-        }
-
-        case 'invoice.payment_succeeded': {
-          const invoice = event.data.object;
-          const customerId = invoice.customer as string;
-          
-          // Find user and update subscription status
-          const user = await storage.getUserByStripeCustomerId(customerId);
-          if (user && invoice.subscription) {
-            const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-            const endDate = new Date(subscription.current_period_end * 1000);
-            await storage.updateSubscriptionStatus(user.id, 'active', endDate);
-            console.log(`✓ Payment succeeded for user ${user.email}`);
-          }
-          break;
-        }
-
-        case 'invoice.payment_failed': {
-          const invoice = event.data.object;
-          const customerId = invoice.customer as string;
-          
-          // Find user and mark subscription as past_due
-          const user = await storage.getUserByStripeCustomerId(customerId);
-          if (user) {
-            await storage.updateSubscriptionStatus(user.id, 'past_due');
-            console.log(`⚠️  Payment failed for user ${user.email}`);
-          }
-          break;
-        }
-
-        default:
-          console.log(`Unhandled event type: ${event.type}`);
-      }
-
-      res.json({ received: true });
-    } catch (error) {
-      console.error('Error processing webhook:', error);
-      res.status(500).json({ error: 'Webhook processing failed' });
-    }
-  });
   
 
   // Password reset request
@@ -1548,172 +1490,9 @@ Need help? Contact us at help@salonsuccessmanager.com
     }
   });
 
-  // Stripe subscription routes
-  app.post('/api/create-subscription', requireAuth, async (req, res) => {
-    try {
-      if (!process.env.STRIPE_SECRET_KEY) {
-        return res.status(500).json({ message: "Stripe configuration missing" });
-      }
 
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-09-30.clover",
-      });
 
-      const userId = req.session.userId!;
-      
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // Check if user has free access from promo code - no subscription needed
-      if (user.subscriptionStatus === 'free_access') {
-        return res.json({
-          subscriptionId: 'free_access',
-          clientSecret: null,
-          status: 'active'
-        });
-      }
-
-      // Check if user already has an active subscription
-      if (user.stripeSubscriptionId) {
-        try {
-          const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-          if (subscription.status === 'active' || subscription.status === 'trialing') {
-            return res.json({
-              subscriptionId: subscription.id,
-              clientSecret: null, // No payment needed for active subscription
-            });
-          }
-        } catch (err) {
-          console.log('Existing subscription not found, creating new one');
-        }
-      }
-
-      // Create or retrieve Stripe customer
-      let customer;
-      if (user.stripeCustomerId) {
-        try {
-          customer = await stripe.customers.retrieve(user.stripeCustomerId);
-        } catch (err) {
-          customer = null;
-        }
-      }
-      
-      if (!customer) {
-        customer = await stripe.customers.create({
-          email: user.email,
-          name: user.name,
-          metadata: {
-            userId: user.id.toString(),
-          }
-        });
-        await storage.updateUserStripeInfo(user.id, customer.id);
-      }
-
-      // Create subscription
-      if (!process.env.STRIPE_PRICE_ID) {
-        return res.status(500).json({ message: "Stripe price ID not configured" });
-      }
-
-      // Create setup intent for payment method
-      const setupIntent = await stripe.setupIntents.create({
-        customer: customer.id,
-        payment_method_types: ['card'],
-        usage: 'off_session'
-      });
-
-      // Create subscription without immediate payment
-      const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
-        items: [{
-          price: process.env.STRIPE_PRICE_ID,
-        }],
-        payment_behavior: 'default_incomplete',
-        payment_settings: {
-          payment_method_types: ['card'],
-          save_default_payment_method: 'on_subscription'
-        },
-        expand: ['latest_invoice.payment_intent'],
-      });
-
-      await storage.updateUserStripeInfo(user.id, customer.id, subscription.id);
-      await storage.updateSubscriptionStatus(user.id, 'pending');
-
-      console.log('Setup Intent created:', {
-        id: setupIntent.id,
-        status: setupIntent.status,
-        client_secret: setupIntent.client_secret ? 'exists' : 'null'
-      });
-
-      console.log('Subscription created:', {
-        id: subscription.id,
-        status: subscription.status,
-        latest_invoice: subscription.latest_invoice ? 'exists' : 'null'
-      });
-
-      res.json({
-        subscriptionId: subscription.id,
-        clientSecret: setupIntent.client_secret,
-        status: subscription.status
-      });
-    } catch (error: any) {
-      console.error('Stripe subscription error:', error);
-      return res.status(400).json({ error: { message: error.message || 'Subscription creation failed. Please check Stripe configuration.' } });
-    }
-  });
-
-  // Check subscription status
-  app.get('/api/subscription-status', async (req, res) => {
-    try {
-      const user = await storage.getUser(1); // Demo user
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      let subscriptionStatus = {
-        active: true,
-        status: user.subscriptionStatus,
-        endDate: user.subscriptionEndDate
-      };
-
-      if (user.stripeSubscriptionId) {
-        try {
-          const testStripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-            apiVersion: "2025-09-30.clover",
-          });
-          
-          const subscription = await testStripe.subscriptions.retrieve(user.stripeSubscriptionId);
-          subscriptionStatus.active = subscription.status === 'active' || subscription.status === 'trialing';
-          subscriptionStatus.status = subscription.status;
-          const endDate = new Date((subscription as any).current_period_end * 1000);
-          subscriptionStatus.endDate = endDate;
-          
-          // Update local storage only if date is valid
-          if (!isNaN(endDate.getTime())) {
-            await storage.updateSubscriptionStatus(
-              user.id, 
-              subscription.status, 
-              endDate
-            );
-          } else {
-            console.error('Invalid subscription end date:', (subscription as any).current_period_end);
-            await storage.updateSubscriptionStatus(
-              user.id, 
-              subscription.status
-            );
-          }
-        } catch (err) {
-          console.log('Error checking subscription status:', err);
-        }
-      }
-
-      res.json(subscriptionStatus);
-    } catch (error: any) {
-      console.error('Subscription status error:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
+  
 
   // Reset demo user for testing
   app.post('/api/reset-demo-user', async (req, res) => {

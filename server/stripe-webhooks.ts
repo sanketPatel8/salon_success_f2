@@ -183,7 +183,10 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     email: user.email
   });
 
-  const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+  const stripeEndUnix = subscription.current_period_end != null 
+  ? subscription.current_period_end 
+  : subscription.trial_end;
+
   const endDate = new Date(stripeEndUnix * 1000);
   
   // Map Stripe status to your app's status
@@ -225,7 +228,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return;
   }
 
-  const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+  const stripeEndUnix = subscription.current_period_end != null 
+  ? subscription.current_period_end 
+  : subscription.trial_end;
   const endDate = new Date(stripeEndUnix * 1000);
   let status = subscription.status;
 
