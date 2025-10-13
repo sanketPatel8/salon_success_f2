@@ -10,15 +10,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export function setupStripeWebhooks(app: Express) {
   console.log('🔧 Setting up Stripe webhook endpoint...');
   
-  // Stripe webhook endpoint - MUST use raw body
   app.post(
     '/api/stripe/webhook',
     express.raw({ type: 'application/json' }),
     async (req, res) => {
       console.log('🎯 WEBHOOK RECEIVED! Starting processing...');
-      console.log('📦 Request headers:', JSON.stringify(req.headers, null, 2));
-      console.log('📦 Body type:', typeof req.body);
-      console.log('📦 Body length:', req.body?.length || 0);
       
       const sig = req.headers['stripe-signature'];
 
@@ -27,14 +23,10 @@ export function setupStripeWebhooks(app: Express) {
         return res.status(400).send('No signature');
       }
 
-      console.log('✓ Stripe signature present:', sig.substring(0, 20) + '...');
-
       if (!process.env.STRIPE_WEBHOOK_SECRET) {
         console.error('❌ STRIPE_WEBHOOK_SECRET not configured');
         return res.status(500).send('Webhook secret not configured');
       }
-
-      console.log('✓ Webhook secret configured');
 
       let event: Stripe.Event;
 
@@ -44,7 +36,7 @@ export function setupStripeWebhooks(app: Express) {
           sig,
           process.env.STRIPE_WEBHOOK_SECRET
         );
-        console.log('✅ Webhook signature verified successfully!');
+        console.log('✅ Webhook signature verified!');
         console.log('📧 Event type:', event.type);
         console.log('🆔 Event ID:', event.id);
       } catch (err: any) {
@@ -52,7 +44,6 @@ export function setupStripeWebhooks(app: Express) {
         return res.status(400).send(`Webhook Error: ${err.message}`);
       }
 
-      // Handle the event
       try {
         console.log(`🔄 Processing event: ${event.type}`);
         
@@ -61,30 +52,40 @@ export function setupStripeWebhooks(app: Express) {
             const session = event.data.object as Stripe.Checkout.Session;
             console.log('🎉 Checkout completed:', session.id);
             
-            // IMPORTANT: Handle subscription creation immediately
             if (session.subscription) {
+              // IMPORTANT: Expand the subscription to get full data
               const subscription = await stripe.subscriptions.retrieve(
                 session.subscription as string,
                 { expand: ['customer'] }
               );
+              console.log('📦 Retrieved subscription with dates:', {
+                id: subscription.id,
+                current_period_end: subscription.current_period_end,
+                trial_end: subscription.trial_end,
+              });
               await handleSubscriptionCreated(subscription);
-            } else if (session.mode === 'subscription') {
-              // If subscription isn't attached yet, wait and retry
-              console.log('⏳ Subscription not attached yet, will be handled by subscription.created event');
             }
             break;
           }
 
           case 'customer.subscription.created': {
             const subscription = event.data.object as Stripe.Subscription;
-            console.log('🆕 Subscription created:', subscription.id, subscription.status);
+            console.log('🆕 Subscription created:', subscription.id);
+            console.log('📅 Event subscription dates:', {
+              current_period_end: subscription.current_period_end,
+              trial_end: subscription.trial_end,
+            });
             await handleSubscriptionCreated(subscription);
             break;
           }
 
           case 'customer.subscription.updated': {
             const subscription = event.data.object as Stripe.Subscription;
-            console.log('🔄 Subscription updated:', subscription.id, subscription.status);
+            console.log('🔄 Subscription updated:', subscription.id);
+            console.log('📅 Event subscription dates:', {
+              current_period_end: subscription.current_period_end,
+              trial_end: subscription.trial_end,
+            });
             await handleSubscriptionUpdated(subscription);
             break;
           }
@@ -96,20 +97,28 @@ export function setupStripeWebhooks(app: Express) {
             break;
           }
 
-          case 'customer.subscription.trial_will_end': {
-            const subscription = event.data.object as Stripe.Subscription;
-            console.log('⏰ Trial ending soon:', subscription.id);
-            await handleTrialWillEnd(subscription);
-            break;
-          }
-
           case 'invoice.payment_succeeded': {
             const invoice = event.data.object as Stripe.Invoice;
             console.log('💰 Payment succeeded:', invoice.id);
+            console.log('📅 Invoice period:', {
+              period_start: invoice.period_start,
+              period_end: invoice.period_end,
+            });
+            
             if (invoice.subscription) {
+              // CRITICAL FIX: Retrieve the full subscription object with all fields
               const subscription = await stripe.subscriptions.retrieve(
                 invoice.subscription as string
               );
+              
+              console.log('📦 Retrieved subscription from invoice:', {
+                id: subscription.id,
+                current_period_end: subscription.current_period_end,
+                current_period_start: subscription.current_period_start,
+                trial_end: subscription.trial_end,
+                billing_cycle_anchor: subscription.billing_cycle_anchor,
+              });
+              
               await handleSubscriptionUpdated(subscription);
             }
             break;
@@ -117,7 +126,7 @@ export function setupStripeWebhooks(app: Express) {
 
           case 'invoice.payment_failed': {
             const invoice = event.data.object as Stripe.Invoice;
-            console.log(' Payment failed:', invoice.id);
+            console.log('💔 Payment failed:', invoice.id);
             if (invoice.subscription) {
               await handlePaymentFailed(invoice);
             }
@@ -137,21 +146,23 @@ export function setupStripeWebhooks(app: Express) {
     }
   );
   
-  console.log('✅ Stripe webhook endpoint registered at /api/stripe/webhook');
+  console.log('✅ Stripe webhook endpoint registered');
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
-  console.log('📝 Subscription created:', subscription.id);
-  console.log('📅 Subscription dates:', {
+  console.log('\n=== HANDLE SUBSCRIPTION CREATED ===');
+  console.log('📝 Subscription ID:', subscription.id);
+  console.log('📅 Raw dates from Stripe:', {
     current_period_end: subscription.current_period_end,
+    current_period_start: subscription.current_period_start,
     trial_end: subscription.trial_end,
-    billing_cycle_anchor: subscription.billing_cycle_anchor
+    billing_cycle_anchor: subscription.billing_cycle_anchor,
+    status: subscription.status,
   });
 
   const customerId = subscription.customer as string;
   let user = null;
   
-  // METHOD 1: Try to get userId from customer metadata (Best method)
   try {
     const customer = await stripe.customers.retrieve(customerId);
     
@@ -163,18 +174,17 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     const userId = customer.metadata?.userId;
     
     if (userId) {
-      console.log('✅ Found userId in customer metadata:', userId);
+      console.log('✅ Found userId in metadata:', userId);
       user = await storage.getUser(parseInt(userId));
     }
     
-    // METHOD 2: Fallback - Find user by email if metadata doesn't have userId
     if (!user && customer.email) {
       console.log('⚠️ No userId in metadata, trying email:', customer.email);
       user = await storage.getUserByEmail(customer.email);
     }
     
   } catch (error) {
-    console.error('❌ Failed to retrieve customer from Stripe:', error);
+    console.error('❌ Failed to retrieve customer:', error);
     return;
   }
   
@@ -183,117 +193,126 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     return;
   }
 
-  console.log('✅ Found user:', {
-    userId: user.id,
-    email: user.email
+  console.log('✅ Found user:', user.id, user.email);
+
+  // Calculate end date with detailed logging
+  let endDateTimestamp: number | undefined;
+  let dateSource = 'none';
+  
+  if (subscription.current_period_end) {
+    endDateTimestamp = subscription.current_period_end;
+    dateSource = 'current_period_end';
+  } else if (subscription.trial_end) {
+    endDateTimestamp = subscription.trial_end;
+    dateSource = 'trial_end';
+  } else if (subscription.billing_cycle_anchor) {
+    endDateTimestamp = subscription.billing_cycle_anchor;
+    dateSource = 'billing_cycle_anchor';
+  }
+
+  console.log('📅 Date calculation:', {
+    timestamp: endDateTimestamp,
+    source: dateSource,
+    hasValue: !!endDateTimestamp,
   });
 
-  // FIX: Properly handle the end date with fallbacks
-  let stripeEndUnix: number | null = null;
-  
-  // Priority 1: Use current_period_end (this is the next invoice date)
-  if (subscription.current_period_end) {
-    stripeEndUnix = subscription.current_period_end;
-  }
-  // Priority 2: Use trial_end if in trial period
-  else if (subscription.trial_end) {
-    stripeEndUnix = subscription.trial_end;
-  }
-  // Priority 3: Use billing_cycle_anchor as last resort
-  else if (subscription.billing_cycle_anchor) {
-    stripeEndUnix = subscription.billing_cycle_anchor;
-  }
-
-  // If we still don't have a date, log error and skip date update
-  if (!stripeEndUnix) {
-    console.error('⚠️ No valid end date found in subscription:', subscription.id);
-    console.error('Subscription details:', JSON.stringify({
-      current_period_end: subscription.current_period_end,
-      trial_end: subscription.trial_end,
-      billing_cycle_anchor: subscription.billing_cycle_anchor,
-      status: subscription.status
-    }, null, 2));
+  if (!endDateTimestamp) {
+    console.error('❌ CRITICAL: No valid timestamp found!');
+    console.error('Full subscription object:', JSON.stringify(subscription, null, 2));
     
-    // Update Stripe info but don't set an invalid date
-    await storage.updateUserStripeInfo(
-      user.id,
-      customerId,
-      subscription.id
+    await storage.updateUserStripeInfo(user.id, customerId, subscription.id);
+    await storage.updateSubscriptionStatus(
+      user.id, 
+      subscription.status === 'trialing' ? 'trial' : subscription.status
     );
-    
-    // Set status without date
-    await storage.updateSubscriptionStatus(user.id, subscription.status === 'trialing' ? 'trial' : subscription.status);
-    
     return;
   }
 
-  const endDate = new Date(stripeEndUnix * 1000);
+  const endDate = new Date(endDateTimestamp * 1000);
   
-  console.log('📅 Calculated end date:', {
-    unix: stripeEndUnix,
-    date: endDate.toISOString(),
-    source: subscription.current_period_end ? 'current_period_end' : 
-            subscription.trial_end ? 'trial_end' : 'billing_cycle_anchor'
+  console.log('📅 Final calculated date:', {
+    unix: endDateTimestamp,
+    iso: endDate.toISOString(),
+    readable: endDate.toLocaleString('en-US', { timeZone: 'UTC' }),
+    source: dateSource,
   });
-  
-  // Map Stripe status to your app's status
+
   let status = subscription.status;
   if (subscription.status === 'trialing') {
     status = 'trial';
   }
 
-  // Update Stripe info
-  await storage.updateUserStripeInfo(
-    user.id,
-    customerId,
-    subscription.id
-  );
+  await storage.updateUserStripeInfo(user.id, customerId, subscription.id);
   
-  console.log('✅ Updated Stripe info:', {
+  console.log('💾 About to update subscription status with:', {
     userId: user.id,
-    customerId,
-    subscriptionId: subscription.id
+    status,
+    endDate: endDate.toISOString(),
   });
-
-  // Update subscription status with the valid end date
+  
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
-  console.log('✅ Subscription status updated:', {
-    userId: user.id,
-    email: user.email,
-    status,
-    endDate: endDate.toISOString()
-  });
+  console.log('✅ SUBSCRIPTION CREATED COMPLETE\n');
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  console.log('\n=== HANDLE SUBSCRIPTION UPDATED ===');
+  console.log('📝 Subscription ID:', subscription.id);
+  console.log('📅 Raw dates from Stripe:', {
+    current_period_end: subscription.current_period_end,
+    current_period_start: subscription.current_period_start,
+    trial_end: subscription.trial_end,
+    billing_cycle_anchor: subscription.billing_cycle_anchor,
+    status: subscription.status,
+  });
+
   const users = await storage.getAllUsers();
   const user = users.find(u => u.stripeSubscriptionId === subscription.id);
 
   if (!user) {
-    console.error('User not found for subscription:', subscription.id);
+    console.error('❌ User not found for subscription:', subscription.id);
     return;
   }
 
-  // FIX: Same date handling logic
-  let stripeEndUnix: number | null = null;
+  console.log('✅ Found user:', user.id, user.email);
+
+  // Calculate end date
+  let endDateTimestamp: number | undefined;
+  let dateSource = 'none';
   
   if (subscription.current_period_end) {
-    stripeEndUnix = subscription.current_period_end;
+    endDateTimestamp = subscription.current_period_end;
+    dateSource = 'current_period_end';
   } else if (subscription.trial_end) {
-    stripeEndUnix = subscription.trial_end;
+    endDateTimestamp = subscription.trial_end;
+    dateSource = 'trial_end';
   } else if (subscription.billing_cycle_anchor) {
-    stripeEndUnix = subscription.billing_cycle_anchor;
+    endDateTimestamp = subscription.billing_cycle_anchor;
+    dateSource = 'billing_cycle_anchor';
   }
 
-  if (!stripeEndUnix) {
-    console.error('⚠️ No valid end date found for subscription update:', subscription.id);
+  console.log('📅 Date calculation:', {
+    timestamp: endDateTimestamp,
+    source: dateSource,
+    hasValue: !!endDateTimestamp,
+  });
+
+  if (!endDateTimestamp) {
+    console.error('❌ CRITICAL: No valid timestamp found!');
+    console.error('Full subscription object:', JSON.stringify(subscription, null, 2));
     return;
   }
 
-  const endDate = new Date(stripeEndUnix * 1000);
-  let status = subscription.status;
+  const endDate = new Date(endDateTimestamp * 1000);
+  
+  console.log('📅 Final calculated date:', {
+    unix: endDateTimestamp,
+    iso: endDate.toISOString(),
+    readable: endDate.toLocaleString('en-US', { timeZone: 'UTC' }),
+    source: dateSource,
+  });
 
+  let status = subscription.status;
   if (subscription.status === 'trialing') {
     status = 'trial';
   } else if (subscription.status === 'active') {
@@ -304,13 +323,15 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     status = 'inactive';
   }
 
-  await storage.updateSubscriptionStatus(user.id, status, endDate);
-
-  console.log(`✅ Subscription updated for user ${user.email}:`, {
+  console.log('💾 About to update subscription status with:', {
+    userId: user.id,
     status,
     endDate: endDate.toISOString(),
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
   });
+
+  await storage.updateSubscriptionStatus(user.id, status, endDate);
+
+  console.log('✅ SUBSCRIPTION UPDATED COMPLETE\n');
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -323,7 +344,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   await storage.updateSubscriptionStatus(user.id, 'inactive');
-
   console.log(`✅ Subscription deleted for user ${user.email}`);
 }
 
@@ -349,6 +369,5 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   }
 
   await storage.updateSubscriptionStatus(user.id, 'past_due');
-
   console.log(`💔 Payment failed for user ${user.email}`);
 }

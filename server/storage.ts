@@ -286,21 +286,49 @@ async updateSubscriptionStatus(
   status: string, 
   endDate?: Date
 ): Promise<User | undefined> {
+  console.log('[updateSubscriptionStatus] Starting for user', userId);
+  console.log('Incoming status →', status);
+  console.log('Provided endDate →', endDate?.toISOString());
+  
   const user = this.users.get(userId);
-  if (!user) return undefined;
+  if (!user) {
+    console.error('❌ User not found:', userId);
+    return undefined;
+  }
+  
+  // CRITICAL FIX: Only update endDate if a valid date is provided
+  let newEndDate = user.subscriptionEndDate;
+  
+  if (endDate) {
+    const year = endDate.getFullYear();
+    // Check if the date is invalid (before 2000 means something went wrong)
+    if (year < 2000) {
+      console.error('⚠️ WARNING: Invalid date detected (year < 2000):', endDate.toISOString());
+      console.error('Keeping existing endDate:', user.subscriptionEndDate?.toISOString());
+    } else {
+      newEndDate = endDate;
+      console.log('✅ Using new endDate:', endDate.toISOString());
+    }
+  } else {
+    console.log('⚠️ No endDate provided, keeping existing:', user.subscriptionEndDate?.toISOString());
+  }
   
   const updatedUser: User = {
     ...user,
     subscriptionStatus: status,
-    subscriptionEndDate: endDate || user.subscriptionEndDate,
+    subscriptionEndDate: newEndDate,
     updatedAt: new Date(),
   };
   
   this.users.set(userId, updatedUser);
   
-  console.log(`✅ MemStorage: Updated subscription status for user ${userId}:`, {
-    status,
-    endDate: endDate?.toISOString(),
+  console.log(`✅ DB update complete for user ${userId}:`, {
+    subscriptionStatus: status,
+    subscriptionEndDate: newEndDate?.toISOString(),
+  });
+  console.log('Stored values:', {
+    subscriptionStatus: updatedUser.subscriptionStatus,
+    subscriptionEndDate: updatedUser.subscriptionEndDate,
   });
   
   return updatedUser;
