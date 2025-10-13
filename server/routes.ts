@@ -232,7 +232,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log('📊 Stripe status → normalizedStatus:', subscription.status, '→', normalizedStatus);
             
             const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+            
+            // Validate timestamp
+            if (!stripeEndUnix || typeof stripeEndUnix !== 'number') {
+              console.error('❌ Invalid timestamp from Stripe in subscription list:', stripeEndUnix);
+              // Fallback to a default trial period
+              const endDate = new Date(now);
+              endDate.setDate(endDate.getDate() + 15);
+              const daysLeft = 15;
+              
+              await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
+
+              const isTrial = normalizedStatus === 'trial';
+
+              return res.json({
+                status: normalizedStatus,
+                hasAccess: ['active', 'trial'].includes(normalizedStatus),
+                endDate: endDate,
+                isTrial: isTrial,
+                daysLeft: daysLeft,
+                cancelAtPeriodEnd: subscription.cancel_at_period_end,
+                amount: subscription.items.data[0]?.price.unit_amount,
+                currency: subscription.items.data[0]?.price.currency,
+              });
+            }
+            
             const endDate = new Date(stripeEndUnix * 1000);
+            
+            // Validate the resulting date
+            if (isNaN(endDate.getTime())) {
+              console.error('❌ Invalid date from timestamp:', stripeEndUnix);
+              const fallbackEndDate = new Date(now);
+              fallbackEndDate.setDate(fallbackEndDate.getDate() + 15);
+              
+              await storage.updateSubscriptionStatus(user.id, normalizedStatus, fallbackEndDate.toISOString());
+
+              return res.json({
+                status: normalizedStatus,
+                hasAccess: ['active', 'trial'].includes(normalizedStatus),
+                endDate: fallbackEndDate,
+                isTrial: normalizedStatus === 'trial',
+                daysLeft: 15,
+                cancelAtPeriodEnd: subscription.cancel_at_period_end,
+                amount: subscription.items.data[0]?.price.unit_amount,
+                currency: subscription.items.data[0]?.price.currency,
+              });
+            }
+            
             const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
             await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
@@ -303,12 +349,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const isTrial = normalizedStatus === 'trial';
 
-      // Calculate end date from Stripe subscription
+      // Calculate end date from Stripe subscription with validation
       const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
+      
+      // Validate the timestamp before creating Date
+      if (!stripeEndUnix || typeof stripeEndUnix !== 'number') {
+        console.error('❌ Invalid timestamp from Stripe:', stripeEndUnix);
+        return res.status(500).json({
+          message: 'Invalid subscription date from Stripe',
+          error: 'Missing or invalid end date'
+        });
+      }
+
       const endDate = new Date(stripeEndUnix * 1000);
+      
+      // Validate the resulting date
+      if (isNaN(endDate.getTime())) {
+        console.error('❌ Invalid date created from timestamp:', stripeEndUnix);
+        return res.status(500).json({
+          message: 'Failed to parse subscription date',
+          error: 'Invalid time value'
+        });
+      }
+
       const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
       console.log("💾 Ending Date full", subscription.trial_end);
+      console.log("💾 End Date calculated:", endDate.toISOString());
 
       // 🔹 Update local database
       console.log('💾 Updating subscription in DB...');
