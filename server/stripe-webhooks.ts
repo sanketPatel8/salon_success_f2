@@ -53,15 +53,20 @@ export function setupStripeWebhooks(app: Express) {
             console.log('🎉 Checkout completed:', session.id);
             
             if (session.subscription) {
-              // IMPORTANT: Expand the subscription to get full data
+              // CRITICAL: Retrieve the full subscription with ALL fields expanded
               const subscription = await stripe.subscriptions.retrieve(
                 session.subscription as string,
-                { expand: ['customer'] }
+                { 
+                  expand: ['customer', 'items.data.price']
+                }
               );
               console.log('📦 Retrieved subscription with dates:', {
                 id: subscription.id,
                 current_period_end: subscription.current_period_end,
+                current_period_start: subscription.current_period_start,
                 trial_end: subscription.trial_end,
+                billing_cycle_anchor: subscription.billing_cycle_anchor,
+                status: subscription.status,
               });
               await handleSubscriptionCreated(subscription);
             }
@@ -106,9 +111,12 @@ export function setupStripeWebhooks(app: Express) {
             });
             
             if (invoice.subscription) {
-              // CRITICAL FIX: Retrieve the full subscription object with all fields
+              // CRITICAL FIX: Retrieve with expand to get ALL subscription fields
               const subscription = await stripe.subscriptions.retrieve(
-                invoice.subscription as string
+                invoice.subscription as string,
+                { 
+                  expand: ['customer', 'items.data.price']
+                }
               );
               
               console.log('📦 Retrieved subscription from invoice:', {
@@ -117,6 +125,7 @@ export function setupStripeWebhooks(app: Express) {
                 current_period_start: subscription.current_period_start,
                 trial_end: subscription.trial_end,
                 billing_cycle_anchor: subscription.billing_cycle_anchor,
+                status: subscription.status,
               });
               
               await handleSubscriptionUpdated(subscription);

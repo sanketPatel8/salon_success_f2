@@ -273,9 +273,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check for active paid subscription with Stripe - ALWAYS check Stripe first if ID exists
       if (user.stripeSubscriptionId) {
         try {
-          const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-          const stripeEndUnix = subscription.current_period_end != null ? subscription.current_period_end : subscription.trial_end;
-          const endDate = new Date(stripeEndUnix * 1000);
+          // CRITICAL FIX: Expand subscription to get ALL fields including current_period_end
+          const subscription = await stripe.subscriptions.retrieve(
+            user.stripeSubscriptionId,
+            { 
+              expand: ['customer', 'items.data.price', 'latest_invoice']
+            }
+          );
+          
+          console.log('📦 Subscription retrieved with full data:', {
+            id: subscription.id,
+            status: subscription.status,
+            current_period_end: subscription.current_period_end,
+            current_period_start: subscription.current_period_start,
+            trial_end: subscription.trial_end,
+            billing_cycle_anchor: subscription.billing_cycle_anchor,
+          });
+          
+          // Calculate end date with proper fallback
+          let endDateTimestamp: number | undefined;
+          
+          if (subscription.current_period_end) {
+            endDateTimestamp = subscription.current_period_end;
+          } else if (subscription.trial_end) {
+            endDateTimestamp = subscription.trial_end;
+          } else if (subscription.billing_cycle_anchor) {
+            endDateTimestamp = subscription.billing_cycle_anchor;
+          }
+          
+          if (!endDateTimestamp) {
+            console.error('❌ No valid timestamp found in subscription');
+            throw new Error('Invalid subscription data: no end date');
+          }
+          
+          const endDate = new Date(endDateTimestamp * 1000);
+          
+          console.log('📅 Calculated end date:', {
+            timestamp: endDateTimestamp,
+            iso: endDate.toISOString(),
+            readable: endDate.toLocaleString('en-US', { timeZone: 'UTC' }),
+          });
           
           // Update local storage with current Stripe status
           await storage.updateSubscriptionStatus(user.id, subscription.status, endDate);
@@ -295,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ? Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
               : null,
             endDate: endDate.toISOString(),
-            cancelAtPeriodEnd: subscription.cancel_at_period_end, // This is the critical field
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
             amount: subscription.items.data[0]?.price?.unit_amount,
             currency: subscription.items.data[0]?.price?.currency,
             subscriptionId: subscription.id

@@ -296,18 +296,26 @@ async updateSubscriptionStatus(
     return undefined;
   }
   
-  // CRITICAL FIX: Only update endDate if a valid date is provided
-  let newEndDate = user.subscriptionEndDate;
+  // Determine the final end date to use
+  let finalEndDate = user.subscriptionEndDate; // Keep existing by default
   
   if (endDate) {
     const year = endDate.getFullYear();
-    // Check if the date is invalid (before 2000 means something went wrong)
-    if (year < 2000) {
-      console.error('⚠️ WARNING: Invalid date detected (year < 2000):', endDate.toISOString());
+    const timestamp = endDate.getTime();
+    
+    // Validate the date is reasonable (after 2000 and not in distant past)
+    if (year < 2000 || timestamp < 946684800000) { // 946684800000 = Jan 1, 2000
+      console.error('⚠️ WARNING: Invalid date detected:', {
+        year,
+        timestamp,
+        iso: endDate.toISOString(),
+        readable: endDate.toLocaleString('en-US', { timeZone: 'UTC' })
+      });
       console.error('Keeping existing endDate:', user.subscriptionEndDate?.toISOString());
+      // Keep existing date, don't update
     } else {
-      newEndDate = endDate;
-      console.log('✅ Using new endDate:', endDate.toISOString());
+      finalEndDate = endDate;
+      console.log('✅ Using new valid endDate:', endDate.toISOString());
     }
   } else {
     console.log('⚠️ No endDate provided, keeping existing:', user.subscriptionEndDate?.toISOString());
@@ -316,7 +324,7 @@ async updateSubscriptionStatus(
   const updatedUser: User = {
     ...user,
     subscriptionStatus: status,
-    subscriptionEndDate: newEndDate,
+    subscriptionEndDate: finalEndDate,
     updatedAt: new Date(),
   };
   
@@ -324,7 +332,7 @@ async updateSubscriptionStatus(
   
   console.log(`✅ DB update complete for user ${userId}:`, {
     subscriptionStatus: status,
-    subscriptionEndDate: newEndDate?.toISOString(),
+    subscriptionEndDate: finalEndDate?.toISOString(),
   });
   console.log('Stored values:', {
     subscriptionStatus: updatedUser.subscriptionStatus,
