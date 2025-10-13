@@ -66,10 +66,10 @@ export default function Register() {
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      email: "sanketbhuva7@gmail.com",
-      password: "12345678",
-      confirmPassword: "12345678",
-      name: "sanket bhuva",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      name: "",
       businessType: "Hair Salon",
       currency: "",
     },
@@ -90,7 +90,7 @@ export default function Register() {
         description:
           "Account created successfully. Redirecting to subscription...",
       });
-      
+
       // Force a full page reload to refresh auth state
       setTimeout(() => {
         window.location.href = "/subscribe";
@@ -116,7 +116,7 @@ export default function Register() {
           variant="ghost"
           size="icon"
           className="absolute top-4 left-3 z-10"
-          onClick={() => window.location.href = "/"}
+          onClick={() => (window.location.href = "/")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -259,10 +259,7 @@ export default function Register() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Currency</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                    >
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select your currency" />
