@@ -168,15 +168,6 @@ export default function SubscriptionSuccess() {
                     <span className="font-medium">Free Trial Active - {daysLeft} days remaining</span>
                   </div>
                 )}
-                {endDate && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      {isTrial ? 'Trial ends on:' : 'Next billing date:'}
-                    </span>
-                    <span className="font-medium text-gray-900">{formatDate(endDate)}</span>
-                  </div>
-                )}
                 {amount && currency && !isTrial && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Monthly price:</span>

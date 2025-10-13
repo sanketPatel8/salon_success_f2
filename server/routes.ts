@@ -238,8 +238,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.error('❌ Invalid timestamp from Stripe in subscription list:', stripeEndUnix);
               // Fallback to a default trial period
               const endDate = new Date(now);
-              endDate.setDate(endDate.getDate() + 15);
-              const daysLeft = 15;
+              endDate.setDate(endDate.getDate() + 3);
+              const daysLeft = 3;
               
               await storage.updateSubscriptionStatus(user.id, normalizedStatus, endDate.toISOString());
 
@@ -263,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (isNaN(endDate.getTime())) {
               console.error('❌ Invalid date from timestamp:', stripeEndUnix);
               const fallbackEndDate = new Date(now);
-              fallbackEndDate.setDate(fallbackEndDate.getDate() + 15);
+              fallbackEndDate.setDate(fallbackEndDate.getDate() + 3);
               
               await storage.updateSubscriptionStatus(user.id, normalizedStatus, fallbackEndDate.toISOString());
 
@@ -272,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 hasAccess: ['active', 'trial'].includes(normalizedStatus),
                 endDate: fallbackEndDate,
                 isTrial: normalizedStatus === 'trial',
-                daysLeft: 15,
+                daysLeft: 3,
                 cancelAtPeriodEnd: subscription.cancel_at_period_end,
                 amount: subscription.items.data[0]?.price.unit_amount,
                 currency: subscription.items.data[0]?.price.currency,
@@ -305,10 +305,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user.subscriptionStatus === 'trial') {
         console.log('⚠️ Trial status in DB but no Stripe subscription found, granting access');
         
-        // Calculate trial end date (15 days from creation)
+        // Calculate trial end date (3 days from creation)
         const createdAt = user.createdAt ? new Date(user.createdAt) : now;
         const trialEndDate = new Date(createdAt);
-        trialEndDate.setDate(trialEndDate.getDate() + 15);
+        trialEndDate.setDate(trialEndDate.getDate() + 3);
         const daysLeft = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
         
         return res.json({
@@ -360,10 +360,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('⚠️ Invalid timestamp from Stripe, using fallback:', stripeEndUnix);
         console.log('📋 Subscription object:', JSON.stringify(subscription, null, 2));
         
-        // Fallback: Create a default end date (30 days from now for active, 15 for trial)
+        // Fallback: Create a default end date (30 days from now for active, 3 for trial)
         endDate = new Date(now);
-        endDate.setDate(endDate.getDate() + (isTrial ? 15 : 30));
-        daysLeft = isTrial ? 15 : 30;
+        endDate.setDate(endDate.getDate() + (isTrial ? 3 : 30));
+        daysLeft = isTrial ? 3 : 30;
         
         console.log('✅ Using fallback end date:', endDate.toISOString());
       } else {
@@ -375,8 +375,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Fallback: Create a default end date
           endDate = new Date(now);
-          endDate.setDate(endDate.getDate() + (isTrial ? 15 : 30));
-          daysLeft = isTrial ? 15 : 30;
+          endDate.setDate(endDate.getDate() + (isTrial ? 3 : 30));
+          daysLeft = isTrial ? 3 : 30;
           
           console.log('✅ Using fallback end date:', endDate.toISOString());
         } else {
