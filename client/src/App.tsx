@@ -69,7 +69,7 @@ function Router() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Switch>
-          <Route path="/subscription/success" component={SubscriptionSuccess} />
+          <Route path="/subscription-success" component={SubscriptionSuccess} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/help" component={Help} />
 

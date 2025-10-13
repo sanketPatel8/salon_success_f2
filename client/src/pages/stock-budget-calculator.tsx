@@ -82,12 +82,9 @@ export default function StockBudgetCalculator() {
       return () => clearInterval(intervalId);
     }, [toast]);
 
-  // Check subscription status
-  const { data: subscriptionStatus, isLoading: subscriptionLoading } = useQuery<{ active: boolean }>({
-    queryKey: ["/api/subscription-status"],
-  });
+  
 
-  const isSubscribed = subscriptionStatus?.active;
+ 
 
   const form = useForm<StockPurchaseForm>({
     resolver: zodResolver(insertStockPurchaseSchema),
@@ -190,37 +187,9 @@ export default function StockBudgetCalculator() {
 
   const insights = calculateBudgetInsights();
 
-  // Show loading while checking subscription
-  if (subscriptionLoading) {
-    return (
-      <>
-        <Header 
-          title="Stock Budget Calculator" 
-          description="Track your product purchases and create monthly stock budgets for better financial planning." 
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
-        </div>
-      </>
-    );
-  }
+  
 
-  // Check subscription status
-  if (!isSubscribed) {
-    return (
-      <>
-        <Header 
-          title="Stock Budget Calculator" 
-          description="Track your product purchases and create monthly stock budgets for better financial planning." 
-        />
-        <Paywall
-          title="Stock Budget Calculator"
-          description="Track your product purchases and create monthly stock budgets for better financial planning."
-          feature="advanced stock budgeting and purchase tracking"
-        />
-      </>
-    );
-  }
+  
 
   return (
     <div className="space-y-8 mb-4">
