@@ -21,6 +21,8 @@ export default function SubscriptionSuccess() {
   }, []);
 
   const verifySession = async (sessionId: string) => {
+    const startTime = Date.now();
+    
     try {
       console.log('Verifying session:', sessionId);
       
@@ -36,9 +38,22 @@ export default function SubscriptionSuccess() {
       const data = await res.json();
       console.log('Verification response:', data);
       
+      // Ensure minimum 2 second delay
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 2000 - elapsedTime);
+      
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
       setSubscriptionData(data);
     } catch (err: any) {
       console.error('Verification error:', err);
+      
+      // Ensure minimum 2 second delay even for errors
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 2000 - elapsedTime);
+      
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
       setError(err.message || 'Failed to verify your subscription. Please contact support.');
     } finally {
       setVerifying(false);
