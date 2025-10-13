@@ -142,6 +142,11 @@ export function setupStripeWebhooks(app: Express) {
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   console.log('📝 Subscription created:', subscription.id);
+  console.log('📅 Subscription dates:', {
+    current_period_end: subscription.current_period_end,
+    trial_end: subscription.trial_end,
+    billing_cycle_anchor: subscription.billing_cycle_anchor
+  });
 
   const customerId = subscription.customer as string;
   let user = null;
@@ -183,11 +188,53 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     email: user.email
   });
 
-  const stripeEndUnix = subscription.current_period_end != null 
-  ? subscription.current_period_end 
-  : subscription.trial_end;
+  // FIX: Properly handle the end date with fallbacks
+  let stripeEndUnix: number | null = null;
+  
+  // Priority 1: Use current_period_end (this is the next invoice date)
+  if (subscription.current_period_end) {
+    stripeEndUnix = subscription.current_period_end;
+  }
+  // Priority 2: Use trial_end if in trial period
+  else if (subscription.trial_end) {
+    stripeEndUnix = subscription.trial_end;
+  }
+  // Priority 3: Use billing_cycle_anchor as last resort
+  else if (subscription.billing_cycle_anchor) {
+    stripeEndUnix = subscription.billing_cycle_anchor;
+  }
+
+  // If we still don't have a date, log error and skip date update
+  if (!stripeEndUnix) {
+    console.error('⚠️ No valid end date found in subscription:', subscription.id);
+    console.error('Subscription details:', JSON.stringify({
+      current_period_end: subscription.current_period_end,
+      trial_end: subscription.trial_end,
+      billing_cycle_anchor: subscription.billing_cycle_anchor,
+      status: subscription.status
+    }, null, 2));
+    
+    // Update Stripe info but don't set an invalid date
+    await storage.updateUserStripeInfo(
+      user.id,
+      customerId,
+      subscription.id
+    );
+    
+    // Set status without date
+    await storage.updateSubscriptionStatus(user.id, subscription.status === 'trialing' ? 'trial' : subscription.status);
+    
+    return;
+  }
 
   const endDate = new Date(stripeEndUnix * 1000);
+  
+  console.log('📅 Calculated end date:', {
+    unix: stripeEndUnix,
+    date: endDate.toISOString(),
+    source: subscription.current_period_end ? 'current_period_end' : 
+            subscription.trial_end ? 'trial_end' : 'billing_cycle_anchor'
+  });
   
   // Map Stripe status to your app's status
   let status = subscription.status;
@@ -208,7 +255,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     subscriptionId: subscription.id
   });
 
-  // Update subscription status
+  // Update subscription status with the valid end date
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
   console.log('✅ Subscription status updated:', {
@@ -228,9 +275,22 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return;
   }
 
-  const stripeEndUnix = subscription.current_period_end != null 
-  ? subscription.current_period_end 
-  : subscription.trial_end;
+  // FIX: Same date handling logic
+  let stripeEndUnix: number | null = null;
+  
+  if (subscription.current_period_end) {
+    stripeEndUnix = subscription.current_period_end;
+  } else if (subscription.trial_end) {
+    stripeEndUnix = subscription.trial_end;
+  } else if (subscription.billing_cycle_anchor) {
+    stripeEndUnix = subscription.billing_cycle_anchor;
+  }
+
+  if (!stripeEndUnix) {
+    console.error('⚠️ No valid end date found for subscription update:', subscription.id);
+    return;
+  }
+
   const endDate = new Date(stripeEndUnix * 1000);
   let status = subscription.status;
 
