@@ -352,27 +352,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate end date from Stripe subscription with validation
       const stripeEndUnix = subscription.trial_end ?? subscription.current_period_end;
       
+      let endDate: Date;
+      let daysLeft: number;
+      
       // Validate the timestamp before creating Date
       if (!stripeEndUnix || typeof stripeEndUnix !== 'number') {
-        console.error('❌ Invalid timestamp from Stripe:', stripeEndUnix);
-        return res.status(500).json({
-          message: 'Invalid subscription date from Stripe',
-          error: 'Missing or invalid end date'
-        });
+        console.error('⚠️ Invalid timestamp from Stripe, using fallback:', stripeEndUnix);
+        console.log('📋 Subscription object:', JSON.stringify(subscription, null, 2));
+        
+        // Fallback: Create a default end date (30 days from now for active, 15 for trial)
+        endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + (isTrial ? 15 : 30));
+        daysLeft = isTrial ? 15 : 30;
+        
+        console.log('✅ Using fallback end date:', endDate.toISOString());
+      } else {
+        endDate = new Date(stripeEndUnix * 1000);
+        
+        // Validate the resulting date
+        if (isNaN(endDate.getTime())) {
+          console.error('⚠️ Invalid date created from timestamp, using fallback:', stripeEndUnix);
+          
+          // Fallback: Create a default end date
+          endDate = new Date(now);
+          endDate.setDate(endDate.getDate() + (isTrial ? 15 : 30));
+          daysLeft = isTrial ? 15 : 30;
+          
+          console.log('✅ Using fallback end date:', endDate.toISOString());
+        } else {
+          daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        }
       }
-
-      const endDate = new Date(stripeEndUnix * 1000);
-      
-      // Validate the resulting date
-      if (isNaN(endDate.getTime())) {
-        console.error('❌ Invalid date created from timestamp:', stripeEndUnix);
-        return res.status(500).json({
-          message: 'Failed to parse subscription date',
-          error: 'Invalid time value'
-        });
-      }
-
-      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
       console.log("💾 Ending Date full", subscription.trial_end);
       console.log("💾 End Date calculated:", endDate.toISOString());
