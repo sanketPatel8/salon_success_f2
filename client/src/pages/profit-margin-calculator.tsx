@@ -310,7 +310,12 @@ export default function ProfitMarginCalculator() {
                       name="duration"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Time Required (min)</FormLabel>
+                          <FormLabel>
+                            <span className="flex items-center gap-1">
+                              Time Required <span className="text-sm text-slate-500">(min)</span>
+                            </span>
+                          </FormLabel>
+
                           <FormControl>
                             <Input
                               {...field}
