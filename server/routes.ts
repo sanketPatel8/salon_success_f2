@@ -293,12 +293,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Calculate end date with proper fallback
           let endDateTimestamp: number | undefined;
           
+          // Priority order: current_period_end > items[0].current_period_end > trial_end > billing_cycle_anchor+1month
           if (subscription.current_period_end) {
             endDateTimestamp = subscription.current_period_end;
+          } else if (subscription.items?.data?.[0]?.current_period_end) {
+            endDateTimestamp = subscription.items.data[0].current_period_end;
+            console.log('Using items[0].current_period_end:', endDateTimestamp);
           } else if (subscription.trial_end) {
             endDateTimestamp = subscription.trial_end;
           } else if (subscription.billing_cycle_anchor) {
-            endDateTimestamp = subscription.billing_cycle_anchor;
+            // WARNING: billing_cycle_anchor is START date, add 1 month for end date
+            const anchor = subscription.billing_cycle_anchor;
+            const anchorDate = new Date(anchor * 1000);
+            anchorDate.setMonth(anchorDate.getMonth() + 1);
+            endDateTimestamp = Math.floor(anchorDate.getTime() / 1000);
+            console.warn('⚠️ Using billing_cycle_anchor as fallback - adding 1 month');
           }
           
           if (!endDateTimestamp) {

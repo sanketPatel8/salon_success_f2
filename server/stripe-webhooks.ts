@@ -74,23 +74,59 @@ export function setupStripeWebhooks(app: Express) {
           }
 
           case 'customer.subscription.created': {
-            const subscription = event.data.object as Stripe.Subscription;
-            console.log('🆕 Subscription created:', subscription.id);
-            console.log('📅 Event subscription dates:', {
-              current_period_end: subscription.current_period_end,
-              trial_end: subscription.trial_end,
+            const eventSubscription = event.data.object as Stripe.Subscription;
+            console.log('🆕 Subscription created:', eventSubscription.id);
+            console.log('📅 Event subscription dates (might be incomplete):', {
+              current_period_end: eventSubscription.current_period_end,
+              trial_end: eventSubscription.trial_end,
             });
+            
+            // CRITICAL: Always retrieve the full subscription to get all fields
+            const subscription = await stripe.subscriptions.retrieve(
+              eventSubscription.id,
+              { 
+                expand: ['customer', 'items.data.price']
+              }
+            );
+            
+            console.log('📦 Retrieved full subscription:', {
+              id: subscription.id,
+              current_period_end: subscription.current_period_end,
+              current_period_start: subscription.current_period_start,
+              trial_end: subscription.trial_end,
+              billing_cycle_anchor: subscription.billing_cycle_anchor,
+              status: subscription.status,
+            });
+            
             await handleSubscriptionCreated(subscription);
             break;
           }
 
           case 'customer.subscription.updated': {
-            const subscription = event.data.object as Stripe.Subscription;
-            console.log('🔄 Subscription updated:', subscription.id);
-            console.log('📅 Event subscription dates:', {
-              current_period_end: subscription.current_period_end,
-              trial_end: subscription.trial_end,
+            const eventSubscription = event.data.object as Stripe.Subscription;
+            console.log('🔄 Subscription updated:', eventSubscription.id);
+            console.log('📅 Event subscription dates (might be incomplete):', {
+              current_period_end: eventSubscription.current_period_end,
+              trial_end: eventSubscription.trial_end,
             });
+            
+            // CRITICAL: Always retrieve the full subscription to get all fields
+            const subscription = await stripe.subscriptions.retrieve(
+              eventSubscription.id,
+              { 
+                expand: ['customer', 'items.data.price']
+              }
+            );
+            
+            console.log('📦 Retrieved full subscription:', {
+              id: subscription.id,
+              current_period_end: subscription.current_period_end,
+              current_period_start: subscription.current_period_start,
+              trial_end: subscription.trial_end,
+              billing_cycle_anchor: subscription.billing_cycle_anchor,
+              status: subscription.status,
+            });
+            
             await handleSubscriptionUpdated(subscription);
             break;
           }
@@ -111,7 +147,7 @@ export function setupStripeWebhooks(app: Express) {
             });
             
             if (invoice.subscription) {
-              // CRITICAL FIX: Retrieve with expand to get ALL subscription fields
+              // CRITICAL: Retrieve with expand to get ALL subscription fields
               const subscription = await stripe.subscriptions.retrieve(
                 invoice.subscription as string,
                 { 
@@ -204,25 +240,37 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   console.log('✅ Found user:', user.id, user.email);
 
-  // Calculate end date with detailed logging
+  // Calculate end date with proper priority and fallback
   let endDateTimestamp: number | undefined;
   let dateSource = 'none';
   
+  // Priority order: current_period_end > items[0].current_period_end > trial_end > billing_cycle_anchor+1month
   if (subscription.current_period_end) {
     endDateTimestamp = subscription.current_period_end;
     dateSource = 'current_period_end';
+  } else if (subscription.items?.data?.[0]?.current_period_end) {
+    endDateTimestamp = subscription.items.data[0].current_period_end;
+    dateSource = 'items[0].current_period_end';
   } else if (subscription.trial_end) {
     endDateTimestamp = subscription.trial_end;
     dateSource = 'trial_end';
   } else if (subscription.billing_cycle_anchor) {
-    endDateTimestamp = subscription.billing_cycle_anchor;
-    dateSource = 'billing_cycle_anchor';
+    // WARNING: billing_cycle_anchor is the START date, not end date!
+    // Only use this as last resort and add 1 month
+    const anchor = subscription.billing_cycle_anchor;
+    const anchorDate = new Date(anchor * 1000);
+    anchorDate.setMonth(anchorDate.getMonth() + 1);
+    endDateTimestamp = Math.floor(anchorDate.getTime() / 1000);
+    dateSource = 'billing_cycle_anchor+1month';
+    console.warn('⚠️ Using billing_cycle_anchor as fallback - adding 1 month');
   }
 
   console.log('📅 Date calculation:', {
     timestamp: endDateTimestamp,
     source: dateSource,
     hasValue: !!endDateTimestamp,
+    subscriptionHasCurrentPeriodEnd: !!subscription.current_period_end,
+    itemsHasCurrentPeriodEnd: !!subscription.items?.data?.[0]?.current_period_end,
   });
 
   if (!endDateTimestamp) {
@@ -285,25 +333,37 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   console.log('✅ Found user:', user.id, user.email);
 
-  // Calculate end date
+  // Calculate end date with proper priority and fallback
   let endDateTimestamp: number | undefined;
   let dateSource = 'none';
   
+  // Priority order: current_period_end > items[0].current_period_end > trial_end > billing_cycle_anchor+1month
   if (subscription.current_period_end) {
     endDateTimestamp = subscription.current_period_end;
     dateSource = 'current_period_end';
+  } else if (subscription.items?.data?.[0]?.current_period_end) {
+    endDateTimestamp = subscription.items.data[0].current_period_end;
+    dateSource = 'items[0].current_period_end';
   } else if (subscription.trial_end) {
     endDateTimestamp = subscription.trial_end;
     dateSource = 'trial_end';
   } else if (subscription.billing_cycle_anchor) {
-    endDateTimestamp = subscription.billing_cycle_anchor;
-    dateSource = 'billing_cycle_anchor';
+    // WARNING: billing_cycle_anchor is the START date, not end date!
+    // Only use this as last resort and add 1 month
+    const anchor = subscription.billing_cycle_anchor;
+    const anchorDate = new Date(anchor * 1000);
+    anchorDate.setMonth(anchorDate.getMonth() + 1);
+    endDateTimestamp = Math.floor(anchorDate.getTime() / 1000);
+    dateSource = 'billing_cycle_anchor+1month';
+    console.warn('⚠️ Using billing_cycle_anchor as fallback - adding 1 month');
   }
 
   console.log('📅 Date calculation:', {
     timestamp: endDateTimestamp,
     source: dateSource,
     hasValue: !!endDateTimestamp,
+    subscriptionHasCurrentPeriodEnd: !!subscription.current_period_end,
+    itemsHasCurrentPeriodEnd: !!subscription.items?.data?.[0]?.current_period_end,
   });
 
   if (!endDateTimestamp) {
