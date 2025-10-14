@@ -431,13 +431,13 @@ export default function Reports() {
                 <div className="space-y-6">
                   <div className="bg-slate-50 rounded-lg p-4">
                     <h4 className="font-semibold text-slate-800 mb-3">Treatment Summary</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex justify-between items-start text-sm">
                       <div>
-                        <span className="text-slate-600">Total Treatments:</span>
+                        <p className="text-slate-600 mb-1">Total Treatments:</p>
                         <p className="font-bold text-slate-800">{treatments.length}</p>
                       </div>
-                      <div>
-                        <span className="text-slate-600">Average Price:</span>
+                      <div className="text-right">
+                        <p className="text-slate-600 mb-1">Average Price:</p>
                         <p className="font-bold text-slate-800">{formatCurrency(avgTreatmentPrice)}</p>
                       </div>
                     </div>
