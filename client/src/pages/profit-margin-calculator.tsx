@@ -89,6 +89,8 @@ export default function ProfitMarginCalculator() {
 
   const { data: latestHourlyRate } = useQuery({
     queryKey: ["/api/hourly-rate-calculations/latest"],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const form = useForm<TreatmentForm>({
@@ -101,19 +103,40 @@ export default function ProfitMarginCalculator() {
     },
   });
 
+  // Calculate overhead cost based on duration and hourly rate
+  const calculateOverheadCostFromRate = (duration: number): number => {
+    if (!latestHourlyRate || !(latestHourlyRate as any).calculatedRate) return 0;
+    const hourlyRate = parseFloat((latestHourlyRate as any).calculatedRate.toString());
+    const hours = duration / 60; // Convert minutes to hours
+    return hourlyRate * hours;
+  };
+
   // Auto-calculate overhead cost when duration changes
   const watchedDuration = form.watch("duration");
   
   useEffect(() => {
     if (watchedDuration && latestHourlyRate) {
       const duration = parseInt(watchedDuration);
-      const autoOverhead = calculateOverheadCost(duration);
+      const autoOverhead = calculateOverheadCostFromRate(duration);
       if (autoOverhead > 0) {
         form.setValue("overheadCost", autoOverhead.toFixed(2));
         calculateProfit();
       }
     }
   }, [watchedDuration, latestHourlyRate]);
+
+  // Calculate overhead cost when latestHourlyRate is initially loaded
+  useEffect(() => {
+    const duration = form.getValues("duration");
+    if (duration && latestHourlyRate) {
+      const durationNum = parseInt(duration);
+      const autoOverhead = calculateOverheadCostFromRate(durationNum);
+      if (autoOverhead > 0) {
+        form.setValue("overheadCost", autoOverhead.toFixed(2));
+        calculateProfit();
+      }
+    }
+  }, [latestHourlyRate]);
 
   const createTreatmentMutation = useMutation({
     mutationFn: async (data: any) => {
