@@ -35,7 +35,7 @@ export default function HourlyRateCalculator() {
   // Fetch calculation history
   const { data: calculationHistory, isLoading: historyLoading } = useQuery({
     queryKey: ["/api/hourly-rate-calculations"],
-    enabled: subscriptionStatus?.active === true,
+    enabled: !subscriptionLoading && subscriptionStatus?.active !== false,
   });
 
   const [calculatedResults, setCalculatedResults] = useState<{
