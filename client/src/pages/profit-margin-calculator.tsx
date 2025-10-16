@@ -372,14 +372,16 @@ export default function ProfitMarginCalculator() {
                       <FormMessage />
 
                       {/* 👇 New p tag here */}
-                      <p className="text-xs text-orange-400">
-                        Please configure your Hourly Rate before proceeding if not configured.
-                      </p>
+                      {!latestHourlyRate && (
+                        <p className="text-xs text-orange-400">
+                          Please configure your Hourly Rate before proceeding.
+                        </p>
+                      )}
 
                       <p className="text-xs text-slate-500">
                         {latestHourlyRate ? 
                           `Automatically calculated: ${formatCurrency((latestHourlyRate as any)?.calculatedRate || 0)}/hour × treatment duration` :
-                          "Complete the hourly rate calculator first to enable auto-calculation"
+                          " "
                         }
                       </p>
                     </FormItem>

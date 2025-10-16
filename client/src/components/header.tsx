@@ -17,10 +17,6 @@ export default function Header({ title, description }: HeaderProps) {
         <div>
           <h2 className="text-2xl font-bold text-slate-800">
             <span> {title} </span>
-            {location !== "/forgot-password" &&
-              location !== "/reset-password" && (
-                <span>{formatCurrency(1000)}</span>
-              )}
           </h2>
           <p className="text-slate-600 mt-1">{description}</p>
         </div>

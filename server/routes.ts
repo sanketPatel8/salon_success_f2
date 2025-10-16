@@ -858,9 +858,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // Email template
     const mailOptions = {
-      from: `"Katie Godfrey Business Coach" <${emailConfig.auth.user}>`,
+      from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
       to: email,
-      subject: 'Reset Your Password - Katie Godfrey Business Coach',
+      subject: 'Reset Your Password - Salon Success Manager',
       html: `
         <!DOCTYPE html>
         <html>
@@ -887,7 +887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 100%);
             }
             .header h1 {
-              color: #ec4899;
+              color: #ff8f9f;
               margin: 0;
               font-size: 28px;
             }
@@ -901,7 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .button { 
               display: inline-block; 
               padding: 14px 40px; 
-              background: #ec4899; 
+              background: #ff8f9f; 
               color: white !important; 
               text-decoration: none; 
               border-radius: 8px; 
@@ -934,7 +934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <div class="content">
               <p style="font-size: 16px; margin-bottom: 10px;">Hello,</p>
               <p style="font-size: 15px; color: #4b5563;">
-                You requested to reset your password for your Katie Godfrey Business Coach account.
+                You requested to reset your password for your Salon Success Manager account.
               </p>
               <p style="font-size: 15px; color: #4b5563;">
                 Click the button below to create a new password:
@@ -950,7 +950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               </p>
             </div>
             <div class="footer">
-              <p style="margin: 5px 0;">© ${new Date().getFullYear()} Katie Godfrey Business Coach</p>
+              <p style="margin: 5px 0;">© ${new Date().getFullYear()} Salon Success Manager</p>
               <p style="margin: 5px 0;">
                 Need help? Contact us at 
                 <a href="mailto:help@salonsuccessmanager.com" style="color: #ec4899; text-decoration: none;">
@@ -967,13 +967,13 @@ Password Reset Request
 
 Hello,
 
-You requested to reset your password for your Katie Godfrey Business Coach account.
+You requested to reset your password for your Salon Success Manager account.
 
 This link will expire in 1 hour for security reasons.
 
 If you didn't request this password reset, please ignore this email.
 
-© ${new Date().getFullYear()} Katie Godfrey Business Coach
+© ${new Date().getFullYear()} 2025 Salon Success Manager
 Need help? Contact us at help@salonsuccessmanager.com
       `
     };
