@@ -94,7 +94,7 @@ export default function Login() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
           <CardDescription className="text-center">
             Sign in to your Salon Success Manager account
           </CardDescription>
