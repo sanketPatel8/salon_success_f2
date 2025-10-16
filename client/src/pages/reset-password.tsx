@@ -115,7 +115,7 @@ export default function ResetPassword() {
               <CardContent>
                 <div className="text-center">
                   <Link href="/forgot-password">
-                    <Button className="bg-pink-600 hover:bg-pink-700">
+                    <Button className="bg-primary hover-bg-[#FFB6C1]">
                       Request New Reset Link
                     </Button>
                   </Link>
@@ -190,7 +190,7 @@ export default function ResetPassword() {
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-pink-600 hover:bg-pink-700"
+                    className="w-full bg-primary hover-bg-[#FFB6C1]"
                     disabled={isLoading}
                   >
                     {isLoading ? "Updating..." : "Update Password"}
@@ -202,7 +202,7 @@ export default function ResetPassword() {
                     Your password has been successfully reset!
                   </div>
                   <Link href="/login">
-                    <Button className="bg-pink-600 hover:bg-pink-700">
+                    <Button className="bg-primary hover-bg-[#FFB6C1]">
                       Go to Login
                     </Button>
                   </Link>
