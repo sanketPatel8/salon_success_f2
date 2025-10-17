@@ -351,7 +351,7 @@ export default function CEONumbers() {
                 Add Business
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[70vh] overflow-y-auto top-[10%] translate-y-0">
               <DialogHeader>
                 <DialogTitle>Add New Business</DialogTitle>
                 <DialogDescription>
