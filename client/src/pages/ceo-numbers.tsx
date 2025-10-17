@@ -351,7 +351,7 @@ export default function CEONumbers() {
                 Add Business
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-md">
+            <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Business</DialogTitle>
                 <DialogDescription>
@@ -367,7 +367,11 @@ export default function CEONumbers() {
                       <FormItem>
                         <FormLabel>Business Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Main Salon" {...field} />
+                          <Input 
+                            placeholder="Main Salon" 
+                            {...field}
+                            inputMode="text"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -380,13 +384,17 @@ export default function CEONumbers() {
                       <FormItem>
                         <FormLabel>Location (Optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="City Center" {...field} />
+                          <Input 
+                            placeholder="City Center" 
+                            {...field}
+                            inputMode="text"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" disabled={createBusinessMutation.isPending} className="w-full">
+                  <Button type="submit" disabled={createBusinessMutation.isPending} className="w-full text-white">
                     {createBusinessMutation.isPending ? "Creating..." : "Create Business"}
                   </Button>
                 </form>
@@ -526,7 +534,7 @@ export default function CEONumbers() {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3">
                         <Label className="font-semibold text-base sm:text-lg">{business.name}:</Label>
                         <div className="flex items-center gap-2 flex-1">
-                          <span className="text-lg sm:text-xl font-bold text-slate-600">£</span>
+                          <span className="text-lg sm:text-xl font-bold text-slate-600">{formatSymbol()}</span>
                           <Input
                             type="number"
                             step="0.01"
@@ -536,7 +544,7 @@ export default function CEONumbers() {
                             className="text-lg sm:text-xl font-bold h-10 sm:h-12 flex-1 sm:w-48 text-center border-2"
                           />
                         </div>
-                        <Button type="submit" size="sm" className="w-full sm:w-auto h-10 sm:h-12 sm:px-6 font-semibold">
+                        <Button type="submit" size="sm" className="w-full text-white sm:w-auto h-10 sm:h-12 sm:px-6 font-semibold">
                           Enter
                         </Button>
                       </div>
@@ -602,7 +610,7 @@ export default function CEONumbers() {
                       className="text-2xl sm:text-3xl font-bold h-12 sm:h-16 w-full max-w-xs text-center border-2 border-primary"
                     />
                   </div>
-                  <Button type="submit" size="lg" className="w-full h-12 sm:h-16 text-base sm:text-lg font-semibold">
+                  <Button type="submit" size="lg" className="w-full h-12 sm:h-16 text-white text-base sm:text-lg font-semibold">
                     Enter
                   </Button>
                 </div>
@@ -729,8 +737,8 @@ export default function CEONumbers() {
                 onClick={() => setViewMode("current")}
                 className="flex-1 sm:flex-none"
               >
-                <Calendar className="h-4 w-4 mr-1" />
-                <span className="text-xs sm:text-sm">Current Year</span>
+                <Calendar className="h-4 w-4 mr-1 text-white" />
+                <span className="text-xs text-white sm:text-sm">Current Year</span>
               </Button>
               <Button 
                 variant={viewMode === "comparison" ? "default" : "outline"}
@@ -1025,8 +1033,8 @@ export default function CEONumbers() {
           </div>
           <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
             <DialogTrigger asChild>
-              <Button size="sm" className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button size="sm" className="w-full text-white sm:w-auto">
+                <Plus className="h-4 w-4 mr-2 text-white" />
                 Add Goal
               </Button>
             </DialogTrigger>
@@ -1093,7 +1101,7 @@ export default function CEONumbers() {
                     name="targetAmount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Target Amount</FormLabel>
+                        <FormLabel>Target Amount ({formatSymbol()})</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="0.00" {...field} />
                         </FormControl>
@@ -1101,7 +1109,7 @@ export default function CEONumbers() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" disabled={createIncomeGoalMutation.isPending} className="w-full">
+                  <Button type="submit" disabled={createIncomeGoalMutation.isPending} className="w-full text-white">
                     {createIncomeGoalMutation.isPending ? "Creating..." : "Create Goal"}
                   </Button>
                 </form>

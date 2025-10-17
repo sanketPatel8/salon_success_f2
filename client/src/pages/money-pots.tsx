@@ -225,8 +225,8 @@ export default function MoneyPots() {
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
+            <Button className="text-white">
+              <Plus className="w-4 h-4 mr-2 text-white" />
               Add Money Pot
             </Button>
           </DialogTrigger>
@@ -321,7 +321,7 @@ export default function MoneyPots() {
           <CardContent>
             <div className="flex justify-between items-center mb-2">
               <span>Total Allocated:</span>
-              <Badge variant={totalPercentage > 100 ? "destructive" : "default"}>
+              <Badge variant={totalPercentage > 100 ? "destructive" : "default"} className="text-white">
                 {totalPercentage.toFixed(2)}%
               </Badge>
             </div>

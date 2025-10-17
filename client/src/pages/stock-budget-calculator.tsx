@@ -349,7 +349,16 @@ export default function StockBudgetCalculator() {
                     <FormItem>
                       <FormLabel>Purchase Date</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input 
+                          type="date" 
+                          {...field}
+                          className="block w-full"
+                          style={{ 
+                            WebkitAppearance: 'none',
+                            MozAppearance: 'none',
+                            appearance: 'none'
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -422,7 +431,7 @@ export default function StockBudgetCalculator() {
               <Button 
                 type="submit" 
                 disabled={createStockPurchaseMutation.isPending}
-                className="w-full hover-bg-[#FFB6C1]"
+                className="w-full hover-bg-[#FFB6C1] text-white"
               >
                 {createStockPurchaseMutation.isPending ? "Adding..." : "Add Purchase"}
               </Button>

@@ -98,7 +98,7 @@ export default function Help() {
                     <p className="text-xs sm:text-sm text-slate-500">Tutorial video coming soon</p>
                   </div>
                 </div>
-                <Button className="w-full text-sm">Watch Tutorial</Button>
+                <Button className="w-full text-sm text-white">Watch Tutorial</Button>
               </CardContent>
             </Card>
 
@@ -357,7 +357,7 @@ export default function Help() {
                 
                
                   <Button 
-                    className="w-full text-sm"
+                    className="w-full text-sm text-white"
                     onClick={() => window.open('mailto:help@salonsuccessmanager.com?subject=Salon Success Manager Support Request', '_blank')}
                   >
                     Send Email

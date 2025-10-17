@@ -153,7 +153,7 @@ export default function Login() {
               />
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full text-white"
                 disabled={loginMutation.isPending}
               >
                 {loginMutation.isPending ? "Signing in..." : "Sign In"}

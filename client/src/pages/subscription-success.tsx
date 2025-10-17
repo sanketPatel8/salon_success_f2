@@ -222,9 +222,8 @@ export default function SubscriptionSuccess() {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <h3 className="font-semibold text-lg mb-2 text-gray-900">💳 Trial Information</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Your 15-day free trial starts now. You won't be charged until {endDate && formatDate(endDate)}. 
-                After the trial, you'll be billed {amount && currency && formatAmount(amount, currency)} per month. 
-                You can cancel anytime before the trial ends to avoid charges.
+                Your 15-day free trial starts now. After the trial, you'll be billed 
+                per month. You can cancel anytime before the trial ends to avoid charges.
               </p>
             </div>
           )}
@@ -233,7 +232,7 @@ export default function SubscriptionSuccess() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-6">
             <Button
               onClick={() => navigateTo('/')}
-              className="bg-pink-600 hover:bg-pink-700 text-white"
+              className="bg-primary text-white hover-bg-[#FFB6C1]"
               size="lg"
             >
               Go to Dashboard

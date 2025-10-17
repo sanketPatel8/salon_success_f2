@@ -93,7 +93,7 @@ export default function Landing() {
                 <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">Sign In</Button>
               </Link>
               <Link href="/register">
-                <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-4">Subscribe Now</Button>
+                <Button size="sm" className="text-xs text-white sm:text-sm px-2 sm:px-4">Subscribe Now</Button>
               </Link>
             </div>
           </div>
