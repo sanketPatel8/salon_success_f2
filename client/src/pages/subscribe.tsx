@@ -401,7 +401,7 @@ export default function Subscription() {
                   <Button
                     onClick={() => handleSubscribe(priceId)}
                     disabled={actionLoading}
-                    className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+                    className="w-full bg-primary text-white hover-bg-[#FFB6C1]"
                     size="lg"
                   >
                     {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}

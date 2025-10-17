@@ -133,7 +133,7 @@ export default function SubscriptionGuard({
           <div className="flex gap-3">
             <Button
               onClick={() => navigateTo('/subscribe')}
-              className="flex-1 bg-pink-600 hover:bg-pink-700"
+              className="flex-1 bg-primary text-white hover-bg-[#FFB6C1]"
               size="lg"
             >
               {subscription?.isTrial ? 'Upgrade Now' : 'Start Free Trial'}
