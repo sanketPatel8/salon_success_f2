@@ -348,6 +348,11 @@ export default function ExpenseTracker() {
                             {...field}
                             type="date"
                             max={new Date().toISOString().split('T')[0]}
+                            style={{ 
+                            WebkitAppearance: 'none',
+                            MozAppearance: 'none',
+                            appearance: 'none'
+                          }}
                           />
                         </FormControl>
                         <FormMessage />

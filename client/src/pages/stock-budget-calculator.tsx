@@ -91,7 +91,7 @@ export default function StockBudgetCalculator() {
     resolver: zodResolver(insertStockPurchaseSchema),
     defaultValues: {
       supplier: "",
-      purchaseDate: "",
+      purchaseDate: new Date().toISOString().split('T')[0],
       totalAmount: "",
       description: "",
       category: "",
