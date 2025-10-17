@@ -351,54 +351,56 @@ export default function CEONumbers() {
                 Add Business
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[70vh] overflow-y-auto top-[10%] translate-y-0">
-              <DialogHeader>
+            <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[85vh] sm:max-h-[70vh] flex flex-col gap-0 p-0">
+              <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
                 <DialogTitle>Add New Business</DialogTitle>
                 <DialogDescription>
                   Create a new business location to track separately
                 </DialogDescription>
               </DialogHeader>
-              <Form {...businessForm}>
-                <form onSubmit={businessForm.handleSubmit(handleBusinessSubmit)} className="space-y-4">
-                  <FormField
-                    control={businessForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business Name</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Main Salon" 
-                            {...field}
-                            inputMode="text"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={businessForm.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location (Optional)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="City Center" 
-                            {...field}
-                            inputMode="text"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={createBusinessMutation.isPending} className="w-full text-white">
-                    {createBusinessMutation.isPending ? "Creating..." : "Create Business"}
-                  </Button>
-                </form>
-              </Form>
+              <div className="overflow-y-auto overflow-x-hidden px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <Form {...businessForm}>
+                  <form onSubmit={businessForm.handleSubmit(handleBusinessSubmit)} className="space-y-4">
+                    <FormField
+                      control={businessForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Business Name</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Main Salon" 
+                              {...field}
+                              inputMode="text"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={businessForm.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location (Optional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="City Center" 
+                              {...field}
+                              inputMode="text"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" disabled={createBusinessMutation.isPending} className="w-full text-white">
+                      {createBusinessMutation.isPending ? "Creating..." : "Create Business"}
+                    </Button>
+                  </form>
+                </Form>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
