@@ -13,7 +13,7 @@ import type { Treatment, Expense, HourlyRateCalculation } from "@shared/schema";
 
 export default function Reports() {
   const { toast } = useToast();
-  const { formatCurrency } = useCurrency();
+   const { formatCurrency, setCurrencyFromUser, formatSymbol } = useCurrency();
   const [isEmailPending, setIsEmailPending] = useState(false);
 
   // Check for session cookie and handle API 401 responses
@@ -235,6 +235,9 @@ export default function Reports() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({
+          currencySymbol: formatSymbol()
+        })
       });
 
       const data = await response.json();
