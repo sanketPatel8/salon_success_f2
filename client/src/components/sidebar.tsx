@@ -95,7 +95,7 @@ export default function Sidebar() {
         {/* Mobile Spacing */}
         <div className="lg:hidden h-4" />
         
-        <nav className="flex-1 p-4 overflow-y-auto md:mt-[0px] mt-[55px]">
+        <nav className="flex-1 p-4 overflow-y-auto lg:mt-[0px] mt-[55px]">
           <ul className="space-y-2">
             {navigation.map((item) => {
               const isActive = location === item.href;

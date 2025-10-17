@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Calendar, TrendingUp, Package, Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/header";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Paywall from "@/components/paywall";
 
 type StockPurchaseForm = z.infer<typeof insertStockPurchaseSchema>;
@@ -145,6 +146,44 @@ export default function StockBudgetCalculator() {
   });
 
   const onSubmit = (data: StockPurchaseForm) => {
+    let hasError = false;
+
+    if (!data.supplier) {
+      form.setError("supplier", {
+        type: "manual",
+        message: "Supplier name is required",
+      });
+      hasError = true;
+    }
+
+    if (!data.purchaseDate) {
+      form.setError("purchaseDate", {
+        type: "manual",
+        message: "Purchase date is required",
+      });
+      hasError = true;
+    }
+
+    if (!data.totalAmount) {
+      form.setError("totalAmount", {
+        type: "manual",
+        message: "Total amount is required",
+      });
+      hasError = true;
+    }
+
+    if (!data.category) {
+      form.setError("category", {
+        type: "manual",
+        message: "Please select a category",
+      });
+      hasError = true;
+    }
+
+    if (hasError) {
+      return;
+    }
+
     createStockPurchaseMutation.mutate(data);
   };
 
@@ -433,14 +472,35 @@ export default function StockBudgetCalculator() {
                     <span className="font-semibold text-lg">
                       {formatCurrency(parseFloat(purchase.totalAmount))}
                     </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(purchase.id)}
-                      disabled={deleteStockPurchaseMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={deleteStockPurchaseMutation.isPending}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete this stock purchase from your records.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>No</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(purchase.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Yes
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}

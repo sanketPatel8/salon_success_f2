@@ -278,7 +278,7 @@ export default function ExpenseTracker() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select category" />
@@ -347,6 +347,7 @@ export default function ExpenseTracker() {
                           <Input
                             {...field}
                             type="date"
+                            max={new Date().toISOString().split('T')[0]}
                           />
                         </FormControl>
                         <FormMessage />

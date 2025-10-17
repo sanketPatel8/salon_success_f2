@@ -165,7 +165,7 @@ export default function SubscriptionSuccess() {
                 {isTrial && (
                   <div className="flex items-center gap-2 text-green-700 bg-green-50 p-3 rounded">
                     <Gift className="w-5 h-5" />
-                    <span className="font-medium">Free Trial Active - {daysLeft} days remaining</span>
+                    <span className="font-medium">Free Trial Active - 15 days remaining</span>
                   </div>
                 )}
                 {amount && currency && !isTrial && (
@@ -184,11 +184,6 @@ export default function SubscriptionSuccess() {
                     {status === 'trial' ? 'Free Trial' : status.charAt(0).toUpperCase() + status.slice(1)}
                   </span>
                 </div>
-                {cancelAtPeriodEnd && (
-                  <div className="text-orange-600 text-sm bg-orange-50 p-3 rounded">
-                    ⚠️ Your subscription is set to cancel at the end of the billing period.
-                  </div>
-                )}
               </div>
             </div>
           )}

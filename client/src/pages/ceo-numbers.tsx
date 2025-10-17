@@ -31,7 +31,7 @@ const weeklyIncomeSchema = z.object({
 
 const incomeGoalSchema = z.object({
   businessId: z.number(),
-  goalType: z.enum(["weekly", "monthly", "yearly"]),
+  goalType: z.enum(["Weekly", "Monthly", "Yearly"]),
   targetAmount: z.string().min(1, "Target amount is required"),
   year: z.number(),
   month: z.number().optional(),
@@ -138,7 +138,7 @@ export default function CEONumbers() {
       setShowGoalDialog(false);
       goalForm.reset({
         businessId: businesses.length > 0 ? businesses[0].id : undefined,
-        goalType: "weekly",
+        goalType: "Weekly",
         targetAmount: "",
         year: new Date().getFullYear(),
         month: new Date().getMonth() + 1,
@@ -169,7 +169,7 @@ export default function CEONumbers() {
     resolver: zodResolver(incomeGoalSchema),
     defaultValues: {
       businessId: businesses.length > 0 ? businesses[0].id : undefined,
-      goalType: "weekly",
+      goalType: "Weekly",
       targetAmount: "",
       year: new Date().getFullYear(),
       month: new Date().getMonth() + 1,
@@ -316,11 +316,13 @@ export default function CEONumbers() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-2 sm:px-4 mb-4">
+    <div className="space-y-4 sm:space-y-6  mb-4">
       <Header 
         title="CEO Numbers" 
         description="Track your weekly income, monitor money pots, and manage multiple business locations"
       />
+
+      <div className="px-2 sm:px-4 space-y-4 sm:space-y-6  mb-4">
 
       {/* Business Selection & Controls */}
       <div className="flex flex-col gap-3 sm:gap-4">
@@ -1077,9 +1079,9 @@ export default function CEONumbers() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="weekly">Weekly</SelectItem>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                            <SelectItem value="yearly">Yearly</SelectItem>
+                            <SelectItem value="Weekly">Weekly</SelectItem>
+                            <SelectItem value="Monthly">Monthly</SelectItem>
+                            <SelectItem value="Yearly">Yearly</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -1093,7 +1095,7 @@ export default function CEONumbers() {
                       <FormItem>
                         <FormLabel>Target Amount</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="5000.00" {...field} />
+                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1134,18 +1136,18 @@ export default function CEONumbers() {
                   let currentAmount = 0;
                   
                   if (selectedBusiness === "all") {
-                    currentAmount = goal.goalType === "weekly" ? weekTotal :
-                                   goal.goalType === "monthly" ? monthTotal : yearTotal;
+                    currentAmount = goal.goalType === "Weekly" ? weekTotal :
+                                   goal.goalType === "Monthly" ? monthTotal : yearTotal;
                   } else {
                     const businessIncomes = weeklyIncomes.filter(income => income.businessId === selectedBusiness);
                     const currentDate = new Date();
                     
-                    if (goal.goalType === "weekly") {
+                    if (goal.goalType === "Weekly") {
                       const currentWeekIncome = businessIncomes.find(income => 
                         isSameWeek(new Date(income.weekStartDate), currentWeek, { weekStartsOn: 1 })
                       );
                       currentAmount = currentWeekIncome ? parseFloat(currentWeekIncome.weeklyTotal) : 0;
-                    } else if (goal.goalType === "monthly") {
+                    } else if (goal.goalType === "Monthly") {
                       currentAmount = businessIncomes
                         .filter(income => {
                           const incomeDate = new Date(income.weekStartDate);
@@ -1170,7 +1172,7 @@ export default function CEONumbers() {
                     <div key={goal.id} className="space-y-2">
                       <div className="flex justify-between text-xs sm:text-sm">
                         <span className="flex items-center gap-2">
-                          {goal.goalType} goal
+                          {goal.goalType} Goal
                           {business && (
                             <Badge variant="secondary" className="text-xs">
                               {business.name}
@@ -1197,6 +1199,7 @@ export default function CEONumbers() {
           })()}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
