@@ -4,6 +4,7 @@ import MemoryStore from "memorystore";
 import bcrypt from "bcryptjs";
 import { storage } from "./storage.ts";
 import { setupActiveCampaignTest } from "./auth.ts";
+import { activeCampaign } from "./activecampaign.ts";
 
 const MemStoreSession = MemoryStore(session);
 
@@ -123,7 +124,7 @@ export function setupSimpleAuth(app: express.Application) {
       console.log("📌 /auth/register called");
 
       const { email, password, name, businessType, currency } = req.body;
-      console.log("📌 Received body:", { email, name, businessType , currency });
+      console.log("📌 Received body:", { email, name, businessType, currency });
 
       if (!email || !password || !name || !businessType || !currency) {
         console.log("❌ Missing required fields");
@@ -157,13 +158,30 @@ export function setupSimpleAuth(app: express.Application) {
       console.log("📌 Creating session...");
       req.session.userId = newUser.id;
       req.session.createdAt = Date.now();
-      req.session.save((err: any) => {
+      
+      req.session.save(async (err: any) => {
         if (err) {
           console.error("❌ Session save error:", err);
           return res.status(500).json({ message: "Session creation failed" });
         }
 
         console.log(`✅ Registration successful, sessionID: ${req.sessionID}`);
+
+        // Send notification email after successful registration
+        try {
+          console.log('🔍 Calling activeCampaign.sendNotificationEmail...');
+          await activeCampaign.sendNotificationEmail(
+            newUser.email,
+            newUser.name,
+            newUser.businessType,
+            false
+          );
+          console.log(`✅ ActiveCampaign integration completed successfully for: ${newUser.email}`);
+        } catch (emailError) {
+          console.error("❌ Failed to send notification email:", emailError);
+          // Don't fail the registration if email fails
+        }
+                
         res.status(201).json({
           id: newUser.id,
           email: newUser.email,
