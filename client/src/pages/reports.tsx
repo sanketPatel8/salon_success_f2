@@ -92,18 +92,18 @@ export default function Reports() {
   const handleExportCSV = () => {
     const reportData = [
       ['Metric', 'Value'],
-      ['Current Hourly Rate', formatCurrency(metrics?.hourlyRate || 0)],
+      ['Current Hourly Rate', metrics?.hourlyRate || 0],
       ['Average Profit Margin', formatPercentage(metrics?.avgProfitMargin || 0)],
-      ['Monthly Revenue', formatCurrency(metrics?.monthlyRevenue || 0)],
+      ['Monthly Revenue', metrics?.monthlyRevenue || 0],
       ['Active Treatments', (metrics?.activeTreatments || 0).toString()],
-      ['Total Expenses', formatCurrency(totalExpenses)],
-      ['Average Treatment Price', formatCurrency(avgTreatmentPrice)],
+      ['Total Expenses', totalExpenses],
+      ['Average Treatment Price', avgTreatmentPrice],
       [''],
       ['Treatment Breakdown', ''],
       ['Name', 'Price', 'Duration (min)', 'Profit Margin'],
       ...treatments.map(t => [
         t.name,
-        formatCurrency(t.price),
+        t.price,
         t.duration.toString(),
         t.profitMargin
       ]),
@@ -112,7 +112,7 @@ export default function Reports() {
       ['Category', 'Amount', 'Date', 'Description'],
       ...expenses.slice(0, 10).map(e => [
         e.category,
-        formatCurrency(e.amount),
+        e.amount,
         new Date(e.date).toLocaleDateString(),
         e.description || ''
       ])
@@ -157,12 +157,11 @@ export default function Reports() {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     
-    // Check if metrics exists and has properties
     if (metrics && typeof metrics === 'object') {
       const metricsData = [
-        `Hourly Rate: ${formatCurrency(metrics.hourlyRate || 0)}`,
-        `Avg Profit Margin: ${formatPercentage(metrics.avgProfitMargin || 0)}`,
-        `Monthly Revenue: ${formatCurrency(metrics.monthlyRevenue || 0)}`,
+        `Hourly Rate: ${metrics.hourlyRate}`,
+        `Avg Profit Margin: ${parseFloat(metrics.avgProfitMargin || 0).toFixed(1)}%`,
+        `Monthly Revenue: ${metrics.monthlyRevenue}`,
         `Active Treatments: ${metrics.activeTreatments || 0}`
       ];
       
@@ -190,7 +189,8 @@ export default function Reports() {
           yPosition = 20;
         }
         
-        doc.text(`${treatment.name} - ${formatCurrency(treatment.price)} (${treatment.duration} min) - ${treatment.profitMargin}%`, 15, yPosition);
+        const treatmentText = `${treatment.name} - ${treatment.price} (${treatment.duration} min) - ${parseFloat(treatment.profitMargin).toFixed(1)}%`;
+        doc.text(treatmentText, 15, yPosition);
         yPosition += 10;
       });
     }
@@ -214,12 +214,12 @@ export default function Reports() {
         }
         
         const expenseDate = new Date(expense.date).toLocaleDateString();
-        doc.text(`${expense.category} - ${formatCurrency(expense.amount)} - ${expenseDate} - ${expense.description || 'N/A'}`, 15, yPosition);
+        const expenseText = `${expense.category} - ${expense.amount} - ${expenseDate} - ${expense.description || 'N/A'}`;
+        doc.text(expenseText, 15, yPosition);
         yPosition += 10;
       });
     }
     
-    // Save the PDF
     doc.save(`business-report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
