@@ -172,7 +172,7 @@ export default function Dashboard() {
       primary: true
     },
     {
-      title: "Import Treatments",
+      title: "Add Your Services",
       icon: Upload,
       href: "/profit-margin",
       primary: false

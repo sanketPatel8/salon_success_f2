@@ -133,7 +133,7 @@ export default function SubscriptionSuccess() {
 
   return (
     <div className="container max-w-2xl mx-auto py-12 px-4">
-      <Card className="border-green-200 bg-gradient-to-br from-green-50 to-white shadow-lg">
+      <Card className="border-pink-200 bg-gradient-to-r from-pink-50 to-pink-100 shadow-lg">
         <CardHeader className="text-center">
           <div className="mx-auto w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4">
             <CheckCircle2 className="w-10 h-10 text-white" />
@@ -148,7 +148,7 @@ export default function SubscriptionSuccess() {
             <p className="text-gray-600 text-lg">
               {hasAccess 
                 ? isTrial 
-                  ? "Your 15-day free trial has started. Enjoy full access to all features!"
+                  ? "Your 3-day free trial has started. Enjoy full access to all features!"
                   : "Your subscription is now active. Thank you for choosing Salon Success Manager Pro!"
                 : "Your payment was successful, but there was an issue activating your subscription. Please contact support."}
             </p>
@@ -165,7 +165,7 @@ export default function SubscriptionSuccess() {
                 {isTrial && (
                   <div className="flex items-center gap-2 text-green-700 bg-green-50 p-3 rounded">
                     <Gift className="w-5 h-5" />
-                    <span className="font-medium">Free Trial Active - 15 days remaining</span>
+                    <span className="font-medium">Free Trial Active - 3 days remaining</span>
                   </div>
                 )}
                 {amount && currency && !isTrial && (
@@ -222,7 +222,7 @@ export default function SubscriptionSuccess() {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <h3 className="font-semibold text-lg mb-2 text-gray-900">💳 Trial Information</h3>
               <p className="text-gray-600 text-sm leading-relaxed">
-                Your 15-day free trial starts now. After the trial, you'll be billed 
+                Your 3-day free trial starts now. After the trial, you'll be billed 
                 per month. You can cancel anytime before the trial ends to avoid charges.
               </p>
             </div>
@@ -251,8 +251,8 @@ export default function SubscriptionSuccess() {
           <div className="text-center pt-4">
             <p className="text-xs text-gray-500">
               Need help? Contact our support team at{' '}
-              <a href="mailto:support@salonsuccess.com" className="text-pink-600 hover:underline">
-                support@salonsuccess.com
+              <a href="mailto:help@salonsuccessmanager.com" className="text-pink-600 hover:underline">
+                help@salonsuccessmanager.com
               </a>
             </p>
           </div>

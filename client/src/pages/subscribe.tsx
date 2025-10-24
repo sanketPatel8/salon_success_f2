@@ -394,7 +394,7 @@ export default function Subscription() {
                       <span className="text-lg font-normal text-slate-600">/month</span>
                     </div>
                     <p className="text-sm text-slate-600 mt-2">
-                      15-day free trial • Cancel anytime
+                      3-day free trial • Cancel anytime
                     </p>
                   </div>
 
@@ -407,7 +407,7 @@ export default function Subscription() {
                     {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
                     {subscription?.isTrial || subscription?.status === 'canceled' 
                       ? 'Subscribe Now - £23.97/month' 
-                      : 'Start 15-Day Free Trial'}
+                      : 'Start 3-Day Free Trial'}
                   </Button>
 
                   <p className="text-xs text-slate-500 text-center">

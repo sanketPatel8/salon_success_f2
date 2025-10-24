@@ -8,7 +8,7 @@ import { useState } from "react";
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Hourly Rate Calculator", href: "/hourly-rate", icon: Clock },
-  { name: "Profit Margin Calculator", href: "/profit-margin", icon: Percent },
+  { name: "Pricing Calculator", href: "/profit-margin", icon: Percent },
   { name: "Expense Tracker", href: "/expenses", icon: Receipt },
   { name: "Stock Budget Calculator", href: "/stock-budget", icon: Package },
   { name: "Revenue Projections", href: "/revenue", icon: TrendingUp },

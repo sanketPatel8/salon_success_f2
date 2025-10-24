@@ -33,7 +33,7 @@ const categories = [
   "Insurance",
   "Marketing & Advertising",
   "Other",
-  "Products & Supplies",
+  "Stock",
   "Professional Services",
   "Rent & Utilities",
   "Spending on me (opps)",
