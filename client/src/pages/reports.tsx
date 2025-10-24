@@ -89,30 +89,30 @@ export default function Reports() {
     ? treatments.reduce((sum, t) => sum + parseFloat(t.price.toString()), 0) / treatments.length 
     : 0;
 
-  const handleExportCSV = () => {
+    const handleExportCSV = () => {
     const reportData = [
       ['Metric', 'Value'],
-      ['Current Hourly Rate', metrics?.hourlyRate || 0],
+      ['Current Hourly Rate', formatCurrency(metrics?.hourlyRate || 0)],
       ['Average Profit Margin', formatPercentage(metrics?.avgProfitMargin || 0)],
-      ['Monthly Revenue', metrics?.monthlyRevenue || 0],
+      ['Monthly Revenue', formatCurrency(metrics?.monthlyRevenue || 0)],
       ['Active Treatments', (metrics?.activeTreatments || 0).toString()],
-      ['Total Expenses', totalExpenses],
-      ['Average Treatment Price', avgTreatmentPrice],
+      ['Total Expenses', formatCurrency(totalExpenses)],
+      ['Average Treatment Price', formatCurrency(avgTreatmentPrice)],
       [''],
       ['Treatment Breakdown', ''],
       ['Name', 'Price', 'Duration (min)', 'Profit Margin'],
       ...treatments.map(t => [
         t.name,
-        t.price,
+        formatCurrency(t.price),
         t.duration.toString(),
-        t.profitMargin
+        formatPercentage(t.profitMargin)
       ]),
       [''],
       ['Recent Expenses', ''],
       ['Category', 'Amount', 'Date', 'Description'],
       ...expenses.slice(0, 10).map(e => [
         e.category,
-        e.amount,
+        formatCurrency(e.amount),
         new Date(e.date).toLocaleDateString(),
         e.description || ''
       ])
@@ -132,96 +132,96 @@ export default function Reports() {
   };
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    let yPosition = 20;
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let yPosition = 20;
+  
+  // Header
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Business Performance Report', pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 15;
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 25;
+  
+  // Key Metrics Section
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Key Metrics', 15, yPosition);
+  yPosition += 15;
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  
+  if (metrics && typeof metrics === 'object') {
+    const metricsData = [
+      `Hourly Rate: ${formatCurrency(metrics.hourlyRate)}`,
+      `Avg Profit Margin: ${parseFloat(metrics.avgProfitMargin || 0).toFixed(1)}%`,
+      `Monthly Revenue: ${formatCurrency(metrics.monthlyRevenue)}`,
+      `Active Treatments: ${metrics.activeTreatments || 0}`
+    ];
     
-    // Header
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Business Performance Report', pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 15;
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
-    yPosition += 25;
-    
-    // Key Metrics Section
+    metricsData.forEach(metric => {
+      doc.text(metric, 15, yPosition);
+      yPosition += 10;
+    });
+  }
+  
+  yPosition += 15;
+  
+  // Treatments Section
+  if (treatments && treatments.length > 0) {
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('Key Metrics', 15, yPosition);
+    doc.text('Treatment Performance', 15, yPosition);
     yPosition += 15;
     
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     
-    if (metrics && typeof metrics === 'object') {
-      const metricsData = [
-        `Hourly Rate: ${metrics.hourlyRate}`,
-        `Avg Profit Margin: ${parseFloat(metrics.avgProfitMargin || 0).toFixed(1)}%`,
-        `Monthly Revenue: ${metrics.monthlyRevenue}`,
-        `Active Treatments: ${metrics.activeTreatments || 0}`
-      ];
+    treatments.forEach(treatment => {
+      if (yPosition > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 20;
+      }
       
-      metricsData.forEach(metric => {
-        doc.text(metric, 15, yPosition);
-        yPosition += 10;
-      });
-    }
-    
+      const treatmentText = `${treatment.name} - ${formatCurrency(treatment.price)} (${treatment.duration} min) - ${parseFloat(treatment.profitMargin).toFixed(1)}%`;
+      doc.text(treatmentText, 15, yPosition);
+      yPosition += 10;
+    });
+  }
+  
+  yPosition += 15;
+  
+  // Recent Expenses Section
+  if (expenses && expenses.length > 0) {
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Recent Expenses', 15, yPosition);
     yPosition += 15;
     
-    // Treatments Section
-    if (treatments && treatments.length > 0) {
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Treatment Performance', 15, yPosition);
-      yPosition += 15;
-      
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      
-      treatments.forEach(treatment => {
-        if (yPosition > pageHeight - 20) {
-          doc.addPage();
-          yPosition = 20;
-        }
-        
-        const treatmentText = `${treatment.name} - ${treatment.price} (${treatment.duration} min) - ${parseFloat(treatment.profitMargin).toFixed(1)}%`;
-        doc.text(treatmentText, 15, yPosition);
-        yPosition += 10;
-      });
-    }
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
     
-    yPosition += 15;
-    
-    // Recent Expenses Section
-    if (expenses && expenses.length > 0) {
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Recent Expenses', 15, yPosition);
-      yPosition += 15;
+    expenses.slice(0, 10).forEach(expense => {
+      if (yPosition > pageHeight - 20) {
+        doc.addPage();
+        yPosition = 20;
+      }
       
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      
-      expenses.slice(0, 10).forEach(expense => {
-        if (yPosition > pageHeight - 20) {
-          doc.addPage();
-          yPosition = 20;
-        }
-        
-        const expenseDate = new Date(expense.date).toLocaleDateString();
-        const expenseText = `${expense.category} - ${expense.amount} - ${expenseDate} - ${expense.description || 'N/A'}`;
-        doc.text(expenseText, 15, yPosition);
-        yPosition += 10;
-      });
-    }
-    
-    doc.save(`business-report-${new Date().toISOString().split('T')[0]}.pdf`);
-  };
+      const expenseDate = new Date(expense.date).toLocaleDateString();
+      const expenseText = `${expense.category} - ${formatCurrency(expense.amount)} - ${expenseDate} - ${expense.description || 'N/A'}`;
+      doc.text(expenseText, 15, yPosition);
+      yPosition += 10;
+    });
+  }
+  
+  doc.save(`business-report-${new Date().toISOString().split('T')[0]}.pdf`);
+};
 
 
 
