@@ -189,29 +189,29 @@ export default function SubscriptionSuccess() {
           )}
 
           {/* What's Next */}
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="font-semibold text-lg mb-3 text-blue-900 flex items-center gap-2">
+          <div className="bg-gradient-to-r from-pink-50 to-pink-100 border border-pink-200 rounded-lg p-6">
+            <h3 className="font-semibold text-lg mb-3 text-black flex items-center gap-2">
               🎉 What's Next?
             </h3>
-            <ul className="space-y-2 text-blue-800">
+            <ul className="space-y-2 text-black">
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">✓</span>
+                <span className="text-black mt-1">✓</span>
                 <span>Calculate your perfect hourly rate based on your business goals</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">✓</span>
+                <span className="text-black mt-1">✓</span>
                 <span>Track treatments, expenses, and profits in real-time</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">✓</span>
+                <span className="text-black mt-1">✓</span>
                 <span>Set income goals and monitor your progress</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">✓</span>
+                <span className="text-black mt-1">✓</span>
                 <span>Manage multiple business locations effortlessly</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">✓</span>
+                <span className="text-black mt-1">✓</span>
                 <span>Access detailed analytics and insights</span>
               </li>
             </ul>
