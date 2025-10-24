@@ -110,13 +110,16 @@ export default function SubscriptionGuard({
           <div className="space-y-3">
             <h3 className="font-semibold">What you'll get:</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li>✓ Hourly rate calculator</li>
-              <li>✓ Treatment pricing & profit margins</li>
-              <li>✓ Expense tracking</li>
-              <li>✓ Multi-business management</li>
-              <li>✓ Weekly income tracking</li>
-              <li>✓ Financial reports</li>
-              <li>✓ Priority support</li>
+              <li>✓ Perfect Pricing Calculator</li>
+              <li>✓ Track Your Salon’s Income</li>
+              <li>✓ Keep on Top of Your Expenses</li>
+              <li>✓ Money goal setting tracker</li>
+              <li>✓ Katie’s famous CEO Numbers formula</li>
+              <li>✓ Money Pot System</li>
+              <li>✓ Instant Profit Insights</li>
+              <li>✓ One Place for All Your Businesses</li>
+              <li>✓ Simple, Professional Reports</li>
+              <li>✓ Bonus Support & Community</li>
             </ul>
           </div>
 
@@ -124,7 +127,7 @@ export default function SubscriptionGuard({
             <div className="text-center">
               <p className="text-2xl font-bold text-pink-600">£23.97/month</p>
               <p className="text-sm text-gray-600">
-                {!subscription?.isTrial && '15-day free trial • '}
+                {!subscription?.isTrial && '3-day free trial • '}
                 Cancel anytime
               </p>
             </div>

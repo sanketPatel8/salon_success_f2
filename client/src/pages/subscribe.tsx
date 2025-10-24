@@ -223,14 +223,16 @@ export default function Subscription() {
   };
 
   const features = [
-    "Treatment pricing & profit margin analysis",
-    "Expense tracking & financial reporting",
-    "Multi-business management",
-    "Weekly income tracking & goals",
-    "Money pot budgeting system",
-    "CEO numbers tracking & forecasting",
-    "Professional reports & exports",
-    "Priority email support"
+    "Perfect Pricing Calculator",
+    "Track Your Salon’s Income",
+    "Keep on Top of Your Expenses",
+    "Money goal setting tracker",
+    "Katie’s famous CEO Numbers formula",
+    "Money Pot System",
+    "Instant Profit Insights",
+    "One Place for All Your Businesses",
+    "Simple, Professional Reports",
+    "Bonus Support & Community"
   ];
 
   if (loading) {
@@ -413,7 +415,7 @@ export default function Subscription() {
                   <p className="text-xs text-slate-500 text-center">
                     {subscription?.isTrial || subscription?.status === 'canceled'
                       ? 'Secure payment via Stripe • Cancel anytime'
-                      : 'No credit card required for trial. Cancel anytime during trial without charge.'}
+                      : 'Cancel anytime during trial without charge.'}
                   </p>
                 </CardContent>
               </Card>

@@ -12,10 +12,9 @@ const navigation = [
   { name: "Expense Tracker", href: "/expenses", icon: Receipt },
   { name: "Stock Budget Calculator", href: "/stock-budget", icon: Package },
   { name: "Revenue Projections", href: "/revenue", icon: TrendingUp },
-  { name: "CEO Numbers", href: "/ceo-numbers", icon: DollarSign },
   { name: "Money Pots", href: "/money-pots", icon: Palette },
+  { name: "CEO Numbers", href: "/ceo-numbers", icon: DollarSign },
   { name: "Reports & Export", href: "/reports", icon: FileText },
-  { name: "Subscribe Pro", href: "/subscribe", icon: Crown, isPro: true },
 ];
 
 export default function Sidebar() {

@@ -228,6 +228,11 @@ export default function ProfitMarginCalculator() {
     createTreatmentMutation.mutate(treatmentData);
   };
 
+  // Sort treatments alphabetically by name
+  const sortedTreatments = treatments ? [...(treatments as any)].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  ) : [];
+
   // Show loading while checking subscription
   if (subscriptionLoading) {
     return (
@@ -439,8 +444,8 @@ export default function ProfitMarginCalculator() {
               <div className="space-y-4 max-h-96 overflow-y-auto">
                 {isLoading ? (
                   <div className="text-center py-8 text-slate-500">Loading treatments...</div>
-                ) : (treatments as any)?.length ? (
-                  (treatments as any).map((treatment: any) => (
+                ) : sortedTreatments?.length ? (
+                  sortedTreatments.map((treatment: any) => (
                     <div key={treatment.id} className="p-4 bg-slate-50 rounded-lg">
                       <div className="flex items-start justify-between mb-3">
                         <div>

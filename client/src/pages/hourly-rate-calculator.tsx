@@ -365,29 +365,7 @@ export default function HourlyRateCalculator() {
                     />
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="staffCount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of Staff (Optional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="text"
-                            placeholder="0"
-                            onChange={(e) => {
-                              const formattedValue = formatNumberWithCommas(e.target.value);
-                              field.onChange(formattedValue);
-                              calculateRate();
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        <p className="text-xs text-slate-500">Include yourself if you work in the business</p>
-                      </FormItem>
-                    )}
-                  />
+                  
 
                   <div className="bg-slate-50 rounded-lg p-4 mt-6 space-y-3">
                     <div className="flex items-center justify-between">

@@ -189,7 +189,7 @@ export default function SubscriptionSuccess() {
           )}
 
           {/* What's Next */}
-          <div className="bg-gradient-to-r from-pink-50 to-pink-100 border border-pink-200 rounded-lg p-6">
+          <div className="bg-white border border-pink-200 rounded-lg p-6">
             <h3 className="font-semibold text-lg mb-3 text-black flex items-center gap-2">
               🎉 What's Next?
             </h3>
