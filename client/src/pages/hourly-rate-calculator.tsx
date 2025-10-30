@@ -16,7 +16,12 @@ import { Save, Calculator, Clock, History } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import Paywall from "@/components/paywall";
 
-const calculatorSchema = z.object({
+const simpleCalculatorSchema = z.object({
+  monthlyExpenses: z.string().min(1, "Monthly expenses is required"),
+  weeklyHours: z.string().min(1, "Weekly hours is required"),
+});
+
+const advancedCalculatorSchema = z.object({
   monthlyExpenses: z.string().min(1, "Monthly expenses is required"),
   desiredProfit: z.string().min(1, "Desired profit is required"),
   weeklyHours: z.string().min(1, "Weekly hours is required"),
@@ -24,7 +29,8 @@ const calculatorSchema = z.object({
   staffCount: z.string().optional(),
 });
 
-type CalculatorForm = z.infer<typeof calculatorSchema>;
+type SimpleCalculatorForm = z.infer<typeof simpleCalculatorSchema>;
+type AdvancedCalculatorForm = z.infer<typeof advancedCalculatorSchema>;
 
 export default function HourlyRateCalculator() {
   const { formatCurrency, formatSymbol } = useCurrency();
@@ -42,113 +48,109 @@ export default function HourlyRateCalculator() {
     hourlyRate: number;
     staffTargetPerPerson: number | null;
   }>({ hourlyRate: 0, staffTargetPerPerson: null });
+
+  const [simpleResults, setSimpleResults] = useState<number>(0);
   
   const { toast } = useToast();
 
   // Check for session cookie and handle API 401 responses
-    useEffect(() => {
-      console.log('🔍 Dashboard mounted - checking authentication...');
-      
-      const checkSession = async () => {
-        try {
-          // Make an API call to verify session is valid
-          const response = await fetch('/api/v2/auth/user', {
-            method: 'GET',
-            credentials: 'include',
+  useEffect(() => {
+    console.log('🔍 Dashboard mounted - checking authentication...');
+    
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/v2/auth/user', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        console.log('🔍 Auth check response status:', response.status);
+        if (response.status === 401) {
+          console.log('❌ Session invalid or expired - redirecting to login');
+  
+          toast({
+            title: "Session Expired",
+            description: "Please log in to continue",
+            variant: "destructive",
           });
           
-          console.log('🔍 Auth check response status:', response.status);
-          if (response.status === 401) {
-            console.log('❌ Session invalid or expired - redirecting to login');
-  
-            toast({
-              title: "Session Expired",
-              description: "Please log in to continue",
-              variant: "destructive",
-            });
-            
-            // Wait 2 seconds before redirecting so toast is visible
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 2000);
-            
-          } else if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Session valid for user:', data.email);
-          }
-        } catch (error) {
-          console.error('❌ Error checking session:', error);
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+          
+        } else if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Session valid for user:', data.email);
         }
-      };
+      } catch (error) {
+        console.error('❌ Error checking session:', error);
+      }
+    };
   
-      // Check immediately on mount
-      checkSession();
-      
-      // Set up periodic check every 30 seconds
-      const intervalId = setInterval(checkSession, 30000);
-      
-      return () => clearInterval(intervalId);
-    }, [toast]);
+    checkSession();
+    
+    const intervalId = setInterval(checkSession, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [toast]);
 
-  // Function to parse number with commas and format for display
   const parseNumberInput = (value: string): number => {
-    // Remove commas and any non-numeric characters except decimal point
     const cleanValue = value.replace(/,/g, '').replace(/[^0-9.-]/g, '');
     return parseFloat(cleanValue) || 0;
   };
 
-  // Function to format number with commas for display
   const formatNumberWithCommas = (value: string): string => {
-    // Remove any non-numeric characters except decimal point and commas
     let cleaned = value.replace(/[^0-9.,]/g, '');
     
-    // Remove existing commas to reformat
     cleaned = cleaned.replace(/,/g, '');
     
-    // Split into integer and decimal parts
     const parts = cleaned.split('.');
     let integerPart = parts[0];
     const decimalPart = parts[1];
     
-    // Add commas to integer part
     if (integerPart.length > 3) {
       integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
     
-    // Reconstruct the number
     return decimalPart !== undefined ? `${integerPart}.${decimalPart}` : integerPart;
   };
 
-  // Function to validate and format percentage inputs (max 4 digits, 1 decimal)
   const validatePercentageInput = (value: string): string => {
-    // Remove any non-numeric characters except decimal point
     let cleaned = value.replace(/[^0-9.]/g, '');
     
-    // Ensure only one decimal point
     const parts = cleaned.split('.');
     if (parts.length > 2) {
       cleaned = parts[0] + '.' + parts.slice(1).join('');
     }
     
-    // Limit to 4 total digits and 1 decimal place
     if (cleaned.includes('.')) {
       const [integerPart, decimalPart] = cleaned.split('.');
-      const limitedInteger = integerPart.slice(0, 3); // Max 3 digits before decimal
-      const limitedDecimal = decimalPart.slice(0, 1); // Max 1 digit after decimal
+      const limitedInteger = integerPart.slice(0, 3);
+      const limitedDecimal = decimalPart.slice(0, 1);
       cleaned = limitedInteger + '.' + limitedDecimal;
     } else {
-      cleaned = cleaned.slice(0, 4); // Max 4 digits if no decimal
+      cleaned = cleaned.slice(0, 4);
     }
     
     return cleaned;
   };
 
-  const form = useForm<CalculatorForm>({
-    resolver: zodResolver(calculatorSchema),
+  // Simple Calculator Form
+  const simpleForm = useForm<SimpleCalculatorForm>({
+    resolver: zodResolver(simpleCalculatorSchema),
+    defaultValues: {
+      monthlyExpenses: "",
+      weeklyHours: "",
+    },
+  });
+
+  // Advanced Calculator Form
+  const advancedForm = useForm<AdvancedCalculatorForm>({
+    resolver: zodResolver(advancedCalculatorSchema),
     defaultValues: {
       monthlyExpenses: "",
       desiredProfit: "30",
-      weeklyHours: "40",
+      weeklyHours: "",
       taxRate: "25",
       staffCount: "",
     },
@@ -175,19 +177,49 @@ export default function HourlyRateCalculator() {
     },
   });
 
-  const calculateRate = () => {
-    const values = form.getValues();
-    const monthlyExpenses = parseNumberInput(values.monthlyExpenses);
-    const desiredProfit = parseNumberInput(values.desiredProfit);
-    const weeklyHours = parseNumberInput(values.weeklyHours) || 40;
-    const taxRate = parseNumberInput(values.taxRate);
-    const staffCount = parseNumberInput(values.staffCount || "0");
-
-    const results = calculateHourlyRate(monthlyExpenses, desiredProfit, weeklyHours, taxRate, staffCount);
-    setCalculatedResults(results);
+  const calculateSimpleRate = (monthlyExpenses: string, weeklyHours: string) => {
+    const expenses = parseNumberInput(monthlyExpenses);
+    const hours = parseNumberInput(weeklyHours) || 40;
+    
+    if (expenses && hours) {
+      const monthlyHours = hours * 4.33;
+      const rate = expenses / monthlyHours;
+      setSimpleResults(rate);
+    } else {
+      setSimpleResults(0);
+    }
   };
 
-  const onSubmit = (data: CalculatorForm) => {
+  const calculateAdvancedRate = (monthlyExpenses: string, desiredProfit: string, weeklyHours: string, taxRate: string, staffCount: string) => {
+    const expenses = parseNumberInput(monthlyExpenses);
+    const profit = parseNumberInput(desiredProfit);
+    const hours = parseNumberInput(weeklyHours) || 40;
+    const tax = parseNumberInput(taxRate);
+    const staff = parseNumberInput(staffCount || "0");
+
+    if (expenses && hours) {
+      const results = calculateHourlyRate(expenses, profit, hours, tax, staff);
+      setCalculatedResults(results);
+    } else {
+      setCalculatedResults({ hourlyRate: 0, staffTargetPerPerson: null });
+    }
+  };
+
+  const onSimpleSubmit = (data: SimpleCalculatorForm) => {
+    const calculationData = {
+      monthlyExpenses: parseNumberInput(data.monthlyExpenses).toString(),
+      desiredProfit: "0",
+      weeklyHours: Math.round(parseNumberInput(data.weeklyHours)),
+      taxRate: "0",
+      staffCount: 0,
+      calculatedRate: simpleResults.toString(),
+      staffTargetPerPerson: null,
+    };
+
+    saveCalculationMutation.mutate(calculationData);
+  };
+
+  const onAdvancedSubmit = (data: AdvancedCalculatorForm) => {
     const calculationData = {
       monthlyExpenses: parseNumberInput(data.monthlyExpenses).toString(),
       desiredProfit: parseNumberInput(data.desiredProfit).toString(),
@@ -201,38 +233,6 @@ export default function HourlyRateCalculator() {
     saveCalculationMutation.mutate(calculationData);
   };
 
-  // Show loading while checking subscription
-  // if (subscriptionLoading) {
-  //   return (
-  //     <>
-  //       <Header 
-  //         title="Hourly Rate Calculator" 
-  //         description="Calculate your optimal hourly rate based on expenses and profit goals" 
-  //       />
-  //       <div className="flex-1 flex items-center justify-center">
-  //         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
-  //       </div>
-  //     </>
-  //   );
-  // }
-
-  // Check subscription status
-  // if (!subscriptionStatus || !(subscriptionStatus as any).active) {
-  //   return (
-  //     <>
-  //       <Header 
-  //         title="Hourly Rate Calculator" 
-  //         description="Calculate your optimal hourly rate based on expenses and profit goals" 
-  //       />
-  //       <Paywall 
-  //         title="Hourly Rate Calculator"
-  //         description="Calculate your optimal pricing strategy"
-  //         feature="hourly rate calculations"
-  //       />
-  //     </>
-  //   );
-  // }
-
   return (
     <>
       <Header 
@@ -240,26 +240,27 @@ export default function HourlyRateCalculator() {
         description="Calculate your optimal hourly rate based on expenses and profit goals" 
       />
       
-      <main className="flex-1 p-4 overflow-y-auto ">
-        <div className="max-w-2xl mx-auto">
-          {/* Calculator Form */}
-          <Card className="border border-slate-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800 ">Calculate Your Rate</h3>
-                  <p className="text-slate-600 text-sm mt-1 ">Enter your business details to calculate the optimal hourly rate. To gain the correct rate, under monthly expenses make sure you add all expenses of the business including wages and stock</p>
+      <main className="flex-1 p-4 overflow-y-auto">
+        <div className="max-w-6xl mx-auto">
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Left Side - Simple Calculator */}
+            <Card className="border border-slate-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800">Save your Hourly Rate</h3>
+                    <p className="text-slate-600 text-sm mt-1">Calculate based on expenses and working hours</p>
+                  </div>
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center hidden md:flex">
+                    <Calculator className="text-primary h-5 w-5" />
+                  </div>
                 </div>
-                <div className="hidden md:flex w-8 h-8 bg-blue-100 rounded-lg items-center justify-center">
-                  <Calculator className="text-primary h-5 w-5 " />
-                </div>
-              </div>
 
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <Form {...simpleForm}>
+                  <form onSubmit={simpleForm.handleSubmit(onSimpleSubmit)} className="space-y-4">
                     <FormField
-                      control={form.control}
+                      control={simpleForm.control}
                       name="monthlyExpenses"
                       render={({ field }) => (
                         <FormItem>
@@ -275,7 +276,8 @@ export default function HourlyRateCalculator() {
                                 onChange={(e) => {
                                   const formattedValue = formatNumberWithCommas(e.target.value);
                                   field.onChange(formattedValue);
-                                  calculateRate();
+                                  const weeklyHours = simpleForm.getValues("weeklyHours");
+                                  calculateSimpleRate(formattedValue, weeklyHours);
                                 }}
                               />
                             </div>
@@ -286,36 +288,7 @@ export default function HourlyRateCalculator() {
                     />
                     
                     <FormField
-                      control={form.control}
-                      name="desiredProfit"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Desired Profit %</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input
-                                {...field}
-                                type="text"
-                                placeholder="0"
-                                className="pr-8"
-                                onChange={(e) => {
-                                  const validatedValue = validatePercentageInput(e.target.value);
-                                  field.onChange(validatedValue);
-                                  calculateRate();
-                                }}
-                              />
-                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500">%</span>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
+                      control={simpleForm.control}
                       name="weeklyHours"
                       render={({ field }) => (
                         <FormItem>
@@ -328,7 +301,8 @@ export default function HourlyRateCalculator() {
                               onChange={(e) => {
                                 const formattedValue = formatNumberWithCommas(e.target.value);
                                 field.onChange(formattedValue);
-                                calculateRate();
+                                const monthlyExpenses = simpleForm.getValues("monthlyExpenses");
+                                calculateSimpleRate(monthlyExpenses, formattedValue);
                               }}
                             />
                           </FormControl>
@@ -336,71 +310,197 @@ export default function HourlyRateCalculator() {
                         </FormItem>
                       )}
                     />
+
+                    <div className="bg-slate-50 rounded-lg p-4 mt-6 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-700 font-medium">Calculated Hourly Rate:</span>
+                        <span className="text-2xl font-bold text-primary">
+                          {formatCurrency(simpleResults)}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 text-sm">Based on your monthly expenses and working hours</p>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-primary text-white hover-bg-[#FFB6C1]"
+                      disabled={saveCalculationMutation.isPending || simpleResults === 0}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {saveCalculationMutation.isPending ? "Saving..." : "Save Rate"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+
+            {/* Right Side - Full Calculator */}
+            <Card className="border border-slate-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800">Advanced Calculate</h3>
+                    <p className="text-slate-600 text-sm mt-1">All factors for optimal rate calculation</p>
+                  </div>
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center hidden md:flex">
+                    <Calculator className="text-primary h-5 w-5" />
+                  </div>
+                </div>
+
+                <Form {...advancedForm}>
+                  <form onSubmit={advancedForm.handleSubmit(onAdvancedSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={advancedForm.control}
+                        name="monthlyExpenses"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Monthly Expenses</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">{formatSymbol()}</span>
+                                <Input
+                                  {...field}
+                                  type="text"
+                                  placeholder="0"
+                                  className="pl-8"
+                                  onChange={(e) => {
+                                    const formattedValue = formatNumberWithCommas(e.target.value);
+                                    field.onChange(formattedValue);
+                                    const desiredProfit = advancedForm.getValues("desiredProfit");
+                                    const weeklyHours = advancedForm.getValues("weeklyHours");
+                                    const taxRate = advancedForm.getValues("taxRate");
+                                    const staffCount = advancedForm.getValues("staffCount");
+                                    calculateAdvancedRate(formattedValue, desiredProfit, weeklyHours, taxRate, staffCount);
+                                  }}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={advancedForm.control}
+                        name="desiredProfit"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Desired Profit %</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Input
+                                  {...field}
+                                  type="text"
+                                  placeholder="0"
+                                  className="pr-8"
+                                  onChange={(e) => {
+                                    const validatedValue = validatePercentageInput(e.target.value);
+                                    field.onChange(validatedValue);
+                                    const monthlyExpenses = advancedForm.getValues("monthlyExpenses");
+                                    const weeklyHours = advancedForm.getValues("weeklyHours");
+                                    const taxRate = advancedForm.getValues("taxRate");
+                                    const staffCount = advancedForm.getValues("staffCount");
+                                    calculateAdvancedRate(monthlyExpenses, validatedValue, weeklyHours, taxRate, staffCount);
+                                  }}
+                                />
+                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500">%</span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     
-                    <FormField
-                      control={form.control}
-                      name="taxRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tax Rate %</FormLabel>
-                          <FormControl>
-                            <div className="relative">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={advancedForm.control}
+                        name="weeklyHours"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Working Hours/Week</FormLabel>
+                            <FormControl>
                               <Input
                                 {...field}
                                 type="text"
                                 placeholder="0"
-                                className="pr-8"
                                 onChange={(e) => {
-                                  const validatedValue = validatePercentageInput(e.target.value);
-                                  field.onChange(validatedValue);
-                                  calculateRate();
+                                  const formattedValue = formatNumberWithCommas(e.target.value);
+                                  field.onChange(formattedValue);
+                                  const monthlyExpenses = advancedForm.getValues("monthlyExpenses");
+                                  const desiredProfit = advancedForm.getValues("desiredProfit");
+                                  const taxRate = advancedForm.getValues("taxRate");
+                                  const staffCount = advancedForm.getValues("staffCount");
+                                  calculateAdvancedRate(monthlyExpenses, desiredProfit, formattedValue, taxRate, staffCount);
                                 }}
                               />
-                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500">%</span>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  
-
-                  <div className="bg-slate-50 rounded-lg p-4 mt-6 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-700 font-medium">Recommended Hourly Rate:</span>
-                      <span className="text-2xl font-bold text-primary">
-                        {formatCurrency(calculatedResults.hourlyRate)}
-                      </span>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={advancedForm.control}
+                        name="taxRate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tax Rate %</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Input
+                                  {...field}
+                                  type="text"
+                                  placeholder="0"
+                                  className="pr-8"
+                                  onChange={(e) => {
+                                    const validatedValue = validatePercentageInput(e.target.value);
+                                    field.onChange(validatedValue);
+                                    const monthlyExpenses = advancedForm.getValues("monthlyExpenses");
+                                    const desiredProfit = advancedForm.getValues("desiredProfit");
+                                    const weeklyHours = advancedForm.getValues("weeklyHours");
+                                    const staffCount = advancedForm.getValues("staffCount");
+                                    calculateAdvancedRate(monthlyExpenses, desiredProfit, weeklyHours, validatedValue, staffCount);
+                                  }}
+                                />
+                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500">%</span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                    {calculatedResults.staffTargetPerPerson && (
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                        <span className="text-slate-700 font-medium">Monthly Target per Staff Member:</span>
-                        <span className="text-xl font-bold text-success">
-                          {formatCurrency(calculatedResults.staffTargetPerPerson)}
+
+                    <div className="bg-slate-50 rounded-lg p-4 mt-6 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-700 font-medium">Recommended Hourly Rate:</span>
+                        <span className="text-2xl font-bold text-primary">
+                          {formatCurrency(calculatedResults.hourlyRate)}
                         </span>
                       </div>
-                    )}
-                    <p className="text-slate-600 text-sm">This rate covers your expenses and achieves your profit goals</p>
-                  </div>
+                      {calculatedResults.staffTargetPerPerson && (
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                          <span className="text-slate-700 font-medium">Monthly Target per Staff:</span>
+                          <span className="text-xl font-bold text-success">
+                            {formatCurrency(calculatedResults.staffTargetPerPerson)}
+                          </span>
+                        </div>
+                      )}
+                      <p className="text-slate-600 text-sm">This rate covers your expenses and achieves your profit goals</p>
+                    </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-primary text-white hover-bg-[#FFB6C1]"
-                    disabled={saveCalculationMutation.isPending || calculatedResults.hourlyRate === 0}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saveCalculationMutation.isPending ? "Saving..." : "Save This Rate"}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                    
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Calculation History */}
           {calculationHistory && calculationHistory.length > 0 && (
-            <Card className="border border-slate-200 mt-6">
+            <Card className="border border-slate-200">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
