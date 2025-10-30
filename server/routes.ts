@@ -800,7 +800,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const user = await storage.getUserByEmail(email);
     
-    
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
@@ -808,25 +807,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Store reset token in database
     await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
     
-    // Create reset URL
-    
-    const resetUrl = `salonsuccessmanager.com/reset-password?token=${resetToken}`;
+    // FIXED: Create reset URL with https:// protocol for mobile compatibility
+    const resetUrl = `https://salonsuccessmanager.com/reset-password?token=${resetToken}`;
 
     console.log('🔍 Checking environment variables:', {
-  SMTP_HOST: process.env.SMTP_HOST,
-  SMTP_PORT: process.env.SMTP_PORT,
-  SMTP_USER: process.env.SMTP_USER,
-  SMTP_PASSWORD: process.env.SMTP_PASSWORD ? '***set***' : 'MISSING',
-});
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT,
+      SMTP_USER: process.env.SMTP_USER,
+      SMTP_PASSWORD: process.env.SMTP_PASSWORD ? '***set***' : 'MISSING',
+    });
     
     // Email configuration for Ionos
     const emailConfig = {
-      host: process.env.SMTP_HOST ,
-      port: parseInt(process.env.SMTP_PORT ),
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT),
       secure: false, // true for 465, false for 587
       auth: {
-        user: process.env.SMTP_USER ,
-        pass: process.env.SMTP_PASSWORD 
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
       },
       tls: {
         rejectUnauthorized: process.env.NODE_ENV === 'production'
@@ -856,109 +854,211 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
     
-    // Email template
+    // FIXED: Outlook-compatible email template with proper button rendering
     const mailOptions = {
       from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
       to: email,
       subject: 'Reset Your Password - Salon Success Manager',
       html: `
         <!DOCTYPE html>
-        <html>
+        <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <!--[if mso]>
+          <xml>
+            <o:OfficeDocumentSettings>
+              <o:AllowPNG/>
+              <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+          </xml>
+          <![endif]-->
           <style>
+            /* Reset styles */
             body { 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; 
-              line-height: 1.6; 
-              color: #333; 
-              margin: 0;
-              padding: 0;
-              background-color: #f5f5f5;
+              margin: 0 !important;
+              padding: 0 !important;
+              -webkit-text-size-adjust: 100% !important;
+              -ms-text-size-adjust: 100% !important;
+              -webkit-font-smoothing: antialiased !important;
             }
-            .container { 
-              max-width: 600px; 
-              margin: 0 auto; 
-              background: white;
+            img { 
+              border: 0 !important; 
+              outline: none !important; 
+              text-decoration: none !important;
             }
-            .header { 
-              text-align: center; 
-              padding: 40px 20px 20px; 
-              background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 100%);
+            table {
+              border-collapse: collapse !important;
+              mso-table-lspace: 0pt !important;
+              mso-table-rspace: 0pt !important;
             }
-            .header h1 {
-              color: #ff8f9f;
-              margin: 0;
-              font-size: 28px;
+            td, p, a {
+              -webkit-text-size-adjust: 100%;
+              -ms-text-size-adjust: 100%;
             }
-            .content { 
-              padding: 40px 30px; 
+            
+            /* Outlook-specific fixes */
+            .outlook-header {
+              background-color: #fce7f3;
             }
-            .button-container {
-              text-align: center;
-              margin: 30px 0;
+            .outlook-footer {
+              background-color: #f9fafb;
             }
-            .button { 
-              display: inline-block; 
-              padding: 14px 40px; 
-              background: #ff8f9f; 
-              color: white !important; 
-              text-decoration: none; 
-              border-radius: 8px; 
-              font-weight: 600;
-              font-size: 16px;
-            }
-            .footer { 
-              text-align: center; 
-              padding: 30px 20px; 
-              font-size: 13px; 
-              color: #6b7280;
-              background: #f9fafb;
-              border-top: 1px solid #e5e7eb;
-            }
-            .warning {
-              background: #fef3c7;
-              border-left: 4px solid #f59e0b;
-              padding: 12px 15px;
-              margin: 20px 0;
-              border-radius: 4px;
-              font-size: 14px;
+            
+            /* Mobile responsive */
+            @media only screen and (max-width: 600px) {
+              .content-padding {
+                padding: 20px 15px !important;
+              }
+              .button-td {
+                padding: 12px 30px !important;
+                font-size: 14px !important;
+              }
             }
           </style>
         </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🔐 Password Reset Request</h1>
-            </div>
-            <div class="content">
-              <p style="font-size: 16px; margin-bottom: 10px;">Hello,</p>
-              <p style="font-size: 15px; color: #4b5563;">
-                You requested to reset your password for your Salon Success Manager account.
-              </p>
-              <p style="font-size: 15px; color: #4b5563;">
-                Click the button below to create a new password:
-              </p>
-              <div class="button-container">
-                <a href="${resetUrl}" class="button">Reset My Password</a>
-              </div>
-              <div class="warning">
-                <strong>⏰ Important:</strong> This link will expire in 1 hour for security reasons.
-              </div>
-              <p style="font-size: 14px; color: #6b7280; margin-top: 25px;">
-                If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
-              </p>
-            </div>
-            <div class="footer">
-              <p style="margin: 5px 0;">© ${new Date().getFullYear()} Salon Success Manager</p>
-              <p style="margin: 5px 0;">
-                Need help? Contact us at 
-                <a href="mailto:help@salonsuccessmanager.com" style="color: #ec4899; text-decoration: none;">
-                  help@salonsuccessmanager.com
-                </a>
-              </p>
-            </div>
-          </div>
+        <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
+          <!-- Main container table -->
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f5f5f5">
+            <tr>
+              <td align="center" style="padding: 20px 0;">
+                <!-- Content table -->
+                <table width="600" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%;">
+                  
+                  <!-- Header with gradient background -->
+                  <tr>
+                    <td class="outlook-header" align="center" style="padding: 40px 20px 20px; background-color: #fce7f3;">
+                      <!--[if mso]>
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td align="center" style="padding: 40px 20px 20px; background-color: #fce7f3;">
+                      <![endif]-->
+                      <h1 style="margin: 0; color: #ff8f9f; font-size: 28px; font-weight: 700; line-height: 1.3;">
+                        🔐 Password Reset Request
+                      </h1>
+                      <!--[if mso]>
+                          </td>
+                        </tr>
+                      </table>
+                      <![endif]-->
+                    </td>
+                  </tr>
+                  
+                  <!-- Main content -->
+                  <tr>
+                    <td class="content-padding" style="padding: 40px 30px;">
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td style="padding-bottom: 10px;">
+                            <p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.6;">
+                              Hello,
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 15px;">
+                            <p style="margin: 0; font-size: 15px; color: #4b5563; line-height: 1.6;">
+                              You requested to reset your password for your Salon Success Manager account.
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 25px;">
+                            <p style="margin: 0; font-size: 15px; color: #4b5563; line-height: 1.6;">
+                              Click the button below to create a new password:
+                            </p>
+                          </td>
+                        </tr>
+                        
+                        <!-- Button - Outlook compatible -->
+                        <tr>
+                          <td align="center" style="padding: 20px 0;">
+                            <!--[if mso]>
+                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${resetUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="17%" strokecolor="#ff8f9f" fillcolor="#ff8f9f">
+                              <w:anchorlock/>
+                              <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">Reset My Password</center>
+                            </v:roundrect>
+                            <![endif]-->
+                            <!--[if !mso]><!-->
+                            <table border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center" bgcolor="#ff8f9f" style="border-radius: 8px; background-color: #ff8f9f;">
+                                  <a href="${resetUrl}" target="_blank" class="button-td" style="display: inline-block; padding: 14px 40px; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
+                                    Reset My Password
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <!--<![endif]-->
+                          </td>
+                        </tr>
+                        
+                        <!-- Warning box -->
+                        <tr>
+                          <td style="padding: 20px 0;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#fef3c7" style="border-left: 4px solid #f59e0b; border-radius: 4px;">
+                              <tr>
+                                <td style="padding: 12px 15px;">
+                                  <p style="margin: 0; font-size: 14px; color: #92400e; line-height: 1.5;">
+                                    <strong>⏰ Important:</strong> This link will expire in 1 hour for security reasons.
+                                  </p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- Alternative link for mobile -->
+                        <tr>
+                          <td style="padding-top: 20px; padding-bottom: 10px;">
+                            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
+                              If the button doesn't work, copy and paste this link into your browser:
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 25px;">
+                            <p style="margin: 0; font-size: 12px; color: #3b82f6; word-break: break-all; line-height: 1.5;">
+                              <a href="${resetUrl}" style="color: #3b82f6; text-decoration: underline;">${resetUrl}</a>
+                            </p>
+                          </td>
+                        </tr>
+                        
+                        <tr>
+                          <td style="padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
+                              If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td class="outlook-footer" align="center" style="padding: 30px 20px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td align="center">
+                            <p style="margin: 0 0 5px 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
+                              © ${new Date().getFullYear()} Salon Success Manager
+                            </p>
+                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
+                              Need help? Contact us at 
+                              <a href="mailto:help@salonsuccessmanager.com" style="color: #ec4899; text-decoration: none;">help@salonsuccessmanager.com</a>
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
         </body>
         </html>
       `,
@@ -969,11 +1069,14 @@ Hello,
 
 You requested to reset your password for your Salon Success Manager account.
 
-This link will expire in 1 hour for security reasons.
+Click or copy this link to reset your password:
+${resetUrl}
 
-If you didn't request this password reset, please ignore this email.
+⏰ Important: This link will expire in 1 hour for security reasons.
 
-© ${new Date().getFullYear()} 2025 Salon Success Manager
+If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+
+© ${new Date().getFullYear()} Salon Success Manager
 Need help? Contact us at help@salonsuccessmanager.com
       `
     };
