@@ -443,8 +443,8 @@ export default function ExpenseTracker() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800">Recent Expenses</h3>
-                  <p className="text-slate-600 text-sm mt-1">Latest transactions</p>
+                  <h3 className="text-xl font-bold text-slate-800">Expenses List</h3>
+                  <p className="text-slate-600 text-sm mt-1">List of Expenses</p>
                 </div>
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Calendar className="text-purple-600 h-5 w-5" />
@@ -455,7 +455,11 @@ export default function ExpenseTracker() {
                 {isLoading ? (
                   <div className="text-center py-8 text-slate-500">Loading expenses...</div>
                 ) : expenses?.length ? (
-                  expenses.slice(0, 10).map((expense) => (
+                  expenses
+                    .slice()
+                    .sort((a, b) => a.description.localeCompare(b.description))
+                    .slice(0, 10)
+                    .map((expense) => (
                     <div key={expense.id} className="p-3 bg-slate-50 rounded-lg">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">

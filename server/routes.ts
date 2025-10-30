@@ -1133,7 +1133,7 @@ Need help? Contact us at help@salonsuccessmanager.com
     }
   });
 
-  // Apply promo code endpoint
+  //   promo code endpoint
   app.post('/api/apply-promo-code', requireAuth, async (req, res) => {
     try {
       const { code } = req.body;
@@ -1146,8 +1146,10 @@ Need help? Contact us at help@salonsuccessmanager.com
         });
       }
       
+      const upperCode = code.toUpperCase();
+      
       // Check for CLIENT6FREE promo code
-      if (code.toUpperCase() === 'CLIENT6FREE') {
+      if (upperCode === 'CLIENT6FREE') {
         // Grant 6 months free access
         const sixMonthsEndDate = new Date();
         sixMonthsEndDate.setMonth(sixMonthsEndDate.getMonth() + 6);
@@ -1185,7 +1187,48 @@ Need help? Contact us at help@salonsuccessmanager.com
           success: true,
           message: 'Congratulations! You now have 6 months of free access to all business tools.'
         });
-      } else {
+      } 
+      // Check for FREE1 promo code
+      else if (upperCode === 'FREE1') {
+        // Grant 1 month free access
+        const oneMonthEndDate = new Date();
+        oneMonthEndDate.setMonth(oneMonthEndDate.getMonth() + 1);
+        
+        await storage.updateSubscriptionStatus(userId, 'free_access', oneMonthEndDate);
+        
+        const user = await storage.getUser(userId);
+        console.log(`FREE1 promo code used by user: ${user?.email} - 1 month free access until ${oneMonthEndDate}`);
+        
+        // Send notifications about promo code usage
+        if (user) {
+          try {
+            // Send to ActiveCampaign
+            await activeCampaign.sendNotificationEmail(
+              user.email,
+              user.name,
+              user.businessType,
+              true
+            );
+            
+            // Send developer notification
+            await sendDeveloperNotification(
+              user.email,
+              user.name,
+              user.businessType,
+              'promo_code',
+              'FREE1 - 1 month free access'
+            );
+          } catch (error) {
+            console.error('Failed to send promo code notification:', error);
+          }
+        }
+        
+        return res.json({
+          success: true,
+          message: 'Congratulations! You now have 1 month of free access to all business tools.'
+        });
+      } 
+      else {
         return res.status(400).json({
           success: false,
           message: 'Invalid promo code. Please check your code and try again.'

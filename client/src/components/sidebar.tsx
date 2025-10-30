@@ -9,11 +9,11 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Hourly Rate Calculator", href: "/hourly-rate", icon: Clock },
   { name: "Pricing Calculator", href: "/profit-margin", icon: Percent },
+  { name: "Money Pots", href: "/money-pots", icon: Palette },
+  { name: "CEO Numbers", href: "/ceo-numbers", icon: DollarSign },
   { name: "Expense Tracker", href: "/expenses", icon: Receipt },
   { name: "Stock Budget Calculator", href: "/stock-budget", icon: Package },
   { name: "Revenue Projections", href: "/revenue", icon: TrendingUp },
-  { name: "Money Pots", href: "/money-pots", icon: Palette },
-  { name: "CEO Numbers", href: "/ceo-numbers", icon: DollarSign },
   { name: "Reports & Export", href: "/reports", icon: FileText },
 ];
 

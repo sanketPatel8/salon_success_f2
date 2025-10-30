@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Mail, Phone, MessageCircle, Book, Video, FileText, Calculator, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, Crown, Zap, CheckCircle2, XCircle, RefreshCw, AlertTriangle, Loader2, Gift, Calendar } from "lucide-react";
+import { Mail, Phone, MessageCircle, Book, Video, FileText, Calculator, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, Crown, Zap, CheckCircle2, XCircle, RefreshCw, AlertTriangle, Loader2, Gift, Calendar, Tag } from "lucide-react";
 import Header from "@/components/header";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast.ts";
@@ -19,7 +20,9 @@ export default function Help() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showReactivateDialog, setShowReactivateDialog] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
-const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,40 +85,89 @@ const [loadingProgress, setLoadingProgress] = useState(0);
   };
 
   const fetchSubscriptionStatus = async () => {
-  try {
-    setSubscribeLoading(true);
-    setLoadingProgress(0);
-    
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setLoadingProgress(prev => {
-        if (prev >= 90) return 90;
-        return prev + Math.random() * 40;
+    try {
+      setSubscribeLoading(true);
+      setLoadingProgress(0);
+      
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev >= 90) return 90;
+          return prev + Math.random() * 40;
+        });
+      }, 200);
+
+      const response = await fetch(`/subscription-status`, {
+        credentials: 'include',
       });
-    }, 200);
+      
+      clearInterval(progressInterval);
+      setLoadingProgress(100);
 
-    const response = await fetch(`/subscription-status`, {
-      credentials: 'include',
-    });
-    
-    clearInterval(progressInterval);
-    setLoadingProgress(100);
-
-    if (response.ok) {
-      const data = await response.json();
-      setSubscription(data);
+      if (response.ok) {
+        const data = await response.json();
+        setSubscription(data);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch subscription status",
+        variant: "destructive",
+      });
+    } finally {
+      setSubscribeLoading(false);
+      setLoadingProgress(0);
     }
-  } catch (error) {
-    toast({
-      title: "Error",
-      description: "Failed to fetch subscription status",
-      variant: "destructive",
-    });
-  } finally {
-    setSubscribeLoading(false);
-    setLoadingProgress(0);
-  }
-};
+  };
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a promo code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setPromoLoading(true);
+      
+      const response = await fetch('/api/apply-promo-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ code: promoCode }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Success!",
+          description: data.message,
+        });
+        setPromoCode('');
+        await fetchSubscriptionStatus();
+      } else {
+        toast({
+          title: "Invalid Code",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while applying the promo code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   const handleSubscribe = async (priceId) => {
     try {
@@ -608,6 +660,47 @@ const [loadingProgress, setLoadingProgress] = useState(0);
                 </CardContent>
               </Card>
 
+              {/* Promo Code Card */}
+              <Card className="border-slate-200 shadow-lg bg-white">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Tag className="h-5 w-5 text-success" />
+                    Have a Promo Code?
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Enter your promo code to unlock special offers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Enter promo code"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleApplyPromoCode();
+                        }
+                      }}
+                      className="flex-1 uppercase"
+                      disabled={promoLoading}
+                    />
+                    <Button
+                      onClick={handleApplyPromoCode}
+                      disabled={promoLoading || !promoCode.trim()}
+                      className="bg-success hover:bg-[#FFB6C1] text-white"
+                    >
+                      {promoLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+                      Apply
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Promo codes may provide free access or special discounts
+                  </p>
+                </CardContent>
+              </Card>
+
               {/* Pricing Card - Only show when no access */}
               {!subscription?.hasAccess && (
                 <Card className="border-pink-200 shadow-lg bg-gradient-to-br from-pink-50 to-white">
@@ -623,7 +716,7 @@ const [loadingProgress, setLoadingProgress] = useState(0);
                   <CardContent className="space-y-6">
                     <div className="text-center">
                       <div className="text-4xl font-bold text-pink-600">
-                        £23.97
+                        £27
                         <span className="text-lg font-normal text-slate-600">/month</span>
                       </div>
                       <p className="text-sm text-slate-600 mt-2">
@@ -639,7 +732,7 @@ const [loadingProgress, setLoadingProgress] = useState(0);
                     >
                       {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
                       {subscription?.isTrial || subscription?.status === 'canceled' 
-                        ? 'Subscribe Now - £23.97/month' 
+                        ? 'Subscribe Now - £27/month' 
                         : 'Start 3-Day Free Trial'}
                     </Button>
 
