@@ -11,8 +11,10 @@ export default function Header({ title, description }: HeaderProps) {
   const { formatCurrency, currency, setCurrency } = useCurrency();
   const [location, setLocation] = useLocation();
 
+  const isAuthPage = title === "Reset Password" || title === "Forgot Password";
+
   return (
-    <header className="bg-white shadow-sm border-b border-slate-200 px-8 py-6 lg:mt-[0px] mt-[75px]">
+    <header className={`bg-white shadow-sm border-b border-slate-200 px-8 py-6 ${!isAuthPage ? 'lg:mt-[0px] mt-[75px]' : ''}`}>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">
