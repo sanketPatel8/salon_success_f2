@@ -843,7 +843,7 @@ export default function Help() {
                 
                 <div>
                   <h4 className="font-semibold mb-2 text-sm sm:text-base">What's included in the Pro subscription?</h4>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">Pro subscription (£23.97/month) includes unlimited access to all calculators, advanced reporting, export features, and priority support.</p>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">Pro subscription (£27/month) includes unlimited access to all calculators, advanced reporting, export features, and priority support.</p>
                 </div>
                 
                 <div>
