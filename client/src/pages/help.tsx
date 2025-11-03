@@ -776,6 +776,89 @@ export default function Help() {
           </div>
           )}
         </TabsContent>
+        <AlertDialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
+        <AlertDialogContent className="bg-white border-pink-200">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-green-100 rounded-full">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
+              <AlertDialogTitle className="text-slate-800">Reactivate Subscription?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-600">
+              Welcome back! By reactivating your subscription, you'll continue to have uninterrupted access to all premium features. Your subscription will automatically renew on{' '}
+              {subscription?.endDate && (
+                <span className="font-semibold text-slate-700">
+                  {new Date(subscription.endDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </span>
+              )}
+              .
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              className="border-slate-300 hover:bg-slate-100"
+              disabled={actionLoading}
+            >
+              Not Now
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReactivateSubscription}
+              disabled={actionLoading}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              Yes, Reactivate Now
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent className="bg-white border-pink-200">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-red-100 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <AlertDialogTitle className="text-slate-800">Cancel Subscription?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-600">
+              Are you sure you want to cancel your subscription? You'll continue to have access until{' '}
+              {subscription?.endDate && (
+                <span className="font-semibold text-slate-700">
+                  {new Date(subscription.endDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </span>
+              )}
+              , after which you'll lose access to all premium features.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              className="border-slate-300 hover:bg-slate-100"
+              disabled={actionLoading}
+            >
+              Keep Subscription
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelSubscription}
+              disabled={actionLoading}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
+              Yes, Cancel Subscription
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
         <TabsContent value="faq" className="space-y-4 sm:space-y-6">
           <div className="space-y-4">
