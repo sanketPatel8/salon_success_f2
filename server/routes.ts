@@ -2216,6 +2216,28 @@ app.post("/api/team-targets", requireAuth, async (req, res) => {
   }
 });
 
+app.put("/api/team-targets/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const validation = {
+      staffName: req.body.staffName,
+      role: req.body.role || null,
+      monthlySalary: req.body.monthlySalary,
+    };
+
+    const teamTarget = await storage.updateTeamTarget(id, validation);
+    
+    if (!teamTarget) {
+      return res.status(404).json({ message: "Team target not found" });
+    }
+    
+    res.json(teamTarget);
+  } catch (error) {
+    console.error("Error updating team target:", error);
+    res.status(500).json({ message: "Failed to update team target" });
+  }
+});
+
 app.delete("/api/team-targets/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id);

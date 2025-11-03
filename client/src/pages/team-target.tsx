@@ -5,7 +5,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Trash2, Plus, TrendingUp, Target, Award } from "lucide-react";
+import { Trash2, Plus, TrendingUp, Target, Award, Edit } from "lucide-react";
 
 // Mock subscription check - in real app this would check user's subscription status
 const hasActiveSubscription = false;
@@ -25,6 +25,7 @@ export default function TeamTarget() {
   const { toast } = useToast();
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [staffName, setStaffName] = useState("");
   const [role, setRole] = useState("");
@@ -65,60 +66,88 @@ export default function TeamTarget() {
     }
   };
 
+  const handleEditTeamMember = (member: TeamMember) => {
+  setEditingId(member.id);
+  setStaffName(member.staffName);
+  setRole(member.role || "");
+  setMonthlySalary(member.monthlySalary);
+  // Scroll to form
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
   const handleAddTeamMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!staffName.trim() || !monthlySalary.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in staff name and monthly salary",
-        variant: "destructive",
-      });
-      return;
-    }
+  e.preventDefault();
+  
+  if (!staffName.trim() || !monthlySalary.trim()) {
+    toast({
+      title: "Validation Error",
+      description: "Please fill in staff name and monthly salary",
+      variant: "destructive",
+    });
+    return;
+  }
 
-    setSubmitting(true);
-    try {
-      const response = await fetch('/api/team-targets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          staffName: staffName.trim(),
-          role: role.trim() || null,
-          monthlySalary: monthlySalary,
-        }),
-      });
+  setSubmitting(true);
+  try {
+    const body = {
+      staffName: staffName.trim(),
+      role: role.trim() || null,
+      monthlySalary: monthlySalary,
+    };
 
-      if (response.ok) {
-        const newMember = await response.json();
-        setTeamMembers([...teamMembers, newMember]);
-        
-        // Reset form
-        setStaffName("");
-        setRole("");
-        setMonthlySalary("");
-        
+    // If editing, use PUT; otherwise use POST
+    const url = editingId ? `/api/team-targets/${editingId}` : '/api/team-targets';
+    const method = editingId ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+
+    if (response.ok) {
+      const updatedMember = await response.json();
+      
+      if (editingId) {
+        // Update existing member
+        setTeamMembers(teamMembers.map(m => 
+          m.id === editingId ? updatedMember : m
+        ));
+        toast({
+          title: "Success",
+          description: "Team member updated successfully",
+        });
+      } else {
+        // Add new member
+        setTeamMembers([...teamMembers, updatedMember]);
         toast({
           title: "Success",
           description: "Team member added successfully",
         });
-      } else {
-        throw new Error('Failed to add team member');
       }
-    } catch (error) {
-      console.error('Error adding team member:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add team member",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
+      
+      // Reset form
+      setStaffName("");
+      setRole("");
+      setMonthlySalary("");
+      setEditingId(null);
+    } else {
+      throw new Error('Failed to save team member');
     }
-  };
+  } catch (error) {
+    console.error('Error saving team member:', error);
+    toast({
+      title: "Error",
+      description: "Failed to save team member",
+      variant: "destructive",
+    });
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const handleDeleteTeamMember = async (id: number) => {
     try {
@@ -229,14 +258,31 @@ export default function TeamTarget() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex items-center gap-2 px-6 py-2 bg-primary text-white hover-bg-[#FFB6C1] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus className="w-4 h-4" />
-            {submitting ? "Adding..." : "Add Team Member"}
-          </button>
+          <div className="flex gap-3">
+            <button
+                type="submit"
+                disabled={submitting}
+                className="flex items-center gap-2 px-6 py-2 bg-primary text-white hover-bg-[#FFB6C1] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <Plus className="w-4 h-4" />
+                {submitting ? "Saving..." : (editingId ? "Update Team Member" : "Add Team Member")}
+            </button>
+            
+            {editingId && (
+                <button
+                type="button"
+                onClick={() => {
+                    setEditingId(null);
+                    setStaffName("");
+                    setRole("");
+                    setMonthlySalary("");
+                }}
+                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                >
+                Cancel
+                </button>
+            )}
+            </div>
         </form>
       </div>
 
@@ -246,17 +292,26 @@ export default function TeamTarget() {
           <div key={member.id} className="bg-white rounded-lg border border-gray-200 p-6">
             {/* Header with name and delete button */}
             <div className="flex justify-between items-start mb-4">
-              <div>
+            <div>
                 <h3 className="text-xl font-bold">{member.staffName}</h3>
                 <p className="text-sm text-gray-600">{member.role || 'employee'}</p>
-              </div>
-              <button
+            </div>
+            <div className="flex gap-2">
+                <button
+                onClick={() => handleEditTeamMember(member)}
+                className="text-blue-500 hover:text-blue-700 p-1"
+                title="Edit team member"
+                >
+                <Edit className="w-5 h-5" />
+                </button>
+                <button
                 onClick={() => handleDeleteTeamMember(member.id)}
                 className="text-red-500 hover:text-red-700 p-1"
                 title="Delete team member"
-              >
+                >
                 <Trash2 className="w-5 h-5" />
-              </button>
+                </button>
+            </div>
             </div>
 
             {/* Current Salary */}
