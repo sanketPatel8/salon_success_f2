@@ -2186,6 +2186,52 @@ Need help? Contact us at help@salonsuccessmanager.com
     }
   });
 
+  app.get("/api/team-targets", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const teamTargets = await storage.getTeamTargetsByUserId(userId);
+    res.json(teamTargets);
+  } catch (error) {
+    console.error("Error fetching team targets:", error);
+    res.status(500).json({ message: "Failed to fetch team targets" });
+  }
+});
+
+  // Team target routes
+app.post("/api/team-targets", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    
+    // Validate the incoming data
+    const teamTargetData = {
+      ...req.body,
+      userId: userId
+    };
+    
+    const teamTarget = await storage.createTeamTarget(teamTargetData);
+    res.json(teamTarget);
+  } catch (error) {
+    console.error("Error creating team target:", error);
+    res.status(500).json({ message: "Failed to create team target" });
+  }
+});
+
+app.delete("/api/team-targets/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const success = await storage.deleteTeamTarget(id);
+    
+    if (!success) {
+      return res.status(404).json({ message: "Team target not found" });
+    }
+    
+    res.json({ message: "Team target deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting team target:", error);
+    res.status(500).json({ message: "Failed to delete team target" });
+  }
+});
+
   const httpServer = createServer(app);
   return httpServer;
 }

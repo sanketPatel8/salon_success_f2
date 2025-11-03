@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Calculator, Home, Clock, Percent, Receipt, TrendingUp, FileText, DollarSign, Crown, Package, LogOut, HelpCircle, Palette, Menu, X } from "lucide-react";
+import { Calculator, Home, Clock, Percent, Receipt, TrendingUp, FileText, DollarSign, Crown, Package, LogOut, HelpCircle, Palette, Menu, X, Target  } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoPath from "@assets/KatieGodfrey-Logo_Black.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,8 +13,10 @@ const navigation = [
   { name: "CEO Numbers", href: "/ceo-numbers", icon: DollarSign },
   { name: "Expense Tracker", href: "/expenses", icon: Receipt },
   { name: "Stock Budget Calculator", href: "/stock-budget", icon: Package },
+  { name: "Teams Targets", href: "/team-target", icon: Target },
   { name: "Revenue Projections", href: "/revenue", icon: TrendingUp },
   { name: "Reports & Export", href: "/reports", icon: FileText },
+
 ];
 
 export default function Sidebar() {

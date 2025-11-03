@@ -8,6 +8,9 @@ import {
   incomeGoals,
   stockPurchases,
   moneyPots,
+  teamTargets,
+  type TeamTarget,
+  type InsertTeamTarget,
   type User, 
   type InsertUser,
   type HourlyRateCalculation,
@@ -632,5 +635,41 @@ export class DatabaseStorage implements IStorage {
       console.error('Error deleting money pot:', error);
       return false;
     }
+  }
+
+   // Team target operations
+  async createTeamTarget(target: InsertTeamTarget): Promise<TeamTarget> {
+    const [result] = await db
+      .insert(teamTargets)
+      .values(target)
+      .returning();
+    return result;
+  }
+
+  async getTeamTargetsByUserId(userId: number): Promise<TeamTarget[]> {
+    return await db
+      .select()
+      .from(teamTargets)
+      .where(eq(teamTargets.userId, userId))
+      .orderBy(desc(teamTargets.createdAt));
+  }
+
+  async updateTeamTarget(id: number, target: Partial<InsertTeamTarget>): Promise<TeamTarget | undefined> {
+    const [result] = await db
+      .update(teamTargets)
+      .set({
+        ...target,
+        updatedAt: new Date(),
+      })
+      .where(eq(teamTargets.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteTeamTarget(id: number): Promise<boolean> {
+    const result = await db
+      .delete(teamTargets)
+      .where(eq(teamTargets.id, id));
+    return result.rowCount > 0;
   }
 }

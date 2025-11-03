@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, decimal, timestamp, varchar, jsonb, index, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, decimal, timestamp, varchar, jsonb, index, boolean, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -124,6 +124,8 @@ export const moneyPots = pgTable("money_pots", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+
+
 export const insertUserSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -193,6 +195,16 @@ export const insertMoneyPotSchema = createInsertSchema(moneyPots).omit({
   updatedAt: true,
 });
 
+export const teamTargets = pgTable("team_target", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  staffName: text("staff_name").notNull(),
+  role: text("role"), // nullable by default
+  monthlySalary: numeric("monthly_salary", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertHourlyRateCalculation = z.infer<typeof insertHourlyRateCalculationSchema>;
@@ -211,3 +223,5 @@ export type InsertStockPurchase = z.infer<typeof insertStockPurchaseSchema>;
 export type StockPurchase = typeof stockPurchases.$inferSelect;
 export type InsertMoneyPot = z.infer<typeof insertMoneyPotSchema>;
 export type MoneyPot = typeof moneyPots.$inferSelect;
+export type TeamTarget = typeof teamTargets.$inferSelect;
+export type InsertTeamTarget = typeof teamTargets.$inferInsert;

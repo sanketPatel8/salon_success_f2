@@ -30,6 +30,7 @@ import SubscriptionSuccess from "@/pages/subscription-success";
 import Sidebar from "@/components/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import SubscriptionGuard from "./pages/subscriptionGuard.tsx";
+import TeamTarget from "./pages/team-target.tsx";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -119,6 +120,12 @@ function Router() {
           <Route path="/money-pots">
             <SubscriptionGuard>
               <MoneyPots />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/team-target">
+            <SubscriptionGuard>
+              <TeamTarget />
             </SubscriptionGuard>
           </Route>
 

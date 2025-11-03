@@ -8,6 +8,9 @@ import {
   incomeGoals,
   stockPurchases,
   moneyPots,
+  teamTargets,
+  type TeamTarget,
+  type InsertTeamTarget,
   type User, 
   type InsertUser,
   type HourlyRateCalculation,
@@ -98,6 +101,11 @@ export interface IStorage {
   getMoneyPotsByBusinessId(businessId: number): Promise<MoneyPot[]>;
   updateMoneyPot(id: number, pot: Partial<InsertMoneyPot>): Promise<MoneyPot | undefined>;
   deleteMoneyPot(id: number): Promise<boolean>;
+
+  createTeamTarget(target: InsertTeamTarget): Promise<TeamTarget>;
+  getTeamTargetsByUserId(userId: number): Promise<TeamTarget[]>;
+  updateTeamTarget(id: number, target: Partial<InsertTeamTarget>): Promise<TeamTarget | undefined>;
+  deleteTeamTarget(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -119,6 +127,8 @@ export class MemStorage implements IStorage {
   private currentIncomeGoalId: number;
   private currentStockPurchaseId: number;
   private currentMoneyPotId: number;
+  private teamTargets: Map<number, TeamTarget>;
+  private currentTeamTargetId: number;
 
   constructor() {
     this.users = new Map();
@@ -139,6 +149,8 @@ export class MemStorage implements IStorage {
     this.currentIncomeGoalId = 1;
     this.currentStockPurchaseId = 1;
     this.currentMoneyPotId = 1;
+    this.teamTargets = new Map();
+    this.currentTeamTargetId = 1;
 
     // Add a demo user
     this.users.set(1, {
@@ -727,6 +739,41 @@ async updateSubscriptionStatus(
     pot.updatedAt = new Date();
     this.moneyPots.set(id, pot);
     return true;
+  }
+
+  // Team target operations
+  async createTeamTarget(target: InsertTeamTarget): Promise<TeamTarget> {
+    const teamTarget: TeamTarget = {
+      id: this.currentTeamTargetId++,
+      ...target,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.teamTargets.set(teamTarget.id, teamTarget);
+    return teamTarget;
+  }
+
+  async getTeamTargetsByUserId(userId: number): Promise<TeamTarget[]> {
+    return Array.from(this.teamTargets.values())
+      .filter(target => target.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updateTeamTarget(id: number, target: Partial<InsertTeamTarget>): Promise<TeamTarget | undefined> {
+    const existing = this.teamTargets.get(id);
+    if (!existing) return undefined;
+
+    const updated = { 
+      ...existing, 
+      ...target, 
+      updatedAt: new Date() 
+    };
+    this.teamTargets.set(id, updated);
+    return updated;
+  }
+
+  async deleteTeamTarget(id: number): Promise<boolean> {
+    return this.teamTargets.delete(id);
   }
 
 
