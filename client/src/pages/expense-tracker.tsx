@@ -418,7 +418,9 @@ export default function ExpenseTracker() {
                         
                         {expandedMonths.has(monthKey) && (
                           <div className="px-3 pb-3 space-y-2">
-                            {Object.entries(monthData.categories).map(([category, amount]) => (
+                            {Object.entries(monthData.categories)
+                              .sort(([categoryA], [categoryB]) => categoryA.localeCompare(categoryB))
+                              .map(([category, amount]) => (
                               <div key={category} className="flex justify-between items-center py-2 px-3 bg-white rounded border-l-4 border-primary/20">
                                 <span className="text-sm text-slate-700">{category}</span>
                                 <span className="text-sm font-semibold text-slate-800">{formatCurrency(amount)}</span>

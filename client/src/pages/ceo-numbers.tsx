@@ -9,10 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format, startOfWeek, addDays, isSameWeek, parseISO, addWeeks, subWeeks, startOfMonth, endOfMonth, getMonth, getYear, isSameMonth, subYears } from "date-fns";
+import { format, startOfWeek, addDays, isSameWeek, parseISO, addWeeks, subWeeks, startOfMonth, endOfMonth, getMonth, getYear, isSameMonth, subYears, endOfWeek } from "date-fns";
 import { CalendarDays, Plus, Target, TrendingUp, DollarSign, PiggyBank, Building2, ChevronLeft, ChevronRight, Calendar, ArrowUpDown } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -41,6 +43,161 @@ type BusinessForm = { name: string; location?: string };
 type WeeklyIncomeForm = z.infer<typeof weeklyIncomeSchema>;
 type IncomeGoalForm = z.infer<typeof incomeGoalSchema>;
 
+// Date Picker Popover Component
+function DatePickerPopover({ currentWeek, onDateSelect, calendarOpen, setCalendarOpen }) {
+  const [tempDate, setTempDate] = useState(new Date(currentWeek));
+  const [selectedMonth, setSelectedMonth] = useState(getMonth(currentWeek));
+  const [selectedYear, setSelectedYear] = useState(getYear(currentWeek));
+
+  const handleMonthChange = (direction) => {
+    let newMonth = selectedMonth + direction;
+    let newYear = selectedYear;
+    
+    if (newMonth > 11) {
+      newMonth = 0;
+      newYear++;
+    } else if (newMonth < 0) {
+      newMonth = 11;
+      newYear--;
+    }
+    
+    setSelectedMonth(newMonth);
+    setSelectedYear(newYear);
+  };
+
+  const handleDaySelect = (day) => {
+    const selected = new Date(selectedYear, selectedMonth, day);
+    const weekStart = startOfWeek(selected, { weekStartsOn: 1 });
+    onDateSelect(weekStart);
+    setCalendarOpen(false);
+  };
+
+  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1).getDay();
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const emptyDays = Array.from({ length: firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1 }, (_, i) => i);
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  return (
+    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="w-full sm:w-auto justify-center gap-2">
+          <Calendar className="h-4 w-4" />
+          <span className="text-xs sm:text-sm font-medium">
+            {format(currentWeek, "d MMM")} - {format(endOfWeek(currentWeek, { weekStartsOn: 1 }), "d MMM, yyyy")}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-4" align="center">
+        <div className="space-y-4">
+          {/* Month/Year Header with Navigation */}
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleMonthChange(-1)}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex gap-2">
+              <Select value={selectedMonth.toString()} onValueChange={(val) => setSelectedMonth(parseInt(val))}>
+                <SelectTrigger className="w-[120px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthNames.map((month, idx) => (
+                    <SelectItem key={idx} value={idx.toString()}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(parseInt(val))}>
+                <SelectTrigger className="w-[90px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 20 }, (_, i) => getYear(new Date()) - 10 + i).map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleMonthChange(1)}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="space-y-2">
+            <div className="grid grid-cols-7 gap-1">
+              {dayNames.map((day) => (
+                <div key={day} className="h-8 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {emptyDays.map((_, idx) => (
+                <div key={`empty-${idx}`} className="h-8" />
+              ))}
+              {daysArray.map((day) => {
+                const dateObj = new Date(selectedYear, selectedMonth, day);
+                const weekStart = startOfWeek(dateObj, { weekStartsOn: 1 });
+                const isCurrentWeek = isSameWeek(weekStart, currentWeek, { weekStartsOn: 1 });
+                const isMonday = dateObj.getDay() === 1;
+
+                return (
+                  <Button
+                    key={day}
+                    variant={isCurrentWeek ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleDaySelect(day)}
+                    disabled={!isMonday}
+                    className="h-8 w-8 p-0 text-xs"
+                  >
+                    {day}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Today Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const today = new Date();
+              setSelectedMonth(getMonth(today));
+              setSelectedYear(getYear(today));
+              const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+              onDateSelect(weekStart);
+            }}
+            className="w-full"
+          >
+            Today
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function CEONumbers() {
   const { formatCurrency, formatSymbol } = useCurrency();
   const { data: subscriptionStatus, isLoading: subscriptionLoading } = useQuery({
@@ -55,6 +212,7 @@ export default function CEONumbers() {
   const [viewMode, setViewMode] = useState<"current" | "comparison">("current");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [comparisonYear, setComparisonYear] = useState(new Date().getFullYear() - 1);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   
   // Local state for input values to prevent blinking
   const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
@@ -65,7 +223,6 @@ export default function CEONumbers() {
     
     const checkSession = async () => {
       try {
-        // Make an API call to verify session is valid
         const response = await fetch('/api/v2/auth/user', {
           method: 'GET',
           credentials: 'include',
@@ -81,7 +238,6 @@ export default function CEONumbers() {
             variant: "destructive",
           });
           
-          // Wait 2 seconds before redirecting so toast is visible
           setTimeout(() => {
             window.location.href = '/login';
           }, 2000);
@@ -95,10 +251,7 @@ export default function CEONumbers() {
       }
     };
 
-    // Check immediately on mount
     checkSession();
-    
-    // Set up periodic check every 30 seconds
     const intervalId = setInterval(checkSession, 30000);
     
     return () => clearInterval(intervalId);
@@ -147,14 +300,14 @@ export default function CEONumbers() {
   });
 
   const createOrUpdateWeeklyIncomeMutation = useMutation({
-    mutationFn: (data: WeeklyIncomeForm) => apiRequest("POST", "/api/weekly-incomes", data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/weekly-incomes"] });
-      // Keep the input value after successful submission
-      const key = `${variables.businessId}-${variables.weekStartDate}`;
-      setInputValues(prev => ({ ...prev, [key]: variables.weeklyTotal }));
-    },
-  });
+  mutationFn: (data: WeeklyIncomeForm) => apiRequest("POST", "/api/weekly-incomes", data),
+  onSuccess: (_, variables) => {
+    queryClient.invalidateQueries({ queryKey: ["/api/weekly-incomes"] });
+    const key = `${variables.businessId}-${variables.weekStartDate}`;
+    // Reset input to empty after successful submission
+    setInputValues(prev => ({ ...prev, [key]: "" }));
+  },
+});
 
   // Forms
   const businessForm = useForm<BusinessForm>({
@@ -255,7 +408,6 @@ export default function CEONumbers() {
     const weekStartDate = format(currentWeek, "yyyy-MM-dd");
     const key = `${businessId}-${weekStartDate}`;
     
-    // Optimistically update the input value
     setInputValues(prev => ({ ...prev, [key]: value }));
     
     createOrUpdateWeeklyIncomeMutation.mutate({
@@ -263,6 +415,7 @@ export default function CEONumbers() {
       weekStartDate,
       weeklyTotal: value,
     });
+
   };
 
   const handleInputChange = (businessId: number, value: string) => {
@@ -277,6 +430,14 @@ export default function CEONumbers() {
 
   const handleGoalSubmit = (data: IncomeGoalForm) => {
     createIncomeGoalMutation.mutate(data);
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+      setCurrentWeek(weekStart);
+      setCalendarOpen(false);
+    }
   };
 
   // Initialize input values from existing data
@@ -376,7 +537,6 @@ export default function CEONumbers() {
                             inputMode="text"
                             autoFocus={false}
                             onFocus={(e) => {
-                              // Prevent auto-focus on mobile
                               if (window.innerWidth <= 1024) {
                                 e.target.blur();
                                 setTimeout(() => e.target.focus(), 100);
@@ -415,18 +575,19 @@ export default function CEONumbers() {
           </Dialog>
         </div>
 
-        {/* Week Navigation */}
-        <div className="flex items-center gap-2 justify-between sm:justify-end">
-          <Button variant="outline" size="sm" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-xs sm:text-sm font-medium px-2 sm:px-3 text-center">
-            {format(currentWeek, "d MMM, yyyy")}
-          </span>
-          <Button variant="outline" size="sm" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))}>
+        {/* Week Selection with Enhanced Calendar Picker */}
+        <div className="flex items-center gap-2 justify-end">
+          <DatePickerPopover 
+            currentWeek={currentWeek}
+            onDateSelect={handleDateSelect}
+            calendarOpen={calendarOpen}
+            setCalendarOpen={setCalendarOpen}
+          />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+          >
             Today
           </Button>
         </div>
@@ -553,6 +714,7 @@ export default function CEONumbers() {
                             placeholder="0.00"
                             value={currentValue}
                             onChange={(e) => handleInputChange(business.id, e.target.value)}
+                            onWheel={(e) => e.currentTarget.blur()}
                             className="text-lg sm:text-xl font-bold h-10 sm:h-12 flex-1 sm:w-48 text-center border-2"
                           />
                         </div>
@@ -619,7 +781,8 @@ export default function CEONumbers() {
                       placeholder="0.00"
                       value={inputValues[`${selectedBusiness}-${format(currentWeek, "yyyy-MM-dd")}`] || ""}
                       onChange={(e) => handleInputChange(selectedBusiness as number, e.target.value)}
-                      className="text-2xl sm:text-3xl font-bold h-12 sm:h-16 w-full max-w-xs text-center border-2 border-primary"
+                      onWheel={(e) => e.currentTarget.blur()}
+                      className="text-2xl sm:text-3xl font-bold h-12 sm:h-16 w-full max-w-xs text-center border-2 border-primary [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&]:appearance-none"
                     />
                   </div>
                   <Button type="submit" size="lg" className="w-full h-12 sm:h-16 text-white text-base sm:text-lg font-semibold">
