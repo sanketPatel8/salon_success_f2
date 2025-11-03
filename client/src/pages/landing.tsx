@@ -93,7 +93,7 @@ export default function Landing() {
                 <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">Sign In</Button>
               </Link>
               <Link href="/register">
-                <Button size="sm" className="text-xs text-white sm:text-sm px-2 sm:px-4">Subscribe Now</Button>
+                <Button size="sm" className="text-xs text-white sm:text-sm px-2 sm:px-4">Get Your Free Trial</Button>
               </Link>
             </div>
           </div>
@@ -119,8 +119,8 @@ export default function Landing() {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <Link href="/register">
-                  <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
-                    Subscribe Now
+                  <Button size="lg" className="w-full sm:w-auto text-white text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
+                    Get Your Free Trial
                     <span className="ml-2">→</span>
                   </Button>
                 </Link>
@@ -433,7 +433,7 @@ export default function Landing() {
               </Badge>
               <CardTitle className="text-xl sm:text-2xl">Professional Plan</CardTitle>
               <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4">
-                <span className="text-3xl sm:text-4xl font-bold text-slate-900">£23.97</span>
+                <span className="text-3xl sm:text-4xl font-bold text-slate-900">£27</span>
                 <span className="text-sm sm:text-base text-slate-500">/month</span>
               </div>
               <CardDescription className="text-sm sm:text-base mt-2">
@@ -453,7 +453,7 @@ export default function Landing() {
               <div className="space-y-3 sm:space-y-4">
                 <Link href="/register">
                   <Button size="lg" className="w-full text-base sm:text-lg py-3 sm:py-4">
-                    Subscribe Now - £23.97/month
+                    Get Your Free Trial - £27/month
                   </Button>
                 </Link>
                 <p className="text-center text-xs sm:text-sm text-slate-500">
@@ -477,7 +477,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link href="/register">
               <Button size="lg" variant="secondary" className="w-full text-black sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
-                Subscribe Now
+                Get Your Free Trial
               </Button>
             </Link>
             <Button size="lg" variant="outline" className="w-full sm:w-auto text-black text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 border-white hover:bg-white hover:text-primary">
@@ -513,7 +513,7 @@ export default function Landing() {
             <div>
               <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Get Started</h4>
               <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
-                <li><Link href="/register" className="hover:text-white">Subscribe</Link></li>
+                <li><Link href="/register" className="hover:text-white">Get Your Free Trial</Link></li>
                 <li><Link href="/login" className="hover:text-white">Sign In</Link></li>
               </ul>
             </div>
