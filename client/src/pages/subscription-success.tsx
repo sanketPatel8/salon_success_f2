@@ -196,23 +196,43 @@ export default function SubscriptionSuccess() {
             <ul className="space-y-2 text-black">
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
-                <span>Calculate your perfect hourly rate based on your business goals</span>
+                <span>Perfect Pricing Calculator</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
-                <span>Track treatments, expenses, and profits in real-time</span>
+                <span>Track Your Salon’s Income</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
-                <span>Set income goals and monitor your progress</span>
+                <span>Keep on Top of Your Expenses</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
-                <span>Manage multiple business locations effortlessly</span>
+                <span>Money goal setting tracker</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
-                <span>Access detailed analytics and insights</span>
+                <span>Katie’s famous CEO Numbers formula</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-black mt-1">✓</span>
+                <span>Money Pot System</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-black mt-1">✓</span>
+                <span>Instant Profit Insights</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-black mt-1">✓</span>
+                <span>One Place for All Your Businesses</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-black mt-1">✓</span>
+                <span>Simple, Professional Reports</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-black mt-1">✓</span>
+                <span>Bonus Support & Community</span>
               </li>
             </ul>
           </div>
