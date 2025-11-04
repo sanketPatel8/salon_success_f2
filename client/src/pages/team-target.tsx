@@ -294,7 +294,7 @@ export default function TeamTarget() {
             <div className="flex justify-between items-start mb-4">
             <div>
                 <h3 className="text-xl font-bold">{member.staffName}</h3>
-                <p className="text-sm text-gray-600">{member.role || 'employee'}</p>
+                <p className="text-sm text-gray-600">{member.role || 'Employee'}</p>
             </div>
             <div className="flex gap-2">
                 <button
