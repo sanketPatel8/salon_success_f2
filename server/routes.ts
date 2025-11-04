@@ -25,7 +25,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-09-30.clover",
+  apiVersion: "2024-11-20.acacia",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1920,7 +1920,7 @@ Need help? Contact us at help@salonsuccessmanager.com
       console.log('Price ID:', process.env.STRIPE_PRICE_ID);
       
       const testStripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-        apiVersion: "2025-09-30.clover",
+        apiVersion: "2024-11-20.acacia",
       });
       
       const price = await testStripe.prices.retrieve(process.env.STRIPE_PRICE_ID!);
@@ -1960,7 +1960,7 @@ Need help? Contact us at help@salonsuccessmanager.com
   app.post('/api/create-promo-code', async (req, res) => {
     try {
       const testStripe = new Stripe('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', {
-        apiVersion: "2025-09-30.clover",
+        apiVersion: "2024-11-20.acacia",
       });
 
       // First create a coupon for 100% off for 6 months
