@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { Mail, Phone, MessageCircle, Book, Video, FileText, Calculator, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, Crown, Zap, CheckCircle2, XCircle, RefreshCw, AlertTriangle, Loader2, Gift, Calendar, Tag } from "lucide-react";
+import { Mail, Phone, MessageCircle, Book, Video, FileText, Calculator, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, Crown, Zap, CheckCircle2, XCircle, RefreshCw, AlertTriangle, Loader2, Gift, Calendar, Tag, Target } from "lucide-react";
 import Header from "@/components/header";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast.ts";
@@ -425,13 +425,7 @@ export default function Help() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs sm:text-sm space-y-2 pb-4 sm:pb-6">
-                <p>Calculate your optimal hourly rate based on:</p>
-                <ul className="list-disc list-inside text-xs space-y-1 text-slate-600">
-                  <li>Business expenses</li>
-                  <li>Desired salary</li>
-                  <li>Working hours</li>
-                  <li>Profit margins</li>
-                </ul>
+                <p>Work out how much it costs you per hour to run your business, so you can check if your treatments are actually priced correctly.</p>
               </CardContent>
             </Card>
 
@@ -439,16 +433,11 @@ export default function Help() {
               <CardHeader className="pb-2 sm:pb-6">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <Percent className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Profit Margin Calculator
+                  Treatment Pricing Calculator
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs sm:text-sm space-y-2 pb-4 sm:pb-6">
-                <p>Analyse profitability of services:</p>
-                <ul className="list-disc list-inside text-xs space-y-1 text-slate-600">
-                  <li>Service costs vs. pricing</li>
-                  <li>Profit margin analysis</li>
-                  <li>Pricing recommendations</li>
-                </ul>
+                <p>Work out how much you should be charging for every single service. You can even break down the profit in every treatment or training course.</p>
               </CardContent>
             </Card>
 
@@ -456,16 +445,11 @@ export default function Help() {
               <CardHeader className="pb-2 sm:pb-6">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <Receipt className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Expense Tracker
+                  Expense Tracker & Profit Margins
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs sm:text-sm space-y-2 pb-4 sm:pb-6">
-                <p>Monitor business expenses:</p>
-                <ul className="list-disc list-inside text-xs space-y-1 text-slate-600">
-                  <li>Track all business costs</li>
-                  <li>Categorise expenses</li>
-                  <li>Monthly summaries</li>
-                </ul>
+                <p>Know exactly where your money’s going and what’s actually bringing in profit.</p>
               </CardContent>
             </Card>
 
@@ -477,12 +461,7 @@ export default function Help() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs sm:text-sm space-y-2 pb-4 sm:pb-6">
-                <p>Plan your stock purchases:</p>
-                <ul className="list-disc list-inside text-xs space-y-1 text-slate-600">
-                  <li>Budget allocation</li>
-                  <li>Inventory planning</li>
-                  <li>Cost management</li>
-                </ul>
+                <p>Does it feel like all your money is constantly going on stock? Create a monthly budget to help you stay in control and stop overspending.</p>
               </CardContent>
             </Card>
 
@@ -490,16 +469,11 @@ export default function Help() {
               <CardHeader className="pb-2 sm:pb-6">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
-                  CEO Numbers
+                  CEO Numbers Formula
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs sm:text-sm space-y-2 pb-4 sm:pb-6">
-                <p>Key business metrics:</p>
-                <ul className="list-disc list-inside text-xs space-y-1 text-slate-600">
-                  <li>Revenue tracking</li>
-                  <li>Profit analysis</li>
-                  <li>Growth indicators</li>
-                </ul>
+                <p>Katie Godfrey’s famous system used by thousands of salon owners to finally make sense of their business finances.</p>
               </CardContent>
             </Card>
 
@@ -507,16 +481,35 @@ export default function Help() {
               <CardHeader className="pb-2 sm:pb-6">
                 <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                   <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Reports & Export
+                  Professional Reports & Dashboards
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs sm:text-sm space-y-2 pb-4 sm:pb-6">
-                <p>Generate professional reports:</p>
-                <ul className="list-disc list-inside text-xs space-y-1 text-slate-600">
-                  <li>PDF reports</li>
-                  <li>CSV exports</li>
-                  <li>Email sharing</li>
-                </ul>
+                <p>Simple visuals, no spreadsheets, no jargon. Just clarity.</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Revenue Goals & Projections
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs sm:text-sm space-y-2 pb-4 sm:pb-6">
+                <p>Set clear income targets and see exactly how many clients or courses you need to hit them.</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Team Targets Setter
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs sm:text-sm space-y-2 pb-4 sm:pb-6">
+                <p>Easily set your team targets that they need to hit to keep the business profitable.</p>
               </CardContent>
             </Card>
           </div>
@@ -874,7 +867,7 @@ export default function Help() {
                 </div>
                 
                 <div>
-                  <h4 className="font-semibold mb-2 text-sm sm:text-base">How do I use the Profit Margin Calculator?</h4>
+                  <h4 className="font-semibold mb-2 text-sm sm:text-base">How do I use the Pricing Calculator?</h4>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">With the Profit Margin Calculator, you can input your treatments or training courses, their prices, and the time it takes to deliver each service. The calculator will then show you exactly how much profit you're making, or if you're actually making a loss. Plus the profit percentage of each service.</p>
                   <p className="text-xs sm:text-sm text-slate-600 mt-2 font-medium leading-relaxed">This is a crucial step in understanding whether your services are priced correctly and sustainably.</p>
                 </div>

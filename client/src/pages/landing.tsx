@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, FileText, Star, Users, Shield, Crown } from "lucide-react";
+import { Check, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, FileText, Star, Users, Target, Shield, Crown } from "lucide-react";
 import { Link } from "wouter";
 import katiePhotoPath from "@assets/katie-photo.png";
 
@@ -9,43 +9,48 @@ const features = [
   {
     icon: Clock,
     title: "Hourly Rate Calculator",
-    description: "Work out how much it costs you per hour to run your business, so you can check if your treatments are actually priced correctly"
+    description: "Work out how much it costs you per hour to run your business, so you can check if your treatments are actually priced correctly."
   },
   {
     icon: Percent,
-    title: "Profit Margin Calculator", 
-    description: "Break down the profit in every treatment or training course, so you know exactly what's worth your time"
+    title: "Treatment Pricing Calculator", 
+    description: "Work out how much you should be charging for every single service. You can even break down the profit in every treatment or training course."
   },
   {
     icon: DollarSign,
     title: "CEO Numbers Dashboard",
-    description: "Katie's famous CEO System helps business owners finally understand their numbers, so they can stop winging it or hiding from the figures"
+    description: "Katie Godfrey’s famous system used by thousands of salon owners to finally make sense of their business finances."
   },
   {
     icon: Package,
     title: "Stock Budget Calculator",
-    description: "Does it feel like all your money is constantly going on stock? Create a monthly budget to help you stay in control and stop overspending"
+    description: "Does it feel like all your money is constantly going on stock? Create a monthly budget to help you stay in control and stop overspending."
   },
   {
     icon: TrendingUp,
-    title: "Revenue Projections",
-    description: "Have income goals you'd love to hit? Let's break them down clearly, so you know exactly how many extra clients you need, and for which treatments"
+    title: "Revenue Goals & Projections",
+    description: "Set clear income targets and see exactly how many clients or courses you need to hit them."
   },
   {
     icon: Receipt,
-    title: "Expense Tracker",
-    description: "Keep track of all your business costs and put them into categories to stay on top of your finances"
+    title: "Expense Tracker & Profit Margins",
+    description: "Know exactly where your money’s going and what’s actually bringing in profit."
   },
   {
     icon: FileText,
-    title: "Professional Reports",
-    description: "Generate PDF reports, CSV exports, and email summaries"
+    title: "Professional Reports & Dashboards",
+    description: "Simple visuals, no spreadsheets, no jargon. Just clarity."
+  },
+  {
+    icon: Target,
+    title: "Team Targets Setter",
+    description: "Easily set your team targets that they need to hit to keep the business profitable."
   }
 ];
 
 const testimonials = [
   {
-    name: "Sarah Mitchell",
+    name: "Kay Taylor",
     business: "Hair Salon Owner",
     quote: "This tool completely transformed how I price my services. I'm now making 40% more profit!",
     rating: 5
@@ -53,13 +58,13 @@ const testimonials = [
   {
     name: "Emma Johnson", 
     business: "Beauty Clinic",
-    quote: "The expense tracking alone has saved me thousands. I can see exactly where my money goes.",
+    quote: "The expense tracking alone has saved me thousands.",
     rating: 5
   },
   {
     name: "Lisa Williams",
     business: "Training Academy",
-    quote: "Running a training academy means juggling so many numbers. This app keeps everything organised and shows me exactly which courses are most profitable.",
+    quote: "Running a training academy means juggling so many numbers. This app keeps it all clear and organised.",
     rating: 5
   }
 ];
@@ -84,7 +89,7 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div>
-                <h1 className="text-base sm:text-xl font-bold text-slate-800">Salon Success Manager</h1>
+                <h1 className="text-base sm:text-xl font-bold text-slate-800">The Salon Success Manager</h1>
                 <p className="text-xs sm:text-sm text-slate-500">by Katie Godfrey</p>
               </div>
             </div>
@@ -106,17 +111,24 @@ export default function Landing() {
           <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div className="text-center lg:text-left">
               <div className="mb-4 sm:mb-6 flex justify-center lg:justify-start">
-                <h2 className="text-xl sm:text-2xl font-bold text-primary">Salon Success Manager</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-primary">The Salon Success Manager</h2>
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
-                Transform Your Salon into a 
-                <span className="text-primary"> Profitable Business</span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
+                Understand Your Numbers. Stop Winging It.
+                <span className="text-primary"> Love Your Business Again.</span>
               </h1>
               
               <p className="text-base sm:text-lg lg:text-xl text-slate-600 mb-6 sm:mb-8 leading-relaxed">
-                Stop guessing your prices. Start managing like a CEO. Get the financial clarity and tools you need 
-                to build a successful salon, clinic, or training academy.
+                Running a salon, clinic, or training academy shouldn’t feel like guesswork. You deserve to know where your money is going, how much you’re really making, and exactly what to do to increase your income and profit, without feeling like you need to be an accountant.
               </p>
+              {/* <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
+                Stop Guessing. Start Managing 
+                <span className="text-primary"> Like a CEO.</span>
+              </h1>
+              
+              <p className="text-base sm:text-md lg:text-lg text-slate-600 mb-6 sm:mb-8 leading-relaxed">
+                Most salon owners are incredible at what they do , but when it comes to numbers? It’s confusing, overwhelming, and easy to avoid. That’s where Salon Success Manager comes in. The no - jargon financial tool built specifically for the hair, beauty, and aesthetics industry. It’s the easiest way to finally take control of your pricing, profits, and business growth.
+              </p> */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <Link href="/register">
                   <Button size="lg" className="w-full sm:w-auto text-white text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
@@ -129,7 +141,7 @@ export default function Landing() {
                 </Button>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 mt-3 sm:mt-4">
-                £23.97/month • Cancel anytime • Have a promo code? Enter during signup
+                £27/month • Cancel anytime • Have a promo code? Enter after signup
               </p>
             </div>
             
@@ -154,7 +166,7 @@ export default function Landing() {
                         </div>
                         <span className="text-sm sm:text-base font-medium">Profit Margin</span>
                       </div>
-                      <span className="text-lg sm:text-2xl font-bold text-blue-600">68%</span>
+                      <span className="text-lg sm:text-2xl font-bold text-blue-600">38%</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 sm:gap-3">
@@ -163,7 +175,7 @@ export default function Landing() {
                         </div>
                         <span className="text-sm sm:text-base font-medium">Hourly Rate</span>
                       </div>
-                      <span className="text-lg sm:text-2xl font-bold text-purple-600">£85</span>
+                      <span className="text-lg sm:text-2xl font-bold text-purple-600">£35</span>
                     </div>
                   </div>
                   <div className="mt-4 sm:mt-6 h-24 sm:h-32 bg-gradient-to-r from-primary/10 to-blue-100 rounded-lg flex items-end justify-center">
@@ -216,10 +228,15 @@ export default function Landing() {
               />
               </div>
               <div className="flex-1">
-                <p className="text-sm sm:text-base lg:text-lg text-slate-700 italic leading-relaxed mb-3 sm:mb-4">
-                  "So many professionals come to me confused about why they're making money, but have nothing left at the end of the month. Nine times out of ten, it comes down to incorrect pricing and not knowing their break-even point or the real cost of running their business day-to-day. This app takes the guesswork out of your numbers, no spreadsheets, no confusing accountant jargon. Just simple, clear insights to help you understand exactly how to price, where your profit is, and how to finally make more money in your business."
-                </p>
-                <p className="text-xs sm:text-sm font-semibold text-primary">- Katie Godfrey, Business Strategist</p>
+                <div className="text-sm sm:text-base lg:text-lg text-slate-700 italic leading-relaxed mb-3 sm:mb-4">
+                  <p>
+                  "So many professionals come to me saying they’re fully booked but have nothing left at the end of the month. Nine times out of ten, it comes down to incorrect pricing and not knowing their break - even point or the real cost of running their business day - to - day. It’s not because they are bad with money, it’s because they have never been shown how to understand it.
+                  </p>
+                  <p className="mt-3">
+                  This web app takes away the stress, the spreadsheets, and the scary accountant terms. It’s everything I teach my private clients and have used in my own salons for years. When you understand what money your business needs to make, you can build the business more easily. Start to enjoy the parts of business that your currently avoiding."
+                  </p>
+                </div>
+                <p className="text-xs italic sm:text-sm font-semibold text-primary">- Katie Godfrey, Business Strategist, Author & Podcaster</p>
               </div>
             </div>
           </div>
@@ -237,92 +254,299 @@ export default function Landing() {
               Get real-time insights and manage every aspect of your salon business
             </p>
           </div>
-          
+
           <div className="relative">
             <div className="bg-white rounded-xl shadow-2xl overflow-hidden border">
-              {/* Mock Browser Header */}
-              <div className="bg-slate-100 px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2">
-                <div className="flex gap-1.5 sm:gap-2">
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-400 rounded-full"></div>
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-400 rounded-full"></div>
-                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full"></div>
+            {/* Mock Browser Header */}
+            <div className="bg-slate-100 px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-400 rounded-full"></div>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-400 rounded-full"></div>
+            <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full"></div>
+            </div>
+            <div className="flex-1 bg-white rounded px-2 sm:px-3 py-1 mx-2 sm:mx-4">
+            <span className="text-xs sm:text-sm text-slate-500">salonsuccessmanager.com</span>
+            </div>
+            </div>
+            
+            <main className="flex-1 p-8 overflow-y-auto">
+        {/* Metrics Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Current Hourly Rate Card */}
+          <div className="rounded-lg bg-card text-card-foreground shadow-sm border border-slate-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-600 text-sm font-medium">Current Hourly Rate</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">£13.20</p>
+                  <p className="text-sm mt-2 flex items-center text-success">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-trending-up h-3 w-3 mr-1"
+                    >
+                      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                      <polyline points="16 7 22 7 22 13"></polyline>
+                    </svg>
+                    +12% from last month
+                  </p>
                 </div>
-                <div className="flex-1 bg-white rounded px-2 sm:px-3 py-1 mx-2 sm:mx-4">
-                  <span className="text-xs sm:text-sm text-slate-500">salon-success-manager.app</span>
-                </div>
-              </div>
-              
-              {/* Mock Dashboard */}
-              <div className="p-4 sm:p-6 bg-gradient-to-br from-white to-slate-50">
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs sm:text-sm text-slate-600">This Month's Revenue</span>
-                      <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                    </div>
-                    <div className="text-xl sm:text-2xl font-bold text-slate-900">£18,240</div>
-                    <div className="text-xs sm:text-sm text-green-600">+24% from last month</div>
-                  </div>
-                  
-                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs sm:text-sm text-slate-600">Average Profit Margin</span>
-                      <Percent className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
-                    </div>
-                    <div className="text-xl sm:text-2xl font-bold text-slate-900">72%</div>
-                    <div className="text-xs sm:text-sm text-blue-600">Above industry average</div>
-                  </div>
-                  
-                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border sm:col-span-2 md:col-span-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs sm:text-sm text-slate-600">Optimal Hourly Rate</span>
-                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
-                    </div>
-                    <div className="text-xl sm:text-2xl font-bold text-slate-900">£95</div>
-                    <div className="text-xs sm:text-sm text-purple-600">Based on your data</div>
-                  </div>
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
-                    <h3 className="font-semibold text-sm sm:text-base mb-2 sm:mb-3">Recent Calculations</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center py-1.5 sm:py-2">
-                        <span className="text-xs sm:text-sm">Hair Cut & Blow Dry</span>
-                        <span className="font-medium text-sm sm:text-base">£45</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1.5 sm:py-2">
-                        <span className="text-xs sm:text-sm">Full Colour Treatment</span>
-                        <span className="font-medium text-sm sm:text-base">£120</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1.5 sm:py-2">
-                        <span className="text-xs sm:text-sm">Wedding Package</span>
-                        <span className="font-medium text-sm sm:text-base">£350</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border">
-                    <h3 className="font-semibold text-sm sm:text-base mb-2 sm:mb-3">Expense Overview</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center py-1.5 sm:py-2">
-                        <span className="text-xs sm:text-sm">Product Supplies</span>
-                        <span className="text-red-600 text-sm sm:text-base">-£1,240</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1.5 sm:py-2">
-                        <span className="text-xs sm:text-sm">Rent & Utilities</span>
-                        <span className="text-red-600 text-sm sm:text-base">-£2,400</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1.5 sm:py-2">
-                        <span className="text-xs sm:text-sm">Marketing</span>
-                        <span className="text-red-600 text-sm sm:text-base">-£480</span>
-                      </div>
-                    </div>
-                  </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-clock text-primary h-6 w-6"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Average Profit Margin Card */}
+          <div className="rounded-lg bg-card text-card-foreground shadow-sm border border-slate-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-600 text-sm font-medium">Avg Profit Margin</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">38.0%</p>
+                  <p className="text-sm mt-2 flex items-center text-success">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-trending-up h-3 w-3 mr-1"
+                    >
+                      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                      <polyline points="16 7 22 7 22 13"></polyline>
+                    </svg>
+                    +5% from last month
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-percent text-success h-6 w-6"
+                  >
+                    <line x1="19" x2="5" y1="5" y2="19"></line>
+                    <circle cx="6.5" cy="6.5" r="2.5"></circle>
+                    <circle cx="17.5" cy="17.5" r="2.5"></circle>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly Revenue Card */}
+          <div className="rounded-lg bg-card text-card-foreground shadow-sm border border-slate-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-600 text-sm font-medium">Monthly Revenue</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">£2,650.20</p>
+                  <p className="text-sm mt-2 flex items-center text-warning">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-trending-up h-3 w-3 mr-1 rotate-180"
+                    >
+                      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                      <polyline points="16 7 22 7 22 13"></polyline>
+                    </svg>
+                    -3% from last month
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-dollar-sign text-warning h-6 w-6"
+                  >
+                    <line x1="12" x2="12" y1="2" y2="22"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Treatments Card */}
+          <div className="rounded-lg bg-card text-card-foreground shadow-sm border border-slate-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-600 text-sm font-medium">Active Treatments</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">12</p>
+                  <p className="text-sm mt-2 flex items-center text-slate-500">Services offered</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-bath text-purple-600 h-6 w-6"
+                  >
+                    <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"></path>
+                    <line x1="10" x2="8" y1="5" y2="7"></line>
+                    <line x1="2" x2="22" y1="12" y2="12"></line>
+                    <line x1="7" x2="7" y1="19" y2="21"></line>
+                    <line x1="17" x2="17" y1="19" y2="21"></line>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Calculator Cards Grid */}
+        <div
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"
+          style={{
+            marginBottom: 0,
+          }}
+        >
+          {/* Hourly Rate Calculator Card */}
+          <div className="rounded-lg bg-card text-card-foreground shadow-sm border border-slate-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">Hourly Rate Calculator</h3>
+                  <p className="text-slate-600 text-sm mt-1">Calculate your optimal hourly rate based on expenses and goals</p>
+                </div>
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-clock text-primary h-5 w-5"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-700 font-medium">Current Hourly Rate:</span>
+                  <span className="text-2xl font-bold text-primary">£13.20</span>
+                </div>
+                <p className="text-slate-600 text-sm mt-2">Based on your latest calculation</p>
+              </div>
+
+              <button
+                onClick={() => router.push('/hourly-rate')}
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-10 px-4 py-2 w-full bg-primary text-white hover-bg-[#FFB6C1]"
+              >
+                Open Calculator
+              </button>
+            </div>
+          </div>
+
+          {/* Treatment Profit Calculator Card */}
+          <div className="rounded-lg bg-card text-card-foreground shadow-sm border border-slate-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">Treatment Profit Calculator</h3>
+                  <p className="text-slate-600 text-sm mt-1">Calculate profit margins for individual treatments</p>
+                </div>
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-percent text-success h-5 w-5"
+                  >
+                    <line x1="19" x2="5" y1="5" y2="19"></line>
+                    <circle cx="6.5" cy="6.5" r="2.5"></circle>
+                    <circle cx="17.5" cy="17.5" r="2.5"></circle>
+                  </svg>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-700 font-medium">Average Profit Margin:</span>
+                  <span className="text-2xl font-bold text-success">38.0%</span>
+                </div>
+                <p className="text-slate-600 text-sm mt-2">Across all your treatments</p>
+              </div>
+
+              <button
+                onClick={() => router.push('/profit-margin')}
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-10 px-4 py-2 w-full bg-success text-white hover-bg-[#FFB6C1]"
+              >
+                Open Calculator
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
         </div>
       </section>
 
@@ -376,7 +600,7 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
-              Trusted by Salon Owners Across the World
+              Trusted by Salon Owners Worldwide
             </h2>
             <div className="flex items-center justify-center gap-1 sm:gap-2 mb-3 sm:mb-4">
               {[...Array(5)].map((_, i) => (
@@ -419,7 +643,7 @@ export default function Landing() {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
-              Simple, Transparent Pricing
+              Simple, No-Brainer Pricing
             </h2>
             <p className="text-base sm:text-lg text-slate-600">
               One plan, all features, incredible value
@@ -431,13 +655,13 @@ export default function Landing() {
               <Badge variant="default" className="w-fit mx-auto mb-3 sm:mb-4 text-xs sm:text-sm">
                 Most Popular
               </Badge>
-              <CardTitle className="text-xl sm:text-2xl">Professional Plan</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl">Start with a 3 - day free trial - cancel anytime.</CardTitle>
               <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4">
-                <span className="text-3xl sm:text-4xl font-bold text-slate-900">£27</span>
-                <span className="text-sm sm:text-base text-slate-500">/month</span>
+                {/* <span className="text-3xl sm:text-4xl font-bold text-slate-900">£27</span>
+                <span className="text-sm sm:text-base text-slate-500">/month</span> */}
               </div>
               <CardDescription className="text-sm sm:text-base mt-2">
-                Everything you need to manage your business professionally
+                After that, it’s just <span className="font-semibold text-black">£27/month</span> for the tools, support, and clarity that will change your business.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4 sm:pt-6">
@@ -453,11 +677,11 @@ export default function Landing() {
               <div className="space-y-3 sm:space-y-4">
                 <Link href="/register">
                   <Button size="lg" className="w-full text-base sm:text-lg py-3 sm:py-4">
-                    Get Your Free Trial - £27/month
+                    Start Your Free 3-Day Trial
                   </Button>
                 </Link>
                 <p className="text-center text-xs sm:text-sm text-slate-500">
-                  Cancel anytime • Have a promo code? Enter during signup
+                  No contracts • Cancel anytime
                 </p>
               </div>
             </CardContent>
@@ -467,22 +691,29 @@ export default function Landing() {
 
       {/* CTA Section */}
       <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-primary text-white">
-        <div className="container mx-auto max-w-4xl text-center">
+        <div className="container mx-auto max-w-5xl text-center">
           <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
-            Ready to Transform Your Business?
+            Ready to Finally Understand Your Numbers?
           </h2>
           <p className="text-base sm:text-xl mb-6 sm:mb-8 text-primary-foreground/90">
-            Join hundreds of salon owners who've increased their profits with data-driven decisions
+            Join hundreds of salon owners transforming their profits, pricing, and peace of mind with Salon Success Manager.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-            <Link href="/register">
+          <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 justify-center">
+            <div className="flex flex-col items-center">
+              <Link href="/register">
+                <Button size="lg" variant="secondary" className="w-full text-black sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
+                  Start Your 3 - Day Free Trial Now
+                </Button>
+              </Link>
+              <p className="text-sm text-black/90 pt-2">
+                £27/month after trial • Cancel anytime
+              </p>
+            </div>
+            {/* <Link href="/contact">
               <Button size="lg" variant="secondary" className="w-full text-black sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
-                Get Your Free Trial
+                Contact Sales
               </Button>
-            </Link>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto text-black text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 border-white hover:bg-white hover:text-primary">
-              Contact Sales
-            </Button>
+            </Link> */}
           </div>
         </div>
       </section>
