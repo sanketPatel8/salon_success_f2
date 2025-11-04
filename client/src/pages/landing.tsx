@@ -80,6 +80,14 @@ const pricingBenefits = [
   "Regular feature updates"
 ];
 
+const benefits = [
+    "Understanding exactly what to charge",
+    "Easy to use calculators which will show you your profit margins",
+    "A clear plan to hit your income goals",
+    "Less financial stress and more freedom",
+    "The feeling of finally running your business like a CEO without winging it"
+  ];
+
 export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -215,8 +223,40 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="relative  flex items-center justify-center overflow-hidden bg-hsl(348 30% 85%)">
+      
+      {/* Content */}
+      <div className="relative z-10 max-w-6xl mx-auto px-6 my-16 py-4 text-center">
+        {/* Main Headline */}
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-8 leading-tight">
+          Stop Guessing. Start Managing Like a CEO.
+        </h1>
+
+        {/* Subheadline */}
+        <p className="text-lg md:text-xl text-gray-800 mb-6 max-w-3xl mx-auto leading-relaxed">
+          Most salon owners are incredible at what they do, but when it comes to numbers? 
+          It's confusing, overwhelming, and easy to avoid.
+        </p>
+
+        {/* Product Introduction */}
+        <p className="text-xl md:text-2xl text-primary font-semibold mb-6">
+          That's where Salon Success Manager comes in.
+        </p>
+
+        {/* Description */}
+        <div className="max-w-5xl mx-auto mb-12">
+          <p className="text-base md:text-lg text-gray-800 leading-relaxed mb-4">
+            The no-jargon financial tool built specifically for the hair, beauty, and aesthetics industry.
+          </p>
+          <p className="text-lg md:text-xl font-medium text-gray-800">
+            It's the easiest way to finally take control of your pricing, profits, and business growth.
+          </p>
+        </div>
+      </div>
+    </section>
+
       {/* Testimonial Section */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 bg-white">
+      <section className="py-12 sm:py-16 px-4 sm:px-6 bg-hsl(348 30% 85%)">
         <div className="container mx-auto max-w-4xl">
           <div className="bg-blue-50 border-l-4 border-primary p-4 sm:p-6 lg:p-8 rounded-r-lg">
             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
@@ -244,7 +284,7 @@ export default function Landing() {
       </section>
 
       {/* App Preview Section */}
-      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-slate-50">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-hsl(348 30% 85%)">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
@@ -551,7 +591,7 @@ export default function Landing() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-white">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-hsl(348 30% 85%)">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
@@ -584,6 +624,94 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      <section className="py-20 px-6 bg-gray-50">
+      <div className="max-w-5xl mx-auto">
+        {/* Main Heading */}
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-4">
+          You Don't Just Get the App, You Get the Support.
+        </h2>
+        
+        {/* Subheading */}
+        <p className="text-md md:text-lg text-gray-600 text-center mb-16">
+          Because we know information alone isn't enough...
+        </p>
+
+        {/* Included With Your Subscription */}
+        <h3 className="text-xl md:text-2xl font-bold text-gray-900 text-center mb-12">
+          Included With Your Subscription:
+        </h3>
+
+        {/* Features List */}
+        <div className="space-y-6">
+          {/* Feature 1 - Monthly Live Accountability Sessions */}
+          <div className="bg-[#F8FBFF] rounded-lg border border-[#CFE4FE] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="flex gap-6 items-start">
+              {/* Icon */}
+              <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-md flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
+                  Monthly Live Accountability Sessions
+                </h4>
+                <p className="text-base md:text-md text-gray-700 leading-relaxed">
+                  Join Katie every month on Zoom to keep on top of your numbers and actually use the tools. Ask any questions you like to understand money and business.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature 2 - Access to Business Training */}
+          <div className="bg-[#F8FBFF] rounded-lg border border-[#CFE4FE] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="flex gap-6 items-start">
+              {/* Icon */}
+              <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-md flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
+                  Access to £1,500+ Worth of Business Training
+                </h4>
+                <p className="text-base md:text-md text-gray-700 leading-relaxed">
+                  Exclusive video library covering pricing, money mindset, marketing, and growth which is drip fed over a period of time to stop the overwhelm.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature 3 - Private Facebook Community */}
+          <div className="bg-[#F8FBFF] rounded-lg border border-[#CFE4FE] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <div className="flex gap-6 items-start">
+              {/* Icon */}
+              <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-md flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                </svg>
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1">
+                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
+                  Private Facebook Community
+                </h4>
+                <p className="text-base md:text-md text-gray-700 leading-relaxed">
+                  Connect with other salon, clinic, and academy owners who are taking control of their profits too. If you have a question or stuck with the system, just drop us a message in the group.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
       {/* Testimonials */}
       <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 relative">
@@ -639,7 +767,7 @@ export default function Landing() {
       </section>
 
       {/* Pricing */}
-      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-white">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-hsl(348 30% 85%)">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
@@ -689,6 +817,74 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="py-20 px-6 bg-hsl(348 30% 85%)">
+      <div className="max-w-5xl mx-auto">
+        {/* Main Heading */}
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-16">
+          What You Will Experience
+        </h2>
+
+        {/* White Card Container */}
+        <div className="bg-white rounded-xl shadow-lg p-8 md:p-12">
+          {/* Benefits List */}
+          <div className="space-y-6 mb-12">
+            {benefits.map((benefit, index) => (
+              <div key={index} className="flex items-start gap-4">
+                {/* Green Checkmark Circle */}
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
+                  <svg 
+                    className="w-4 h-4 text-white" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    strokeWidth={3}
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      d="M5 13l4 4L19 7" 
+                    />
+                  </svg>
+                </div>
+                
+                {/* Benefit Text */}
+                <p className="text-md md:text-xl text-gray-700 leading-relaxed pt-1">
+                  {benefit}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA Button */}
+          <div className="flex flex-col items-center gap-3 mt-12">
+            <button
+            onClick={() => window.location.href = "/register"} 
+            className="group bg-primary hover:from-pink-500 hover:to-pink-600 text-white font-semibold text-lg px-12 py-3 rounded-xl shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-3">
+              Start Your Free 3-Day Trial
+              <svg 
+                className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M17 8l4 4m0 0l-4 4m4-4H3" 
+                />
+              </svg>
+            </button>
+            
+            {/* Subtext */}
+            <p className="text-sm md:text-base text-gray-500">
+              No contracts • Cancel anytime
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
       {/* CTA Section */}
       <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-primary text-white">
         <div className="container mx-auto max-w-5xl text-center">
@@ -717,6 +913,8 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      
 
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-8 sm:py-12 px-4 sm:px-6">
