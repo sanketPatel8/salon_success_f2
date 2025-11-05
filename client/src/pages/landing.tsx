@@ -859,7 +859,7 @@ export default function Landing() {
           <div className="flex flex-col items-center gap-3 mt-12">
             <button
             onClick={() => window.location.href = "/register"} 
-            className="group bg-primary hover:from-pink-500 hover:to-pink-600 text-white font-semibold text-lg px-12 py-3 rounded-xl shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-3">
+            className="group bg-primary hover:from-pink-500 hover:to-pink-600 text-white text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-2 rounded-md shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-3">
               Start Your Free 3-Day Trial
               <svg 
                 className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" 
