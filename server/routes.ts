@@ -413,6 +413,313 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API Endpoint: POST /api/send-subscription-email
+app.post('/api/send-subscription-email', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    const { subscriptionData } = req.body;
+
+    if (!subscriptionData) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subscription data is required'
+      });
+    }
+
+    const user = await storage.getUser(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Email configuration
+    const emailConfig = {
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT!),
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: process.env.NODE_ENV === 'production'
+      }
+    };
+
+    const transporter = nodemailer.createTransport(emailConfig);
+
+    const formattedEndDate = new Date(subscriptionData.endDate).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const trialMessage = subscriptionData.isTrial
+      ? '<p style="margin: 0 0 15px 0; font-size: 15px; color: #4b5563; line-height: 1.6;">You have been given a <strong>3-day free trial</strong> to explore all the premium features. After your trial ends, you\'ll be billed monthly.</p>'
+      : '<p style="margin: 0 0 15px 0; font-size: 15px; color: #4b5563; line-height: 1.6;">Your subscription is now active and you have full access to all premium features of Salon Success Manager.</p>';
+
+    // User email
+    const userEmailOptions = {
+      from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
+      to: user.email,
+      subject: subscriptionData.isTrial
+        ? '🎉 Welcome to Your Free Trial - Salon Success Manager'
+        : '✅ Subscription Confirmed - Salon Success Manager',
+      html: `
+        <!DOCTYPE html>
+        <html xmlns="http://www.w3.org/1999/xhtml">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { 
+              margin: 0 !important;
+              padding: 0 !important;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            }
+            table { border-collapse: collapse !important; }
+            @media only screen and (max-width: 600px) {
+              .content-padding { padding: 20px 15px !important; }
+            }
+          </style>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f5f5f5;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f5f5f5">
+            <tr>
+              <td align="center" style="padding: 20px 0;">
+                <table width="600" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%;">
+                  
+                  <!-- Header -->
+                  <tr>
+                    <td align="center" style="padding: 40px 20px 20px; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">
+                        ${subscriptionData.isTrial ? '🎉 Welcome to Your Trial!' : '✅ Subscription Confirmed'}
+                      </h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main content -->
+                  <tr>
+                    <td class="content-padding" style="padding: 40px 30px;">
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td style="padding-bottom: 15px;">
+                            <p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.6;">
+                              Hello <strong>${user.name}</strong>,
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 15px;">
+                            ${trialMessage}
+                          </td>
+                        </tr>
+                        
+                        <!-- Success info box -->
+                        <tr>
+                          <td style="padding: 20px 0;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="${subscriptionData.isTrial ? '#dbeafe' : '#dcfce7'}" style="border-left: 4px solid ${subscriptionData.isTrial ? '#0284c7' : '#16a34a'}; border-radius: 4px;">
+                              <tr>
+                                <td style="padding: 15px;">
+                                  <p style="margin: 0 0 8px 0; font-size: 15px; color: ${subscriptionData.isTrial ? '#0c4a6e' : '#15803d'}; font-weight: 600;">
+                                    ✓ ${subscriptionData.isTrial ? 'Trial Active' : 'Subscription Active'}
+                                  </p>
+                                  <p style="margin: 0; font-size: 14px; color: ${subscriptionData.isTrial ? '#164e63' : '#166534'}; line-height: 1.5;">
+                                    Your ${subscriptionData.isTrial ? 'trial' : 'subscription'} will ${subscriptionData.isTrial ? 'end' : 'renew'} on <strong>${formattedEndDate}</strong>. 
+                                    You have full access to all features.
+                                  </p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- Features section -->
+                        <tr>
+                          <td style="padding: 20px 0;">
+                            <p style="margin: 0 0 15px 0; font-size: 16px; color: #333333; font-weight: 600;">
+                              🎯 What You Can Do Now:
+                            </p>
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td style="padding: 8px 0; font-size: 14px; color: #4b5563;">✓ Perfect Pricing Calculator</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; font-size: 14px; color: #4b5563;">✓ Track Your Salon's Income & Expenses</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; font-size: 14px; color: #4b5563;">✓ Money Goal Setting Tracker</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; font-size: 14px; color: #4b5563;">✓ CEO Numbers Formula</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; font-size: 14px; color: #4b5563;">✓ Money Pot System</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 8px 0; font-size: 14px; color: #4b5563;">✓ Instant Profit Insights & Reports</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- Subscription details -->
+                        <tr>
+                          <td style="padding: 20px 0;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f9fafb" style="border-radius: 8px;">
+                              <tr>
+                                <td style="padding: 20px;">
+                                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                    <strong>Status:</strong> ${subscriptionData.isTrial ? 'Free Trial' : 'Active'}
+                                  </p>
+                                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                    <strong>${subscriptionData.isTrial ? 'Trial End Date' : 'Next Renewal Date'}:</strong> ${formattedEndDate}
+                                  </p>
+                                  ${!subscriptionData.isTrial && subscriptionData.amount ? `
+                                    <p style="margin: 0; font-size: 14px; color: #6b7280;">
+                                      <strong>Monthly Amount:</strong> ${subscriptionData.amount}
+                                    </p>
+                                  ` : ''}
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- CTA Button -->
+                        <tr>
+                          <td align="center" style="padding: 25px 0;">
+                            <table border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center" bgcolor="#ec4899" style="border-radius: 8px;">
+                                  <a href="https://salonsuccessmanager.com" target="_blank" style="display: inline-block; padding: 14px 40px; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600;">
+                                    Go to Dashboard
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        ${subscriptionData.isTrial ? `
+                        <!-- Trial Info -->
+                        <tr>
+                          <td style="padding: 20px; background-color: #f0f9ff; border-radius: 8px; margin: 20px 0;">
+                            <p style="margin: 0 0 10px 0; font-size: 14px; color: #0c4a6e; font-weight: 600;">
+                              💡 About Your Trial
+                            </p>
+                            <p style="margin: 0; font-size: 13px; color: #164e63; line-height: 1.6;">
+                              You have 3 days to explore all features risk-free. After your trial ends, you'll be charged a monthly subscription fee. You can cancel anytime before the trial ends.
+                            </p>
+                          </td>
+                        </tr>
+                        ` : ''}
+                        
+                        <!-- Support section -->
+                        <tr>
+                          <td style="padding-top: 25px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
+                              Welcome to Salon Success Manager! We're thrilled to have you. If you need any assistance or have questions, our support team is here to help.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td align="center" style="padding: 30px 20px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 5px 0; font-size: 13px; color: #6b7280;">
+                        © ${new Date().getFullYear()} Salon Success Manager
+                      </p>
+                      <p style="margin: 5px 0 0 0; font-size: 13px; color: #6b7280;">
+                        Need help? Contact us at 
+                        <a href="mailto:help@salonsuccessmanager.com" style="color: #ec4899; text-decoration: none;">help@salonsuccessmanager.com</a>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+      text: `Subscription Confirmed
+
+Hello ${user.name},
+
+${subscriptionData.isTrial 
+  ? 'Welcome to your 3-day free trial! You now have full access to all premium features.' 
+  : 'Your subscription is now active!'}
+
+✓ Status: ${subscriptionData.isTrial ? 'Free Trial' : 'Active'}
+✓ ${subscriptionData.isTrial ? 'Trial End Date' : 'Next Renewal Date'}: ${formattedEndDate}
+
+What You Can Do Now:
+- Perfect Pricing Calculator
+- Track Your Salon's Income & Expenses
+- Money Goal Setting Tracker
+- CEO Numbers Formula
+- Money Pot System
+- Instant Profit Insights & Reports
+
+${subscriptionData.isTrial ? 'About Your Trial:\nYou have 3 days to explore all features. After the trial, monthly charges will apply. Cancel anytime to avoid charges.' : ''}
+
+Go to Dashboard: https://salonsuccessmanager.com
+
+Welcome to Salon Success Manager! If you need any help, contact us at help@salonsuccessmanager.com`
+    };
+
+    // Send user email
+    await transporter.sendMail(userEmailOptions);
+
+    // Admin notification email
+    const adminEmailOptions = {
+      from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
+      to: 'info@kgprofessional.com',
+      subject: `New Subscription: ${subscriptionData.isTrial ? 'Trial' : 'Paid'} - ${user.name}`,
+      html: `
+        <h2>New Subscription Notification</h2>
+        <p><strong>User Name:</strong> ${user.name}</p>
+        <p><strong>Email:</strong> ${user.email}</p>
+        <p><strong>Type:</strong> ${subscriptionData.isTrial ? 'Free Trial' : 'Paid Subscription'}</p>
+        <p><strong>End Date:</strong> ${formattedEndDate}</p>
+        ${!subscriptionData.isTrial && subscriptionData.amount ? `<p><strong>Amount:</strong> ${subscriptionData.amount}</p>` : ''}
+        <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+      `,
+      text: `New Subscription Notification\n\nUser: ${user.name}\nEmail: ${user.email}\nType: ${subscriptionData.isTrial ? 'Free Trial' : 'Paid'}\nEnd Date: ${formattedEndDate}\nTimestamp: ${new Date().toISOString()}`
+    };
+
+    // Send admin email (non-blocking)
+    transporter.sendMail(adminEmailOptions).catch(err => {
+      console.error('Failed to send admin notification:', err);
+    });
+
+
+    // Log the subscription event
+    console.log(`Subscription email sent to ${user.email} - Trial: ${subscriptionData.isTrial}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Subscription email sent successfully'
+    });
+
+  } catch (error) {
+    console.error('Error sending subscription email:', error);
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to send subscription email',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
   app.get('/api/stripe/subscription', requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
@@ -703,11 +1010,372 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Update local status
     const stripeEndUnix = subscription.current_period_end != null 
-  ? subscription.current_period_end 
-  : subscription.trial_end;
+      ? subscription.current_period_end 
+      : subscription.trial_end;
     const endDate = new Date(stripeEndUnix * 1000);
 
     console.log(`✓ Subscription ${subscriptionId} cancelled at period end for user: ${user.email}`);
+
+    // Email configuration
+    const emailConfig = {
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT),
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: process.env.NODE_ENV === 'production'
+      }
+    };
+    
+    const transporter = nodemailer.createTransport(emailConfig);
+    
+    // Send cancellation email to user
+    const userEmailOptions = {
+      from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
+      to: user.email,
+      subject: 'Subscription Cancellation Confirmed - Salon Success Manager',
+      html: `
+        <!DOCTYPE html>
+        <html xmlns="http://www.w3.org/1999/xhtml">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { 
+              margin: 0 !important;
+              padding: 0 !important;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            }
+            table { border-collapse: collapse !important; }
+            @media only screen and (max-width: 600px) {
+              .content-padding { padding: 20px 15px !important; }
+            }
+          </style>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f5f5f5;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f5f5f5">
+            <tr>
+              <td align="center" style="padding: 20px 0;">
+                <table width="600" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%;">
+                  
+                  <!-- Header -->
+                  <tr>
+                    <td align="center" style="padding: 40px 20px 20px; background-color: #fef3c7;">
+                      <h1 style="margin: 0; color: #f59e0b; font-size: 28px; font-weight: 700;">
+                        📋 Subscription Cancellation Confirmed
+                      </h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main content -->
+                  <tr>
+                    <td class="content-padding" style="padding: 40px 30px;">
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td style="padding-bottom: 15px;">
+                            <p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.6;">
+                              Hello <strong>${user.name}</strong>,
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 15px;">
+                            <p style="margin: 0; font-size: 15px; color: #4b5563; line-height: 1.6;">
+                              We've received your request to cancel your Salon Success Manager subscription.
+                            </p>
+                          </td>
+                        </tr>
+                        
+                        <!-- Important info box -->
+                        <tr>
+                          <td style="padding: 20px 0;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#dbeafe" style="border-left: 4px solid #3b82f6; border-radius: 4px;">
+                              <tr>
+                                <td style="padding: 15px;">
+                                  <p style="margin: 0 0 8px 0; font-size: 15px; color: #1e3a8a; font-weight: 600;">
+                                    ℹ️ Important Information
+                                  </p>
+                                  <p style="margin: 0; font-size: 14px; color: #1e40af; line-height: 1.5;">
+                                    Your subscription will remain active until <strong>${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>. 
+                                    You can continue to use all features until then.
+                                  </p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- Subscription details -->
+                        <tr>
+                          <td style="padding: 20px 0;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f9fafb" style="border-radius: 8px;">
+                              <tr>
+                                <td style="padding: 20px;">
+                                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                    <strong>Subscription ID:</strong> ${subscriptionId}
+                                  </p>
+                                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                    <strong>Status:</strong> ${subscription.status}
+                                  </p>
+                                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                    <strong>Access Until:</strong> ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- Change your mind section -->
+                        <tr>
+                          <td style="padding-top: 20px;">
+                            <p style="margin: 0 0 15px 0; font-size: 16px; color: #333333; font-weight: 600;">
+                              Changed Your Mind?
+                            </p>
+                            <p style="margin: 0 0 15px 0; font-size: 14px; color: #4b5563; line-height: 1.6;">
+                              You can reactivate your subscription at any time before ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} by logging into your account.
+                            </p>
+                          </td>
+                        </tr>
+                        
+                        <!-- CTA Button -->
+                        <tr>
+                          <td align="center" style="padding: 20px 0;">
+                            <table border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center" bgcolor="#ff8f9f" style="border-radius: 8px;">
+                                  <a href="https://salonsuccessmanager.com/help" target="_blank" style="display: inline-block; padding: 14px 40px; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600;">
+                                    Manage Subscription
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- Feedback section -->
+                        <tr>
+                          <td style="padding-top: 25px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
+                              We're sorry to see you go! If you have a moment, we'd love to hear your feedback about your experience with Salon Success Manager. Your input helps us improve.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td align="center" style="padding: 30px 20px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 5px 0; font-size: 13px; color: #6b7280;">
+                        © ${new Date().getFullYear()} Salon Success Manager
+                      </p>
+                      <p style="margin: 5px 0 0 0; font-size: 13px; color: #6b7280;">
+                        Need help? Contact us at 
+                        <a href="mailto:help@salonsuccessmanager.com" style="color: #ec4899; text-decoration: none;">help@salonsuccessmanager.com</a>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+      text: `
+Subscription Cancellation Confirmed
+
+Hello ${user.name},
+
+We've received your request to cancel your Salon Success Manager subscription.
+
+Important Information:
+Your subscription will remain active until ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. You can continue to use all features until then.
+
+Subscription Details:
+- Subscription ID: ${subscriptionId}
+- Status: ${subscription.status}
+- Access Until: ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+
+Changed Your Mind?
+You can reactivate your subscription at any time before ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} by logging into your account.
+
+Manage your subscription: https://salonsuccessmanager.com/help
+
+We're sorry to see you go! If you have a moment, we'd love to hear your feedback about your experience with Salon Success Manager.
+
+© ${new Date().getFullYear()} Salon Success Manager
+Need help? Contact us at help@salonsuccessmanager.com
+      `
+    };
+    
+    // Send notification email to admin
+    const adminEmailOptions = {
+      from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
+      to: 'info@kgprofessional.com',
+      subject: '⚠️ Subscription Cancelled - Salon Success Manager',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+              background-color: #f5f5f5;
+            }
+            .container {
+              max-width: 600px;
+              margin: 20px auto;
+              background-color: #ffffff;
+              border-radius: 8px;
+              overflow: hidden;
+            }
+            .header {
+              background-color: #ef4444;
+              color: white;
+              padding: 30px 20px;
+              text-align: center;
+            }
+            .content {
+              padding: 30px;
+            }
+            .warning-box {
+              background-color: #fef3c7;
+              border-left: 4px solid #f59e0b;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            }
+            .info-box {
+              background-color: #f9fafb;
+              border-left: 4px solid #6b7280;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            }
+            .info-row {
+              margin: 8px 0;
+              font-size: 14px;
+              color: #4b5563;
+            }
+            .label {
+              font-weight: 600;
+              color: #1f2937;
+            }
+            .footer {
+              background-color: #f9fafb;
+              padding: 20px;
+              text-align: center;
+              font-size: 12px;
+              color: #6b7280;
+              border-top: 1px solid #e5e7eb;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0; font-size: 24px;">⚠️ Subscription Cancelled</h1>
+            </div>
+            
+            <div class="content">
+              <p style="margin: 0 0 15px 0; font-size: 16px; color: #333333;">
+                A user has cancelled their subscription.
+              </p>
+              
+              <div class="warning-box">
+                <p style="margin: 0; font-size: 14px; color: #92400e; font-weight: 600;">
+                  ⏰ Subscription will remain active until: ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              
+              <div class="info-box">
+                <div class="info-row">
+                  <span class="label">User Name:</span> ${user.name}
+                </div>
+                <div class="info-row">
+                  <span class="label">Email:</span> ${user.email}
+                </div>
+                <div class="info-row">
+                  <span class="label">User ID:</span> ${userId}
+                </div>
+                <div class="info-row">
+                  <span class="label">Subscription ID:</span> ${subscriptionId}
+                </div>
+                <div class="info-row">
+                  <span class="label">Status:</span> ${subscription.status}
+                </div>
+                <div class="info-row">
+                  <span class="label">Cancel At Period End:</span> ${subscription.cancel_at_period_end ? 'Yes' : 'No'}
+                </div>
+                <div class="info-row">
+                  <span class="label">Cancellation Date:</span> ${new Date().toLocaleString()}
+                </div>
+                <div class="info-row">
+                  <span class="label">Access Ends:</span> ${endDate.toLocaleString()}
+                </div>
+              </div>
+              
+              <p style="margin: 20px 0 0 0; font-size: 14px; color: #6b7280;">
+                Consider reaching out to understand why the user cancelled and if there's anything that can be improved.
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p style="margin: 0;">
+                This is an automated notification from Salon Success Manager
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+Subscription Cancelled - Salon Success Manager
+
+A user has cancelled their subscription.
+
+⏰ Subscription will remain active until: ${endDate.toLocaleString()}
+
+User Details:
+- User Name: ${user.name}
+- Email: ${user.email}
+- User ID: ${userId}
+- Subscription ID: ${subscriptionId}
+- Status: ${subscription.status}
+- Cancel At Period End: ${subscription.cancel_at_period_end ? 'Yes' : 'No'}
+- Cancellation Date: ${new Date().toLocaleString()}
+- Access Ends: ${endDate.toLocaleString()}
+
+Consider reaching out to understand why the user cancelled and if there's anything that can be improved.
+
+This is an automated notification from Salon Success Manager.
+      `
+    };
+    
+    // Send both emails asynchronously
+    Promise.all([
+      transporter.sendMail(userEmailOptions).then(info => {
+        console.log('✓ Cancellation email sent to user:', user.email);
+      }).catch(err => {
+        console.error('✗ Failed to send cancellation email to user:', err.message);
+      }),
+      
+      transporter.sendMail(adminEmailOptions).then(info => {
+        console.log('✓ Cancellation notification sent to admin');
+      }).catch(err => {
+        console.error('✗ Failed to send cancellation notification to admin:', err.message);
+      })
+    ]);
 
     res.json({ 
       success: true,
@@ -731,26 +1399,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId!;
       
-      
-
       const user = await storage.getUser(userId);
       
       if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'User not found' 
-      });
-    }
+        return res.status(404).json({ 
+          success: false,
+          message: 'User not found' 
+        });
+      }
 
-    // Get subscriptionId from database
-    const subscriptionId = user.stripeSubscriptionId;
-    
-    if (!subscriptionId) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'No active subscription found' 
-      });
-    }
+      // Get subscriptionId from database
+      const subscriptionId = user.stripeSubscriptionId;
+      
+      if (!subscriptionId) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'No active subscription found' 
+        });
+      }
 
       // Reactivate the subscription (remove cancel_at_period_end)
       const subscription = await stripe.subscriptions.update(subscriptionId, {
@@ -759,12 +1425,372 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update local status
       const stripeEndUnix = subscription.current_period_end != null 
-  ? subscription.current_period_end 
-  : subscription.trial_end;
+        ? subscription.current_period_end 
+        : subscription.trial_end;
       const endDate = new Date(stripeEndUnix * 1000);
-     
 
       console.log(`✓ Subscription ${subscriptionId} reactivated for user: ${user.email}`);
+
+      // Email configuration
+      const emailConfig = {
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT),
+        secure: true,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASSWORD
+        },
+        tls: {
+          rejectUnauthorized: process.env.NODE_ENV === 'production'
+        }
+      };
+      
+      const transporter = nodemailer.createTransport(emailConfig);
+      
+      // Send reactivation email to user
+      const userEmailOptions = {
+        from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
+        to: user.email,
+        subject: 'Subscription Reactivated - Salon Success Manager',
+        html: `
+          <!DOCTYPE html>
+          <html xmlns="http://www.w3.org/1999/xhtml">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { 
+                margin: 0 !important;
+                padding: 0 !important;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+              }
+              table { border-collapse: collapse !important; }
+              @media only screen and (max-width: 600px) {
+                .content-padding { padding: 20px 15px !important; }
+              }
+            </style>
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f5f5f5;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f5f5f5">
+              <tr>
+                <td align="center" style="padding: 20px 0;">
+                  <table width="600" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%;">
+                    
+                    <!-- Header -->
+                    <tr>
+                      <td align="center" style="padding: 40px 20px 20px; background-color: #dcfce7;">
+                        <h1 style="margin: 0; color: #16a34a; font-size: 28px; font-weight: 700;">
+                          ✅ Subscription Reactivated
+                        </h1>
+                      </td>
+                    </tr>
+                    
+                    <!-- Main content -->
+                    <tr>
+                      <td class="content-padding" style="padding: 40px 30px;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                          <tr>
+                            <td style="padding-bottom: 15px;">
+                              <p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.6;">
+                                Hello <strong>${user.name}</strong>,
+                              </p>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding-bottom: 15px;">
+                              <p style="margin: 0; font-size: 15px; color: #4b5563; line-height: 1.6;">
+                                Great news! Your Salon Success Manager subscription has been successfully reactivated. You're all set to continue using all premium features.
+                              </p>
+                            </td>
+                          </tr>
+                          
+                          <!-- Success info box -->
+                          <tr>
+                            <td style="padding: 20px 0;">
+                              <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#dcfce7" style="border-left: 4px solid #16a34a; border-radius: 4px;">
+                                <tr>
+                                  <td style="padding: 15px;">
+                                    <p style="margin: 0 0 8px 0; font-size: 15px; color: #15803d; font-weight: 600;">
+                                      ✓ Subscription Active
+                                    </p>
+                                    <p style="margin: 0; font-size: 14px; color: #166534; line-height: 1.5;">
+                                      Your subscription will renew on <strong>${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>. 
+                                      You have full access to all features.
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          
+                          <!-- Subscription details -->
+                          <tr>
+                            <td style="padding: 20px 0;">
+                              <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f9fafb" style="border-radius: 8px;">
+                                <tr>
+                                  <td style="padding: 20px;">
+                                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                      <strong>Subscription ID:</strong> ${subscriptionId}
+                                    </p>
+                                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                      <strong>Status:</strong> ${subscription.status}
+                                    </p>
+                                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                      <strong>Next Renewal:</strong> ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                    </p>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          
+                          <!-- Getting started section -->
+                          <tr>
+                            <td style="padding-top: 20px;">
+                              <p style="margin: 0 0 15px 0; font-size: 16px; color: #333333; font-weight: 600;">
+                                What's Next?
+                              </p>
+                              <p style="margin: 0 0 15px 0; font-size: 14px; color: #4b5563; line-height: 1.6;">
+                                Start managing your salon business operations with full access to all premium features. You can now access your dashboard and continue where you left off.
+                              </p>
+                            </td>
+                          </tr>
+                          
+                          <!-- CTA Button -->
+                          <tr>
+                            <td align="center" style="padding: 20px 0;">
+                              <table border="0" cellspacing="0" cellpadding="0">
+                                <tr>
+                                  <td align="center" bgcolor="#16a34a" style="border-radius: 8px;">
+                                    <a href="https://salonsuccessmanager.com" target="_blank" style="display: inline-block; padding: 14px 40px; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600;">
+                                      Go to Dashboard
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          
+                          <!-- Support section -->
+                          <tr>
+                            <td style="padding-top: 25px; border-top: 1px solid #e5e7eb;">
+                              <p style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
+                                Welcome back! We're excited to have you as an active subscriber. If you have any questions or need assistance, don't hesitate to reach out.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td align="center" style="padding: 30px 20px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                        <p style="margin: 0 0 5px 0; font-size: 13px; color: #6b7280;">
+                          © ${new Date().getFullYear()} Salon Success Manager
+                        </p>
+                        <p style="margin: 5px 0 0 0; font-size: 13px; color: #6b7280;">
+                          Need help? Contact us at 
+                          <a href="mailto:help@salonsuccessmanager.com" style="color: #ec4899; text-decoration: none;">help@salonsuccessmanager.com</a>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `,
+        text: `
+Subscription Reactivated
+
+Hello ${user.name},
+
+Great news! Your Salon Success Manager subscription has been successfully reactivated. You're all set to continue using all premium features.
+
+✓ Subscription Active:
+Your subscription will renew on ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. You have full access to all features.
+
+Subscription Details:
+- Subscription ID: ${subscriptionId}
+- Status: ${subscription.status}
+- Next Renewal: ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+What's Next?
+Start managing your salon bookings, staff, and clients with full access to all premium features. You can now access your dashboard and continue where you left off.
+
+Go to Dashboard: https://salonsuccessmanager.com
+
+Welcome back! We're excited to have you as an active subscriber. If you have any questions or need assistance, don't hesitate to reach out.
+
+© ${new Date().getFullYear()} Salon Success Manager
+Need help? Contact us at help@salonsuccessmanager.com
+        `
+      };
+      
+      // Send notification email to admin
+      const adminEmailOptions = {
+        from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
+        to: 'info@kgprofessional.com',
+        subject: '✅ Subscription Reactivated - Salon Success Manager',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { 
+                margin: 0; 
+                padding: 0; 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+                background-color: #f5f5f5;
+              }
+              .container {
+                max-width: 600px;
+                margin: 20px auto;
+                background-color: #ffffff;
+                border-radius: 8px;
+                overflow: hidden;
+              }
+              .header {
+                background-color: #16a34a;
+                color: white;
+                padding: 30px 20px;
+                text-align: center;
+              }
+              .content {
+                padding: 30px;
+              }
+              .success-box {
+                background-color: #dcfce7;
+                border-left: 4px solid #16a34a;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+              }
+              .info-box {
+                background-color: #f9fafb;
+                border-left: 4px solid #6b7280;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 4px;
+              }
+              .info-row {
+                margin: 8px 0;
+                font-size: 14px;
+                color: #4b5563;
+              }
+              .label {
+                font-weight: 600;
+                color: #1f2937;
+              }
+              .footer {
+                background-color: #f9fafb;
+                padding: 20px;
+                text-align: center;
+                font-size: 12px;
+                color: #6b7280;
+                border-top: 1px solid #e5e7eb;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1 style="margin: 0; font-size: 24px;">✅ Subscription Reactivated</h1>
+              </div>
+              
+              <div class="content">
+                <p style="margin: 0 0 15px 0; font-size: 16px; color: #333333;">
+                  A user has reactivated their subscription.
+                </p>
+                
+                <div class="success-box">
+                  <p style="margin: 0; font-size: 14px; color: #15803d; font-weight: 600;">
+                    ✓ Subscription is now active and will renew on: ${endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                </div>
+                
+                <div class="info-box">
+                  <div class="info-row">
+                    <span class="label">User Name:</span> ${user.name}
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Email:</span> ${user.email}
+                  </div>
+                  <div class="info-row">
+                    <span class="label">User ID:</span> ${userId}
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Subscription ID:</span> ${subscriptionId}
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Status:</span> ${subscription.status}
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Cancel At Period End:</span> ${subscription.cancel_at_period_end ? 'Yes' : 'No'}
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Reactivation Date:</span> ${new Date().toLocaleString()}
+                  </div>
+                  <div class="info-row">
+                    <span class="label">Next Renewal:</span> ${endDate.toLocaleString()}
+                  </div>
+                </div>
+                
+                <p style="margin: 20px 0 0 0; font-size: 14px; color: #6b7280;">
+                  This is a positive indicator. The user has decided to continue with Salon Success Manager after reconsidering their cancellation.
+                </p>
+              </div>
+              
+              <div class="footer">
+                <p style="margin: 0;">
+                  This is an automated notification from Salon Success Manager
+                </p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+        text: `
+Subscription Reactivated - Salon Success Manager
+
+A user has reactivated their subscription.
+
+✓ Subscription is now active and will renew on: ${endDate.toLocaleString()}
+
+User Details:
+- User Name: ${user.name}
+- Email: ${user.email}
+- User ID: ${userId}
+- Subscription ID: ${subscriptionId}
+- Status: ${subscription.status}
+- Cancel At Period End: ${subscription.cancel_at_period_end ? 'Yes' : 'No'}
+- Reactivation Date: ${new Date().toLocaleString()}
+- Next Renewal: ${endDate.toLocaleString()}
+
+This is a positive indicator. The user has decided to continue with Salon Success Manager after reconsidering their cancellation.
+
+This is an automated notification from Salon Success Manager.
+        `
+      };
+      
+      // Send both emails asynchronously
+      Promise.all([
+        transporter.sendMail(userEmailOptions).then(info => {
+          console.log('✓ Reactivation email sent to user:', user.email);
+        }).catch(err => {
+          console.error('✗ Failed to send reactivation email to user:', err.message);
+        }),
+        
+        transporter.sendMail(adminEmailOptions).then(info => {
+          console.log('✓ Reactivation notification sent to admin');
+        }).catch(err => {
+          console.error('✗ Failed to send reactivation notification to admin:', err.message);
+        })
+      ]);
 
       res.json({ 
         success: true,

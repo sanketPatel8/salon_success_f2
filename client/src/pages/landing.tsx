@@ -77,7 +77,9 @@ const pricingBenefits = [
   "Email support",
   "Data security and backups",
   "Mobile responsive design",
-  "Regular feature updates"
+  "Regular feature updates",
+  "Monthly live accountability calls",
+  "Community & training portal"
 ];
 
 const benefits = [

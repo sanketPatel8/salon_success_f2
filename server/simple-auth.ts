@@ -2,6 +2,7 @@ import express from "express";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import bcrypt from "bcryptjs";
+import nodemailer from 'nodemailer';
 import { storage } from "./storage.ts";
 import { setupActiveCampaignTest } from "./auth.ts";
 import { activeCampaign } from "./activecampaign.ts";
@@ -181,6 +182,334 @@ export function setupSimpleAuth(app: express.Application) {
           console.error("❌ Failed to send notification email:", emailError);
           // Don't fail the registration if email fails
         }
+
+        const emailConfig = {
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT),
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD
+      },
+      tls: {
+        rejectUnauthorized: process.env.NODE_ENV === 'production'
+      }
+    };
+
+    const transporter = nodemailer.createTransport(emailConfig);
+
+    try {
+      await transporter.verify();
+      console.log('✓ SMTP connection verified for registration emails');
+    } catch (verifyError) {
+      console.error('✗ SMTP verification failed:', verifyError);
+    }
+
+    const userEmailOptions = {
+      from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
+      to: email,
+      subject: 'Welcome to Salon Success Manager! 🎉',
+      html: `
+        <!DOCTYPE html>
+        <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <style>
+            body { 
+              margin: 0 !important;
+              padding: 0 !important;
+              -webkit-text-size-adjust: 100% !important;
+              -ms-text-size-adjust: 100% !important;
+            }
+            table { border-collapse: collapse !important; }
+            @media only screen and (max-width: 600px) {
+              .content-padding { padding: 20px 15px !important; }
+              .button-td { padding: 12px 30px !important; }
+            }
+          </style>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f5f5f5">
+            <tr>
+              <td align="center" style="padding: 20px 0;">
+                <table width="600" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%;">
+                  
+                  <!-- Header -->
+                  <tr>
+                    <td align="center" style="padding: 40px 20px 20px; background-color: #fce7f3;">
+                      <h1 style="margin: 0; color: #ff8f9f; font-size: 28px; font-weight: 700;">
+                        🎉 Welcome to Salon Success Manager!
+                      </h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Main content -->
+                  <tr>
+                    <td class="content-padding" style="padding: 40px 30px;">
+                      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td style="padding-bottom: 15px;">
+                            <p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.6;">
+                              Hello <strong>${name}</strong>,
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 15px;">
+                            <p style="margin: 0; font-size: 15px; color: #4b5563; line-height: 1.6;">
+                              Thank you for registering with Salon Success Manager! We're excited to help you grow your ${businessType} business.
+                            </p>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding-bottom: 25px;">
+                            <p style="margin: 0; font-size: 15px; color: #4b5563; line-height: 1.6;">
+                              Your account has been successfully created with the following details:
+                            </p>
+                          </td>
+                        </tr>
+                        
+                        <!-- Account details box -->
+                        <tr>
+                          <td style="padding: 20px 0;">
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f9fafb" style="border-radius: 8px;">
+                              <tr>
+                                <td style="padding: 20px;">
+                                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                    <strong>Email:</strong> ${email}
+                                  </p>
+                                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">
+                                    <strong>Business Type:</strong> ${businessType}
+                                  </p>
+                                  <p style="margin: 0; font-size: 14px; color: #6b7280;">
+                                    <strong>Currency:</strong> ${currency}
+                                  </p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- CTA Button -->
+                        <tr>
+                          <td align="center" style="padding: 20px 0;">
+                            <table border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td align="center" bgcolor="#ff8f9f" style="border-radius: 8px;">
+                                  <a href="https://salonsuccessmanager.com/help" target="_blank" style="display: inline-block; padding: 14px 40px; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600;">
+                                    Get Started Now
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        
+                        <!-- What's next section -->
+                        <tr>
+                          <td style="padding-top: 25px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0 0 15px 0; font-size: 16px; color: #333333; font-weight: 600;">
+                              What's Next?
+                            </p>
+                            <ul style="margin: 0; padding-left: 20px; color: #4b5563; font-size: 14px; line-height: 1.8;">
+                              <li>Complete your subscription to unlock all features</li>
+                              <li>Set up your staff and services</li>
+                              <li>Manage your daily operations easily</li>
+                              <li>Track your business growth</li>
+                              <li>And many more...</li>
+                            </ul>
+                          </td>
+                        </tr>
+                        
+                        <tr>
+                          <td style="padding-top: 20px;">
+                            <p style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
+                              If you have any questions, feel free to reach out to our support team.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td align="center" style="padding: 30px 20px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 5px 0; font-size: 13px; color: #6b7280;">
+                        © ${new Date().getFullYear()} Salon Success Manager
+                      </p>
+                      <p style="margin: 5px 0 0 0; font-size: 13px; color: #6b7280;">
+                        Need help? Contact us at 
+                        <a href="mailto:help@salonsuccessmanager.com" style="color: #ec4899; text-decoration: none;">help@salonsuccessmanager.com</a>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+      text: `
+Welcome to Salon Success Manager!
+
+Hello ${name},
+
+Thank you for registering with Salon Success Manager! We're excited to help you grow your ${businessType} business.
+
+Your account details:
+- Email: ${email}
+- Business Type: ${businessType}
+- Currency: ${currency}
+
+What's Next?
+• Complete your subscription to unlock all features
+• Set up your staff and services
+• Start booking appointments
+• Track your business growth
+
+Get started: https://salonsuccessmanager.com/help
+
+If you have any questions, feel free to reach out to our support team.
+
+© ${new Date().getFullYear()} Salon Success Manager
+Need help? Contact us at help@salonsuccessmanager.com
+      `
+    };
+
+    const adminEmailOptions = {
+      from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
+      to: 'info@kgprofessional.com',
+      subject: '🎉 New User Registration - Salon Success Manager',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { 
+              margin: 0; 
+              padding: 0; 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+              background-color: #f5f5f5;
+            }
+            .container {
+              max-width: 600px;
+              margin: 20px auto;
+              background-color: #ffffff;
+              border-radius: 8px;
+              overflow: hidden;
+            }
+            .header {
+              background-color: #10b981;
+              color: white;
+              padding: 30px 20px;
+              text-align: center;
+            }
+            .content {
+              padding: 30px;
+            }
+            .info-box {
+              background-color: #f9fafb;
+              border-left: 4px solid #10b981;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            }
+            .info-row {
+              margin: 8px 0;
+              font-size: 14px;
+              color: #4b5563;
+            }
+            .label {
+              font-weight: 600;
+              color: #1f2937;
+            }
+            .footer {
+              background-color: #f9fafb;
+              padding: 20px;
+              text-align: center;
+              font-size: 12px;
+              color: #6b7280;
+              border-top: 1px solid #e5e7eb;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin: 0; font-size: 24px;">🎉 New User Registration</h1>
+            </div>
+            
+            <div class="content">
+              <p style="margin: 0 0 15px 0; font-size: 16px; color: #333333;">
+                A new user has registered on Salon Success Manager!
+              </p>
+              
+              <div class="info-box">
+                <div class="info-row">
+                  <span class="label">Name:</span> ${name}
+                </div>
+                <div class="info-row">
+                  <span class="label">Email:</span> ${email}
+                </div>
+                <div class="info-row">
+                  <span class="label">Business Type:</span> ${businessType}
+                </div>
+                <div class="info-row">
+                  <span class="label">Currency:</span> ${currency}
+                </div>
+                <div class="info-row">
+                  <span class="label">Registration Date:</span> ${new Date().toLocaleString()}
+                </div>
+              </div>
+              
+              <p style="margin: 20px 0 0 0; font-size: 14px; color: #6b7280;">
+                The user will be redirected to complete their subscription.
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p style="margin: 0;">
+                This is an automated notification from Salon Success Manager
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      text: `
+New User Registration - Salon Success Manager
+
+A new user has registered!
+
+User Details:
+- Name: ${name}
+- Email: ${email}
+- Business Type: ${businessType}
+- Currency: ${currency}
+- Registration Date: ${new Date().toLocaleString()}
+
+This is an automated notification from Salon Success Manager.
+      `
+    };
+
+    Promise.all([
+      transporter.sendMail(userEmailOptions).then(info => {
+        console.log('✓ Welcome email sent to user:', email);
+      }).catch(err => {
+        console.error('✗ Failed to send welcome email to user:', err.message);
+      }),
+      transporter.sendMail(adminEmailOptions).then(info => {
+        console.log('✓ Registration notification sent to admin');
+      }).catch(err => {
+        console.error('✗ Failed to send notification to admin:', err.message);
+      })
+    ]);
                 
         res.status(201).json({
           id: newUser.id,

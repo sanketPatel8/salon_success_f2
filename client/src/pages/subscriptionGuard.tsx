@@ -125,7 +125,7 @@ export default function SubscriptionGuard({
 
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-pink-600">£23.97/month</p>
+              <p className="text-2xl font-bold text-pink-600">£27/month</p>
               <p className="text-sm text-gray-600">
                 {!subscription?.isTrial && '3-day free trial • '}
                 Cancel anytime
@@ -135,7 +135,7 @@ export default function SubscriptionGuard({
 
           <div className="flex gap-3">
             <Button
-              onClick={() => navigateTo('/subscribe')}
+              onClick={() => navigateTo('/help')}
               className="flex-1 bg-primary text-white hover-bg-[#FFB6C1]"
               size="lg"
             >

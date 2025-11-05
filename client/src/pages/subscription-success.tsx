@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Loader2, AlertCircle, Calendar, CreditCard, Gift } from 'lucide-react';
+import { CheckCircle2, Loader2, AlertCircle, Calendar, CreditCard, Gift, Mail } from 'lucide-react';
 
 export default function SubscriptionSuccess() {
   const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -45,6 +46,9 @@ export default function SubscriptionSuccess() {
       await new Promise(resolve => setTimeout(resolve, remainingTime));
       
       setSubscriptionData(data);
+      
+      // Send subscription confirmation emails
+      await sendSubscriptionEmail(data);
     } catch (err: any) {
       console.error('Verification error:', err);
       
@@ -57,6 +61,32 @@ export default function SubscriptionSuccess() {
       setError(err.message || 'Failed to verify your subscription. Please contact support.');
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const sendSubscriptionEmail = async (subscriptionData: any) => {
+    setSendingEmail(true);
+    try {
+      const emailRes = await fetch('/send-subscription-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ subscriptionData })
+      });
+
+      if (!emailRes.ok) {
+        const errorData = await emailRes.json();
+        console.error('Email send error:', errorData);
+      } else {
+        const emailData = await emailRes.json();
+        console.log('Subscription emails sent:', emailData);
+      }
+    } catch (err) {
+      console.error('Failed to send subscription emails:', err);
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -81,17 +111,21 @@ export default function SubscriptionSuccess() {
   };
 
   // Loading state
-  if (verifying) {
+  if (verifying || sendingEmail) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-pink-500 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Verifying your subscription...</p>
+          <p className="text-gray-600 text-lg">
+            {verifying ? 'Verifying your subscription...' : 'Sending confirmation email...'}
+          </p>
           <p className="text-gray-500 text-sm mt-2">Please wait a moment</p>
         </div>
       </div>
     );
   }
+
+ 
 
   // Error state
   if (error) {

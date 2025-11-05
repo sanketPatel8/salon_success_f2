@@ -325,7 +325,7 @@ export default function Subscription() {
           <CardContent className="space-y-6">
             <div>
               <div className="text-4xl font-bold text-pink-600">
-                £23.97
+                £27
                 <span className="text-lg font-normal text-gray-600">/month</span>
               </div>
               <p className="text-sm text-gray-600 mt-2">
