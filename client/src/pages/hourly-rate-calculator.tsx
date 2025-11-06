@@ -339,7 +339,7 @@ export default function HourlyRateCalculator() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-slate-800">Advanced Calculate</h3>
+                    <h3 className="text-xl font-bold text-slate-800">Advanced Calculator</h3>
                     <p className="text-slate-600 text-sm mt-1">All factors for optimal rate calculation</p>
                   </div>
                   <div className="w-8 h-8 bg-blue-100 rounded-lg items-center justify-center hidden md:flex">

@@ -366,17 +366,19 @@ export default function Help() {
                   Quick Start Video
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
-                  Watch a 5-minute overview of your Salon Success Manager
+                  Watch a 20-minute overview of your Salon Success Manager
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-4 sm:pb-6">
-                <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
-                  <div className="text-center">
-                    <Video className="h-8 w-8 sm:h-12 sm:w-12 text-slate-400 mx-auto mb-2" />
-                    <p className="text-xs sm:text-sm text-slate-500">Tutorial video coming soon</p>
-                  </div>
+                <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden mb-3 sm:mb-4">
+                  <iframe 
+                    className="w-full h-full"
+                    src="https://www.youtube.com/embed/Ie1-B8ze_TE?si=LUsVuuAwIXTh0mZH" 
+                    title="YouTube video player" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" 
+                    allowFullScreen
+                  ></iframe>
                 </div>
-                <Button className="w-full text-sm text-white">Watch Tutorial</Button>
               </CardContent>
             </Card>
 
