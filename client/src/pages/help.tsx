@@ -359,30 +359,35 @@ export default function Help() {
 
         <TabsContent value="getting-started" className="space-y-4 sm:space-y-6">
           <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-            <Card>
-  <CardHeader className="pb-3 sm:pb-6">
-    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-      <Video className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-      Quick Start Video
-    </CardTitle>
-    <CardDescription className="text-xs sm:text-sm">
-      Watch a 20-minute overview of your Salon Success Manager
-    </CardDescription>
-  </CardHeader>
-  <CardContent className="pb-4 sm:pb-6">
-    <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden mb-3 sm:mb-4">
-      <iframe 
-        className="w-full h-full"
-        src="https://www.youtube-nocookie.com/embed/Ie1-B8ze_TE"
-        title="Salon Success Help Demo"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-        allowFullScreen
-        loading="lazy"
-      ></iframe>
-    </div>
-    <Button className="w-full text-sm text-white">Watch Tutorial</Button>
-  </CardContent>
-</Card>
+           <Card>
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Video className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                Quick Start Video
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Watch a 20-minute overview of your Salon Success Manager
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4 sm:pb-6">
+              <div className="relative aspect-video bg-slate-100 rounded-lg overflow-hidden mb-3 sm:mb-4">
+                <iframe 
+                  className="absolute top-0 left-0 w-full h-full"
+                  src="https://www.youtube.com/embed/Ie1-B8ze_TE?rel=0&modestbranding=1"
+                  title="Salon Success Help Demo"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  style={{ border: 0 }}
+                ></iframe>
+              </div>
+              <Button className="w-full text-sm text-white" asChild>
+                <a href="https://www.youtube.com/watch?v=Ie1-B8ze_TE" target="_blank" rel="noopener noreferrer">
+                  Watch Tutorial
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
 
             <Card>
               <CardHeader className="pb-3 sm:pb-6">
