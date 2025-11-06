@@ -683,7 +683,7 @@ This is an automated notification from Salon Success Manager.
       id: number;
       email: string;
       name: string;
-      subscriptionStatus: "active" | "trial" | "inactive" | "free";
+      subscriptionStatus: "active" | "trialing" | "inactive" | "free_access";
       createdAt: string;
       businessType: string;
       currency: string;
@@ -696,12 +696,12 @@ This is an automated notification from Salon Success Manager.
         activeSubscriptions: users.filter(
           (u: User) => u.subscriptionStatus === "active"
         ).length,
-        trialUsers: users.filter((u: User) => u.subscriptionStatus === "trial")
+        trialUsers: users.filter((u: User) => u.subscriptionStatus === "trialing")
           .length,
         inactiveUsers: users.filter(
           (u: User) => u.subscriptionStatus === "inactive"
         ).length,
-        freeUsers: users.filter((u: User) => u.subscriptionStatus === "free")
+        freeUsers: users.filter((u: User) => u.subscriptionStatus === "free_access")
           .length,
         recentUsers: users.filter((u: User) => {
           const createdAt = new Date(u.createdAt || 0);

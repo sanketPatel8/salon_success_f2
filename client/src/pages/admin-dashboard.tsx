@@ -152,9 +152,9 @@ export default function AdminDashboard() {
     switch (status) {
       case "active":
         return "bg-green-100 text-green-800";
-      case "trial":
+      case "trialing":
         return "bg-blue-100 text-blue-800";
-      case "free":
+      case "free_access":
         return "bg-purple-100 text-purple-800";
       case "inactive":
         return "bg-gray-100 text-gray-800";
@@ -167,9 +167,9 @@ export default function AdminDashboard() {
     switch (status) {
       case "active":
         return <Crown className="w-4 h-4" />;
-      case "trial":
+      case "trialing":
         return <Clock className="w-4 h-4" />;
-      case "free":
+      case "free_access":
         return <Gift className="w-4 h-4" />;
       case "inactive":
         return <UserX className="w-4 h-4" />;
@@ -337,7 +337,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex space-x-2">
-                          <Button
+                          {/* <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateUserMutation.mutate({ 
@@ -348,25 +348,25 @@ export default function AdminDashboard() {
                             disabled={updateUserMutation.isPending}
                           >
                             Activate
-                          </Button>
-                          <Button
+                          </Button> */}
+                          {/* <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateUserMutation.mutate({ 
                               userId: user.id, 
-                              status: "trial" 
+                              status: "trialing" 
                             })}
                             disabled={updateUserMutation.isPending}
                           >
                             Trial
-                          </Button>
+                          </Button> */}
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateUserMutation.mutate({ 
                               userId: user.id, 
-                              status: "free",
-                              endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
+                              status: "free_access",
+                              endDate: new Date(Date.now() + 60 * 60 * 1000).toISOString()
                             })}
                             disabled={updateUserMutation.isPending}
                           >

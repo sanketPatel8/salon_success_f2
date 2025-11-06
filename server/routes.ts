@@ -819,10 +819,30 @@ Welcome to Salon Success Manager! If you need any help, contact us at help@salon
 
       // Check for free access (promo code)
       if (user.subscriptionStatus === 'free_access') {
-        const daysLeft = user.subscriptionEndDate 
-          ? Math.ceil((new Date(user.subscriptionEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        const now = Date.now();
+        const endDate = user.subscriptionEndDate ? new Date(user.subscriptionEndDate).getTime() : null;
+        const daysLeft = endDate 
+          ? Math.ceil((endDate - now) / (1000 * 60 * 60 * 24))
           : null;
         
+        // Check if free access has expired
+        const hasExpired = endDate && endDate < now;
+        
+        // If expired, update status to inactive and clear end date
+        if (hasExpired) {
+          await storage.updateSubscriptionStatus(user.id, 'inactive', null);
+          
+          return res.json({
+            hasAccess: false,
+            status: 'inactive',
+            isTrial: false,
+            daysLeft: null,
+            endDate: null,
+            cancelAtPeriodEnd: false
+          });
+        }
+        
+        // Still active
         return res.json({
           hasAccess: true,
           status: 'free_access',
@@ -915,34 +935,6 @@ Welcome to Salon Success Manager! If you need any help, contact us at help@salon
         }
       }
 
-      // Check for trial subscription (local only)
-      if (user.subscriptionStatus === 'trial' && user.subscriptionEndDate) {
-        const now = new Date();
-        const trialEnd = new Date(user.subscriptionEndDate);
-        
-        if (now <= trialEnd) {
-          const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return res.json({
-            hasAccess: true,
-            status: 'trial',
-            isTrial: true,
-            daysLeft: daysLeft,
-            endDate: trialEnd.toISOString(),
-            cancelAtPeriodEnd: false
-          });
-        } else {
-          // Trial expired
-          await storage.updateSubscriptionStatus(user.id, 'expired');
-          return res.json({
-            hasAccess: false,
-            status: 'expired',
-            isTrial: false,
-            daysLeft: 0,
-            endDate: trialEnd.toISOString(),
-            cancelAtPeriodEnd: false
-          });
-        }
-      }
 
       // Check for active subscription (backward compatibility)
       if (user.subscriptionStatus === 'active') {
