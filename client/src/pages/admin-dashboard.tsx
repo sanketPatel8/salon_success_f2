@@ -366,7 +366,7 @@ export default function AdminDashboard() {
                             onClick={() => updateUserMutation.mutate({ 
                               userId: user.id, 
                               status: "free_access",
-                              endDate: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+                              endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
                             })}
                             disabled={updateUserMutation.isPending}
                           >
