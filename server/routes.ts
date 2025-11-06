@@ -681,7 +681,7 @@ Welcome to Salon Success Manager! If you need any help, contact us at help@salon
     // Admin notification email
     const adminEmailOptions = {
       from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
-      to: 'info@kgprofessional.com',
+      to: 'help@salonsuccessmanager.com',
       subject: `New Subscription: ${subscriptionData.isTrial ? 'Trial' : 'Paid'} - ${user.name}`,
       html: `
         <h2>New Subscription Notification</h2>
@@ -1209,7 +1209,7 @@ Need help? Contact us at help@salonsuccessmanager.com
     // Send notification email to admin
     const adminEmailOptions = {
       from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
-      to: 'info@kgprofessional.com',
+      to: 'help@salonsuccessmanager.com',
       subject: '⚠️ Subscription Cancelled - Salon Success Manager',
       html: `
         <!DOCTYPE html>
@@ -1624,7 +1624,7 @@ Need help? Contact us at help@salonsuccessmanager.com
       // Send notification email to admin
       const adminEmailOptions = {
         from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
-        to: 'info@kgprofessional.com',
+        to: 'help@salonsuccessmanager.com',
         subject: '✅ Subscription Reactivated - Salon Success Manager',
         html: `
           <!DOCTYPE html>

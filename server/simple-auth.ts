@@ -382,7 +382,7 @@ Need help? Contact us at help@salonsuccessmanager.com
 
     const adminEmailOptions = {
       from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
-      to: 'info@kgprofessional.com',
+      to: 'help@salonsuccessmanager.com',
       subject: '🎉 New User Registration - Salon Success Manager',
       html: `
         <!DOCTYPE html>
