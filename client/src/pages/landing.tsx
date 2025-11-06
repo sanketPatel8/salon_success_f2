@@ -127,13 +127,13 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div className="text-center lg:text-left">
-              <div className="mb-4 sm:mb-6 flex justify-center lg:justify-start">
+              <div className="mb-4 sm:mb-6 flex justify-center">
                 <img 
                 src="/logo_withbg.jpeg" 
                 alt="The Salon Success Manager Logo" 
-                className="h-8 w-8 sm:h-8 sm:w-8 mr-[10px]"
+                className="h-24 w-24 sm:h-24 sm:w-24"
               />
-                <h2 className="text-xl sm:text-2xl font-bold text-primary">The Salon Success Manager</h2>
+                {/* <h2 className="text-xl sm:text-2xl font-bold text-primary">The Salon Success Manager</h2> */}
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
                 Understand Your Numbers. Stop Winging It.
