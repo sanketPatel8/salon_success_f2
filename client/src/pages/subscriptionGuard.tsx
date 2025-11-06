@@ -21,14 +21,36 @@ export default function SubscriptionGuard({
 }: SubscriptionGuardProps) {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [forceRefresh, setForceRefresh] = useState(0);
 
   useEffect(() => {
     checkSubscription();
-  }, []);
+
+    // Listen for subscription status updates
+    const handleSubscriptionUpdate = (event: CustomEvent) => {
+      const data = event.detail as SubscriptionStatus;
+      setSubscription(data);
+      setLoading(false);
+    };
+
+    window.addEventListener('subscriptionStatusUpdated', handleSubscriptionUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('subscriptionStatusUpdated', handleSubscriptionUpdate as EventListener);
+    };
+  }, [forceRefresh]);
 
   const checkSubscription = async () => {
     try {
-      // Use the route from routes.ts
+      // Check if we have cached status first (for quick render)
+      const cached = sessionStorage.getItem('subscription_status');
+      if (cached) {
+        const cachedData = JSON.parse(cached);
+        setSubscription(cachedData);
+        setLoading(false);
+      }
+
+      // Always fetch fresh data
       const res = await fetch('/subscription-status', {
         credentials: 'include',
       });
@@ -40,6 +62,10 @@ export default function SubscriptionGuard({
       }
 
       const data = await res.json();
+      
+      // Update cache
+      sessionStorage.setItem('subscription_status', JSON.stringify(data));
+      
       setSubscription(data);
 
       // Check if user has access
@@ -63,6 +89,11 @@ export default function SubscriptionGuard({
 
   const navigateTo = (path: string) => {
     window.location.href = path;
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setForceRefresh(prev => prev + 1);
   };
 
   if (loading) {
@@ -111,10 +142,10 @@ export default function SubscriptionGuard({
             <h3 className="font-semibold">What you'll get:</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>✓ Perfect Pricing Calculator</li>
-              <li>✓ Track Your Salon’s Income</li>
+              <li>✓ Track Your Salon's Income</li>
               <li>✓ Keep on Top of Your Expenses</li>
               <li>✓ Money goal setting tracker</li>
-              <li>✓ Katie’s famous CEO Numbers formula</li>
+              <li>✓ Katie's famous CEO Numbers formula</li>
               <li>✓ Money Pot System</li>
               <li>✓ Instant Profit Insights</li>
               <li>✓ One Place for All Your Businesses</li>
@@ -136,12 +167,11 @@ export default function SubscriptionGuard({
           <div className="flex gap-3">
             <Button
               onClick={() => navigateTo('/help')}
-              className="flex-1 bg-primary text-white hover-bg-[#FFB6C1]"
+              className="flex-1 bg-primary text-white hover:bg-[#FFB6C1]"
               size="lg"
             >
               {subscription?.isTrial ? 'Upgrade Now' : 'Start Free Trial'}
             </Button>
-            
           </div>
         </CardContent>
       </Card>

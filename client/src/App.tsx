@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -34,6 +35,35 @@ import TeamTarget from "./pages/team-target.tsx";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
+
+  // Check subscription status on every route change
+  useEffect(() => {
+    if (isAuthenticated && !location.startsWith('/admin')) {
+      checkSubscriptionStatus();
+    }
+  }, [location, isAuthenticated]);
+
+  const checkSubscriptionStatus = async () => {
+    try {
+      const res = await fetch('/subscription-status', {
+        credentials: 'include',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Store subscription status in sessionStorage for quick access
+        sessionStorage.setItem('subscription_status', JSON.stringify(data));
+        
+        // You can also dispatch a custom event if you want other components to react
+        window.dispatchEvent(new CustomEvent('subscriptionStatusUpdated', { 
+          detail: data 
+        }));
+      }
+    } catch (error) {
+      console.error('Subscription status check failed:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -43,6 +73,17 @@ function Router() {
           aria-label="Loading"
         />
       </div>
+    );
+  }
+
+  // Admin routes - handle separately (no sidebar)
+  if (location.startsWith('/admin')) {
+    return (
+      <Switch>
+        <Route path="/admin" component={AdminLogin} />
+        <Route path="/admin/dashboard" component={AdminDashboard} />
+        <Route component={NotFound} />
+      </Switch>
     );
   }
 
@@ -56,8 +97,6 @@ function Router() {
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/trial-demo" component={TrialDemo} />
         <Route path="/privacy" component={Privacy} />
-        <Route path="/admin" component={AdminLogin} />
-        <Route path="/admin/dashboard" component={AdminDashboard} />
         <Route path="/" component={Landing} />
         <Route component={Landing} />
       </Switch>
