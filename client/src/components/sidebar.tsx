@@ -43,7 +43,7 @@ export default function Sidebar() {
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-8 bg-white rounded-lg flex items-center justify-center p-1">
-              <img src={logoPath} alt="Katie Godfrey Logo" className="w-full h-full object-contain" />
+              <img src="/logo_withbg.jpeg" alt="salon success Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-slate-800">Salon Success</h1>
@@ -83,11 +83,11 @@ export default function Sidebar() {
         {/* Logo Section - Desktop Only */}
         <div className="hidden lg:block p-6 border-b border-slate-200">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-10 bg-white rounded-lg flex items-center justify-center p-1">
-              <img src={logoPath} alt="Katie Godfrey Logo" className="w-full h-full object-contain" />
+            <div className="w-14 h-14 bg-white rounded-lg flex items-center justify-center">
+              <img src="/logo_withbg.jpeg" alt="salon success Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Salon Success</h1>
+              <h1 className="text-lg font-bold text-slate-800">Salon Success</h1>
               <p className="text-sm text-slate-500">Manager</p>
             </div>
           </div>

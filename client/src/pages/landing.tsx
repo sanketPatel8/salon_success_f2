@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, FileText, Star, Users, Target, Shield, Crown } from "lucide-react";
+import { Check, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, FileText, Star, Users, Target, Shield, Crown, X } from "lucide-react";
 import { Link } from "wouter";
 import katiePhotoPath from "@assets/katie-photo.png";
+import { useState } from "react";
 
 const features = [
   {
@@ -91,6 +92,7 @@ const benefits = [
   ];
 
 export default function Landing() {
+  const [showDemo, setShowDemo] = useState(false);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -98,6 +100,11 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-3">
+              <img 
+                src="/logo_withbg.jpeg" 
+                alt="The Salon Success Manager Logo" 
+                className="h-14 w-14 sm:h-16 sm:w-16"
+              />
               <div>
                 <h1 className="text-base sm:text-xl font-bold text-slate-800">The Salon Success Manager</h1>
                 <p className="text-xs sm:text-sm text-slate-500">by Katie Godfrey</p>
@@ -121,6 +128,11 @@ export default function Landing() {
           <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div className="text-center lg:text-left">
               <div className="mb-4 sm:mb-6 flex justify-center lg:justify-start">
+                <img 
+                src="/logo_withbg.jpeg" 
+                alt="The Salon Success Manager Logo" 
+                className="h-8 w-8 sm:h-8 sm:w-8 mr-[10px]"
+              />
                 <h2 className="text-xl sm:text-2xl font-bold text-primary">The Salon Success Manager</h2>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
@@ -146,7 +158,7 @@ export default function Landing() {
                     <span className="ml-2">→</span>
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
+                <Button onClick={() => setShowDemo(true)} size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
                   Watch Demo
                 </Button>
               </div>
@@ -225,17 +237,57 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="relative  flex items-center justify-center overflow-hidden bg-hsl(348 30% 85%)">
+      {showDemo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl relative">
+            <button
+              onClick={() => setShowDemo(false)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition"
+            >
+              <X size={32} />
+            </button>
+            
+            <div className="relative w-full bg-black" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute inset-0 w-full h-full"
+                width="560"
+                height="315"
+                src="https://www.youtube.com/embed/yitHSnYrNNI?si=Zt-FSphqLzrCEtRf"
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <section className="relative flex items-center justify-center overflow-hidden bg-hsl(348 30% 85%)">
+  
+  {/* Content Container */}
+  <div className="relative z-10 max-w-6xl mx-auto px-6 my-16 py-4">
+    <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
       
-      {/* Content */}
-      <div className="relative z-10 max-w-6xl mx-auto px-6 my-16 py-4 text-center">
+      {/* Left Side - Image */}
+      <div className="w-full lg:w-1/2 h-full">
+        <img 
+          src="/Katie_image.jpeg" 
+          alt="Salon Success Manager Dashboard" 
+          className="w-full h-[600px] rounded-lg shadow-xl object-cover"
+        />
+      </div>
+
+      {/* Right Side - Content */}
+      <div className="w-full lg:w-1/2 text-center lg:text-left">
         {/* Main Headline */}
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-8 leading-tight">
           Stop Guessing. Start Managing Like a CEO.
         </h1>
 
         {/* Subheadline */}
-        <p className="text-lg md:text-xl text-gray-800 mb-6 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-lg md:text-xl text-gray-800 mb-6 leading-relaxed">
           Most salon owners are incredible at what they do, but when it comes to numbers? 
           It's confusing, overwhelming, and easy to avoid.
         </p>
@@ -246,7 +298,7 @@ export default function Landing() {
         </p>
 
         {/* Description */}
-        <div className="max-w-5xl mx-auto mb-12">
+        <div className="mb-12">
           <p className="text-base md:text-lg text-gray-800 leading-relaxed mb-4">
             The no-jargon financial tool built specifically for the hair, beauty, and aesthetics industry.
           </p>
@@ -255,7 +307,10 @@ export default function Landing() {
           </p>
         </div>
       </div>
-    </section>
+
+    </div>
+  </div>
+</section>
 
       {/* Testimonial Section */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 bg-hsl(348 30% 85%)">
