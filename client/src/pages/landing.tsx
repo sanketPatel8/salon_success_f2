@@ -105,10 +105,10 @@ export default function Landing() {
                 alt="The Salon Success Manager Logo" 
                 className="h-14 w-14 sm:h-16 sm:w-16"
               />
-              <div>
+              {/* <div>
                 <h1 className="text-base sm:text-xl font-bold text-slate-800">The Salon Success Manager</h1>
                 <p className="text-xs sm:text-sm text-slate-500">by Katie Godfrey</p>
-              </div>
+              </div> */}
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/login">
