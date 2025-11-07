@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -218,6 +218,16 @@ export default function CEONumbers() {
   
   // Local state for input values to prevent blinking
   const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
+
+  const businessNameInputRef = useRef<HTMLInputElement>(null);
+const businessLocationInputRef = useRef<HTMLInputElement>(null);
+
+// Add this handler function
+const handleInputTouchStart = (inputRef: React.RefObject<HTMLInputElement>) => {
+  if (inputRef.current) {
+    inputRef.current.focus();
+  }
+};
 
   // Check for session cookie and handle API 401 responses
   useEffect(() => {
@@ -586,47 +596,50 @@ export default function CEONumbers() {
       <Form {...businessForm}>
         <form onSubmit={businessForm.handleSubmit(handleBusinessSubmit)} className="space-y-4">
           <FormField
-            control={businessForm.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Business Name</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Main Salon" 
-                    {...field}
-                    inputMode="text"
-                    autoFocus={false}
-                    onFocus={(e) => {
-                      if (window.innerWidth <= 1024) {
-                        e.target.blur();
-                        setTimeout(() => e.target.focus(), 100);
-                      }
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={businessForm.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Location (Optional)</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="City Center" 
-                    {...field}
-                    inputMode="text"
-                    autoFocus={false}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+  control={businessForm.control}
+  name="name"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Business Name</FormLabel>
+      <FormControl>
+        <Input 
+          ref={businessNameInputRef}
+          placeholder="Main Salon" 
+          {...field}
+          inputMode="text"
+          autoComplete="off"
+          autoFocus={false}
+          onTouchStart={() => handleInputTouchStart(businessNameInputRef)}
+          onClick={() => businessNameInputRef.current?.focus()}
+        />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
+<FormField
+  control={businessForm.control}
+  name="location"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Location (Optional)</FormLabel>
+      <FormControl>
+        <Input 
+          ref={businessLocationInputRef}
+          placeholder="City Center" 
+          {...field}
+          inputMode="text"
+          autoComplete="off"
+          autoFocus={false}
+          onTouchStart={() => handleInputTouchStart(businessLocationInputRef)}
+          onClick={() => businessLocationInputRef.current?.focus()}
+        />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
           <Button type="submit" disabled={createBusinessMutation.isPending} className="w-full text-white">
             {createBusinessMutation.isPending ? "Creating..." : "Create Business"}
           </Button>
