@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, startOfWeek, addDays, isSameWeek, parseISO, addWeeks, subWeeks, startOfMonth, endOfMonth, getMonth, getYear, isSameMonth, subYears, endOfWeek } from "date-fns";
-import { CalendarDays, Plus, Target, TrendingUp, DollarSign, PiggyBank, Building2, ChevronLeft, ChevronRight, Calendar, ArrowUpDown } from "lucide-react";
+import { CalendarDays, Plus, Target, TrendingUp, DollarSign, PiggyBank, Building2, ChevronLeft, ChevronRight, Calendar, ArrowUpDown, Edit2  } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import Header from "@/components/header";
@@ -213,6 +213,8 @@ export default function CEONumbers() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [comparisonYear, setComparisonYear] = useState(new Date().getFullYear() - 1);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [showEditBusinessDialog, setShowEditBusinessDialog] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   
   // Local state for input values to prevent blinking
   const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
@@ -283,6 +285,31 @@ export default function CEONumbers() {
       businessForm.reset();
     },
   });
+
+  const editBusinessMutation = useMutation({
+    mutationFn: (data: { id: number; name: string; location?: string }) => 
+      apiRequest("PUT", `/api/businesses/${data.id}`, { name: data.name, location: data.location }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/businesses"] });
+      setShowEditBusinessDialog(false);
+      setEditingBusiness(null);
+      businessForm.reset();
+      
+      // Toast shows here after successful update
+      toast({
+        title: "Business Updated",
+        description: "Your business has been updated successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update business. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
 
   const createIncomeGoalMutation = useMutation({
     mutationFn: (data: IncomeGoalForm) => apiRequest("POST", "/api/income-goals", data),
@@ -428,6 +455,24 @@ export default function CEONumbers() {
     createBusinessMutation.mutate(data);
   };
 
+  const handleEditBusiness = (business: Business) => {
+    setEditingBusiness(business);
+    businessForm.reset({
+      name: business.name,
+      location: business.location || "",
+    });
+    setShowEditBusinessDialog(true);
+  };
+
+  const handleEditBusinessSubmit = (data: BusinessForm) => {
+    if (editingBusiness) {
+      editBusinessMutation.mutate({
+        id: editingBusiness.id,
+        ...data,
+      });
+    }
+  };
+
   const handleGoalSubmit = (data: IncomeGoalForm) => {
     createIncomeGoalMutation.mutate(data);
   };
@@ -488,92 +533,171 @@ export default function CEONumbers() {
       {/* Business Selection & Controls */}
       <div className="flex flex-col gap-3 sm:gap-4">
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-          <div className="flex items-center gap-2 flex-1">
-            <Label htmlFor="business-select" className="whitespace-nowrap text-sm">Business:</Label>
-            <Select value={selectedBusiness.toString()} onValueChange={(value) => setSelectedBusiness(value === "all" ? "all" : parseInt(value))}>
-              <SelectTrigger className="flex-1 sm:w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Businesses</SelectItem>
-                {businesses.map((business) => (
-                  <SelectItem key={business.id} value={business.id.toString()}>
-                    {business.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+  <div className="flex items-center gap-2 flex-1">
+    <Label htmlFor="business-select" className="whitespace-nowrap text-sm">Business:</Label>
+    <Select value={selectedBusiness.toString()} onValueChange={(value) => setSelectedBusiness(value === "all" ? "all" : parseInt(value))}>
+      <SelectTrigger className="flex-1 sm:w-48">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Businesses</SelectItem>
+        {businesses.map((business) => (
+          <SelectItem key={business.id} value={business.id.toString()}>
+            {business.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
 
-         <Dialog open={showBusinessDialog} onOpenChange={setShowBusinessDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Business
-              </Button>
-            </DialogTrigger>
-            <DialogContent 
-              className="max-w-[95vw] sm:max-w-md max-h-[70vh] overflow-y-auto top-[10%] translate-y-0"
-              onOpenAutoFocus={(e) => e.preventDefault()}
-            >
-              <DialogHeader>
-                <DialogTitle>Add New Business</DialogTitle>
-                <DialogDescription>
-                  Create a new business location to track separately
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...businessForm}>
-                <form onSubmit={businessForm.handleSubmit(handleBusinessSubmit)} className="space-y-4">
-                  <FormField
-                    control={businessForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business Name</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Main Salon" 
-                            {...field}
-                            inputMode="text"
-                            autoFocus={false}
-                            onFocus={(e) => {
-                              if (window.innerWidth <= 1024) {
-                                e.target.blur();
-                                setTimeout(() => e.target.focus(), 100);
-                              }
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+  {/* Edit Button - Shows when a single business is selected */}
+  {selectedBusiness !== "all" && (
+    <Button 
+      variant="outline" 
+      size="sm" 
+      className="w-full sm:w-auto"
+      onClick={() => {
+        const business = businesses.find(b => b.id === selectedBusiness);
+        if (business) handleEditBusiness(business);
+      }}
+    >
+      <Edit2 className="h-4 w-4 mr-2" />
+      Edit
+    </Button>
+  )}
+
+  <Dialog open={showBusinessDialog} onOpenChange={setShowBusinessDialog}>
+    <DialogTrigger asChild>
+      <Button variant="outline" size="sm" className="w-full sm:w-auto">
+        <Plus className="h-4 w-4 mr-2" />
+        Add Business
+      </Button>
+    </DialogTrigger>
+    <DialogContent 
+      className="max-w-[95vw] sm:max-w-md max-h-[70vh] overflow-y-auto top-[10%] translate-y-0"
+      onOpenAutoFocus={(e) => e.preventDefault()}
+    >
+      <DialogHeader>
+        <DialogTitle>Add New Business</DialogTitle>
+        <DialogDescription>
+          Create a new business location to track separately
+        </DialogDescription>
+      </DialogHeader>
+      <Form {...businessForm}>
+        <form onSubmit={businessForm.handleSubmit(handleBusinessSubmit)} className="space-y-4">
+          <FormField
+            control={businessForm.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Business Name</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Main Salon" 
+                    {...field}
+                    inputMode="text"
+                    autoFocus={false}
+                    onFocus={(e) => {
+                      if (window.innerWidth <= 1024) {
+                        e.target.blur();
+                        setTimeout(() => e.target.focus(), 100);
+                      }
+                    }}
                   />
-                  <FormField
-                    control={businessForm.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location (Optional)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="City Center" 
-                            {...field}
-                            inputMode="text"
-                            autoFocus={false}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={businessForm.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Location (Optional)</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="City Center" 
+                    {...field}
+                    inputMode="text"
+                    autoFocus={false}
                   />
-                  <Button type="submit" disabled={createBusinessMutation.isPending} className="w-full text-white">
-                    {createBusinessMutation.isPending ? "Creating..." : "Create Business"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" disabled={createBusinessMutation.isPending} className="w-full text-white">
+            {createBusinessMutation.isPending ? "Creating..." : "Create Business"}
+          </Button>
+        </form>
+      </Form>
+    </DialogContent>
+  </Dialog>
+</div>
+
+<Dialog open={showEditBusinessDialog} onOpenChange={setShowEditBusinessDialog}>
+  <DialogContent 
+    className="max-w-[95vw] sm:max-w-md max-h-[70vh] overflow-y-auto top-[10%] translate-y-0"
+    onOpenAutoFocus={(e) => e.preventDefault()}
+  >
+    <DialogHeader>
+      <DialogTitle>Edit Business</DialogTitle>
+      <DialogDescription>
+        Update your business details
+      </DialogDescription>
+    </DialogHeader>
+    <Form {...businessForm}>
+      <form onSubmit={businessForm.handleSubmit(handleEditBusinessSubmit)} className="space-y-4">
+        <FormField
+          control={businessForm.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Business Name</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Main Salon" 
+                  {...field}
+                  inputMode="text"
+                  autoFocus={false}
+                  onFocus={(e) => {
+                    if (window.innerWidth <= 1024) {
+                      e.target.blur();
+                      setTimeout(() => e.target.focus(), 100);
+                    }
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={businessForm.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Location (Optional)</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="City Center" 
+                  {...field}
+                  inputMode="text"
+                  autoFocus={false}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={editBusinessMutation.isPending} className="w-full text-white">
+          {editBusinessMutation.isPending ? "Updating..." : "Update Business"}
+        </Button>
+      </form>
+    </Form>
+  </DialogContent>
+</Dialog>
 
         {/* Week Selection with Enhanced Calendar Picker */}
         <div className="flex items-center gap-2 justify-end">

@@ -36,7 +36,7 @@ const categories = [
   "Stock",
   "Professional Services",
   "Rent & Utilities",
-  "Spending on me (opps)",
+  "Spending on me (oops)",
   "Training & Education",
   "Travel & Transportation",
   "Wages"
