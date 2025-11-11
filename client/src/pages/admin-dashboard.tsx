@@ -154,6 +154,8 @@ export default function AdminDashboard() {
         return "bg-green-100 text-green-800";
       case "trialing":
         return "bg-blue-100 text-blue-800";
+      case "trial":
+        return "bg-blue-100 text-blue-800";
       case "free_access":
         return "bg-purple-100 text-purple-800";
       case "inactive":
@@ -168,6 +170,8 @@ export default function AdminDashboard() {
       case "active":
         return <Crown className="w-4 h-4" />;
       case "trialing":
+        return <Clock className="w-4 h-4" />;
+      case "trial":
         return <Clock className="w-4 h-4" />;
       case "free_access":
         return <Gift className="w-4 h-4" />;
