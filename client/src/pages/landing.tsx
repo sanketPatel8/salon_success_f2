@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, FileText, Star, Users, Target, Shield, Crown, X } from "lucide-react";
 import { Link } from "wouter";
 import katiePhotoPath from "@assets/katie-photo.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const features = [
   {
@@ -93,6 +93,22 @@ const benefits = [
 
 export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
+
+  useEffect(() => {
+    // Base Meta Pixel Code
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod ?
+    n.callMethod.apply(n,arguments) : n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    
+    fbq('init', '544990893994369');
+    fbq('track', 'PageView');
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -105,10 +121,6 @@ export default function Landing() {
                 alt="The Salon Success Manager Logo" 
                 className="h-14 w-14 sm:h-16 sm:w-16"
               />
-              {/* <div>
-                <h1 className="text-base sm:text-xl font-bold text-slate-800">The Salon Success Manager</h1>
-                <p className="text-xs sm:text-sm text-slate-500">by Katie Godfrey</p>
-              </div> */}
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/login">

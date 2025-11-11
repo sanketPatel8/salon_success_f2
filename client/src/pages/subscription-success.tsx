@@ -149,7 +149,7 @@ export default function SubscriptionSuccess() {
           </p>
           <p className="text-gray-500 text-sm mt-2">
             {verificationAttempts > 0 
-              ? `Checking status (${verificationAttempts}/${maxAttempts})...`
+              ? `Checking status ...`
               : 'Please wait a moment'}
           </p>
         </div>

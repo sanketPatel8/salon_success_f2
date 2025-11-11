@@ -765,6 +765,69 @@ This is an automated notification from Salon Success Manager.
     }
   });
 
+  app.post("/api/auth/verify-registration", async (req, res) => {
+  try {
+    const { token } = req.body;
+    console.log("🔍 /api/auth/verify-registration called with token:", token?.substring(0, 20) + "...");
+
+    if (!token) {
+      console.log("❌ No token provided");
+      return res.status(400).json({ 
+        success: false, 
+        message: "Token is required" 
+      });
+    }
+
+    // Validate token format (timestamp-random)
+    const tokenParts = token.split('-');
+    if (tokenParts.length < 2) {
+      console.log("❌ Invalid token format");
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid token format" 
+      });
+    }
+
+    const timestamp = parseInt(tokenParts[0]);
+    
+    // Check if token timestamp is valid (not older than 24 hours)
+    const currentTime = Date.now();
+    const tokenAge = currentTime - timestamp;
+    const maxTokenAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+    if (isNaN(timestamp)) {
+      console.log("❌ Invalid timestamp in token");
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid token" 
+      });
+    }
+
+    if (tokenAge > maxTokenAge) {
+      console.log(`❌ Token expired: ${tokenAge}ms old (max: ${maxTokenAge}ms)`);
+      return res.status(400).json({ 
+        success: false, 
+        message: "Token has expired. Please register again.",
+        expired: true
+      });
+    }
+
+    // Token is valid
+    console.log(`✅ Token verified successfully. Age: ${tokenAge}ms`);
+    res.json({ 
+      success: true, 
+      message: "Registration verified successfully" 
+    });
+
+  } catch (error) {
+    console.error("❌ Token verification error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Token verification failed" 
+    });
+  }
+});
+
   app.delete(
     "/api/admin/users/:userId",
     requireAdmin,

@@ -1,3 +1,4 @@
+// Updated Register.tsx
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -77,23 +78,24 @@ export default function Register() {
 
   const registerMutation = useMutation({
     mutationFn: (data: RegisterForm) => {
-      // Remove confirmPassword before sending to API
       const { confirmPassword, ...registerData } = data;
       return apiRequest("POST", "/api/auth/register", {
         ...registerData,
         currency: data.currency,
       });
     },
-    onSuccess: () => {
+    onSuccess: (response: any) => {
+      // Generate verification token
+      const token = generateToken();
+      
       toast({
         title: "Success",
-        description:
-          "Account created successfully. Redirecting to subscription...",
+        description: "Account created successfully. Redirecting...",
       });
 
-      // Force a full page reload to refresh auth state
+      // Redirect to thank you page with token
       setTimeout(() => {
-        window.location.href = "/help";
+        window.location.href = `/thank-you?token=${token}`;
       }, 500);
     },
     onError: (error: any) => {
@@ -104,6 +106,13 @@ export default function Register() {
       });
     },
   });
+
+  // Generate a secure token
+  const generateToken = (): string => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 15);
+    return `${timestamp}-${random}`;
+  };
 
   const onSubmit = (data: RegisterForm) => {
     registerMutation.mutate(data);
@@ -252,7 +261,6 @@ export default function Register() {
                 )}
               />
 
-              {/* Currency Dropdown */}
               <FormField
                 control={form.control}
                 name="currency"
