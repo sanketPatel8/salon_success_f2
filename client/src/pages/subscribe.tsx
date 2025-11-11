@@ -392,7 +392,7 @@ export default function Subscription() {
                 <CardContent className="space-y-6">
                   <div className="text-center">
                     <div className="text-4xl font-bold text-pink-600">
-                      £23.97
+                      £27
                       <span className="text-lg font-normal text-slate-600">/month</span>
                     </div>
                     <p className="text-sm text-slate-600 mt-2">
@@ -408,7 +408,7 @@ export default function Subscription() {
                   >
                     {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
                     {subscription?.isTrial || subscription?.status === 'canceled' 
-                      ? 'Subscribe Now - £23.97/month' 
+                      ? 'Subscribe Now - £27/month' 
                       : 'Start 3-Day Free Trial'}
                   </Button>
 

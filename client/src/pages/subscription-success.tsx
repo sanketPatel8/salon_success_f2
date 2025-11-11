@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Loader2, AlertCircle, Calendar, CreditCard, Gift, Mail } from 'lucide-react';
@@ -8,24 +8,49 @@ export default function SubscriptionSuccess() {
   const [error, setError] = useState<string | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [verificationAttempts, setVerificationAttempts] = useState(0);
+  const maxAttempts = 30; // Maximum attempts (30 attempts * 2 seconds = 60 seconds)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
 
     if (sessionId) {
-      verifySession(sessionId);
+      startVerificationPolling(sessionId);
     } else {
       setError('No session ID found. Please try subscribing again.');
       setVerifying(false);
     }
+
+    // Cleanup on unmount
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, []);
 
+  const startVerificationPolling = (sessionId: string) => {
+    // Initial verification
+    verifySession(sessionId);
+
+    // Set up polling interval
+    pollingIntervalRef.current = setInterval(() => {
+      verifySession(sessionId);
+    }, 2000); // Poll every 2 seconds
+  };
+
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  };
+
   const verifySession = async (sessionId: string) => {
-    const startTime = Date.now();
-    
     try {
-      console.log('Verifying session:', sessionId);
+      console.log('Verifying session (attempt:', verificationAttempts + 1, '):', sessionId);
       
       const res = await fetch(`/api/stripe/verify-session/${sessionId}`, {
         credentials: 'include',
@@ -39,27 +64,30 @@ export default function SubscriptionSuccess() {
       const data = await res.json();
       console.log('Verification response:', data);
       
-      // Ensure minimum 2 second delay
-      const elapsedTime = Date.now() - startTime;
-      const remainingTime = Math.max(0, 2000 - elapsedTime);
-      
-      await new Promise(resolve => setTimeout(resolve, remainingTime));
-      
-      setSubscriptionData(data);
-      
-      // Send subscription confirmation emails
-      await sendSubscriptionEmail(data);
+      setVerificationAttempts(prev => prev + 1);
+
+      // Check if hasAccess is true
+      if (data.hasAccess === true) {
+        console.log('Access granted! Stopping verification polling.');
+        stopPolling();
+        setSubscriptionData(data);
+        setVerifying(false);
+        
+        // Send subscription confirmation emails
+        await sendSubscriptionEmail(data);
+      } else if (verificationAttempts >= maxAttempts - 1) {
+        // Max attempts reached
+        stopPolling();
+        throw new Error('Verification timeout. Your subscription may still be processing. Please check your account or contact support.');
+      } else {
+        // Keep polling, update data but keep verifying state
+        setSubscriptionData(data);
+        console.log('Access not yet granted, continuing to poll...');
+      }
     } catch (err: any) {
       console.error('Verification error:', err);
-      
-      // Ensure minimum 2 second delay even for errors
-      const elapsedTime = Date.now() - startTime;
-      const remainingTime = Math.max(0, 2000 - elapsedTime);
-      
-      await new Promise(resolve => setTimeout(resolve, remainingTime));
-      
+      stopPolling();
       setError(err.message || 'Failed to verify your subscription. Please contact support.');
-    } finally {
       setVerifying(false);
     }
   };
@@ -110,22 +138,24 @@ export default function SubscriptionSuccess() {
     }).format(amount / 100);
   };
 
-  // Loading state
-  if (verifying || sendingEmail) {
+  // Loading state - show while verifying OR if access not yet granted
+  if (verifying || sendingEmail || !subscriptionData || subscriptionData?.hasAccess !== true) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-pink-500 mx-auto mb-4" />
           <p className="text-gray-600 text-lg">
-            {verifying ? 'Verifying your subscription...' : 'Sending confirmation email...'}
+            Verifying your subscription...
           </p>
-          <p className="text-gray-500 text-sm mt-2">Please wait a moment</p>
+          <p className="text-gray-500 text-sm mt-2">
+            {verificationAttempts > 0 
+              ? `Checking status (${verificationAttempts}/${maxAttempts})...`
+              : 'Please wait a moment'}
+          </p>
         </div>
       </div>
     );
   }
-
- 
 
   // Error state
   if (error) {
@@ -142,11 +172,11 @@ export default function SubscriptionSuccess() {
             <p className="text-gray-600">{error}</p>
             <div className="flex gap-3 justify-center pt-4">
               <Button
-                onClick={() => navigateTo('/subscribe')}
+                onClick={() => navigateTo('/help')}
                 className="bg-pink-600 hover:bg-pink-700"
                 size="lg"
               >
-                Try Again
+                Contact Support
               </Button>
               <Button
                 onClick={() => navigateTo('/')}
@@ -180,7 +210,7 @@ export default function SubscriptionSuccess() {
           {/* Status Message */}
           <div className="text-center">
             <p className="text-gray-600 text-lg">
-              {hasAccess 
+              {hasAccess === true
                 ? isTrial 
                   ? "Your 3-day free trial has started. Enjoy full access to all features!"
                   : "Your subscription is now active. Thank you for choosing Salon Success Manager Pro!"
@@ -212,10 +242,10 @@ export default function SubscriptionSuccess() {
                   <span className="text-gray-600">Status:</span>
                   <span className={`font-medium px-3 py-1 rounded-full text-xs ${
                     status === 'active' ? 'bg-green-100 text-green-700' :
-                    status === 'trial' ? 'bg-blue-100 text-blue-700' :
+                    status === 'trialing' ? 'bg-blue-100 text-blue-700' :
                     'bg-gray-100 text-gray-700'
                   }`}>
-                    {status === 'trial' ? 'Free Trial' : status.charAt(0).toUpperCase() + status.slice(1)}
+                    {status === 'trialing' ? 'Free Trial' : status.charAt(0).toUpperCase() + status.slice(1)}
                   </span>
                 </div>
               </div>
@@ -234,7 +264,7 @@ export default function SubscriptionSuccess() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
-                <span>Track Your Salon’s Income</span>
+                <span>Track Your Salon's Income</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
@@ -246,7 +276,7 @@ export default function SubscriptionSuccess() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
-                <span>Katie’s famous CEO Numbers formula</span>
+                <span>Katie's famous CEO Numbers formula</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-black mt-1">✓</span>
@@ -292,7 +322,7 @@ export default function SubscriptionSuccess() {
               Go to Dashboard
             </Button>
             <Button
-              onClick={() => navigateTo('/subscribe')}
+              onClick={() => navigateTo('/help')}
               variant="outline"
               size="lg"
               className="border-pink-300 text-pink-700 hover:bg-pink-50"

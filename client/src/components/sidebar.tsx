@@ -120,7 +120,7 @@ export default function Sidebar() {
                     <span className={cn(item.isPro && "font-semibold")}>{item.name}</span>
                     {item.isPro && (
                       <span className="ml-auto text-xs bg-primary text-white px-2 py-1 rounded-full">
-                        £23.97/mo
+                        £27/mo
                       </span>
                     )}
                   </Link>

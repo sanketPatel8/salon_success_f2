@@ -93,7 +93,7 @@ export default function Register() {
 
       // Force a full page reload to refresh auth state
       setTimeout(() => {
-        window.location.href = "/subscribe";
+        window.location.href = "/help";
       }, 500);
     },
     onError: (error: any) => {

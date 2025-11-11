@@ -123,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
         ],
         success_url: `${process.env.BASE_URL}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.BASE_URL}/cancel`,
+        cancel_url: `${process.env.BASE_URL}/cancel?session_id={CHECKOUT_SESSION_ID}`,
         client_reference_id: userId?.toString(),
         customer_email: user?.email,
       });

@@ -32,6 +32,7 @@ import Sidebar from "@/components/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import SubscriptionGuard from "./pages/subscriptionGuard.tsx";
 import TeamTarget from "./pages/team-target.tsx";
+import Cancel from "./pages/cancel.tsx";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -110,6 +111,7 @@ function Router() {
       <div className="flex-1 flex flex-col">
         <Switch>
           <Route path="/subscription-success" component={SubscriptionSuccess} />
+          <Route path="/cancel" component={Cancel} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/help" component={Help} />
 

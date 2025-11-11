@@ -209,7 +209,7 @@ export default function Dashboard() {
               <span>
                 <strong>Trial Expired:</strong> {trialStatus.message}
               </span>
-              <Link href="/subscribe">
+              <Link href="/help">
                 <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
                   Subscribe to Continue
                 </Button>

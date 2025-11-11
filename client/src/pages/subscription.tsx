@@ -367,7 +367,7 @@ export default function Subscription() {
               size="lg"
             >
               {actionLoading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
-              Start 15-Day Free Trial
+              Start 3-Day Free Trial
             </Button>
 
             <p className="text-xs text-gray-500 text-center">
