@@ -90,7 +90,7 @@ export function setupStripeRoutes(app: Express) {
 
             return res.json({
               status: normalizedStatus,
-              hasAccess: ['active', 'trial'].includes(normalizedStatus),
+              hasAccess: ['active', 'trial', 'trialing'].includes(normalizedStatus),
               endDate: endDate,
               isTrial: isTrial,
               daysLeft: daysLeft,
@@ -167,7 +167,7 @@ export function setupStripeRoutes(app: Express) {
 
       res.json({
         status: normalizedStatus,
-        hasAccess: ['active', 'trial'].includes(normalizedStatus),
+        hasAccess: ['active', 'trial', 'trialing'].includes(normalizedStatus),
         endDate: endDate,
         isTrial: isTrial,
         daysLeft: daysLeft,
@@ -303,7 +303,7 @@ export function setupStripeRoutes(app: Express) {
               success: true,
               status: normalizedStatus,
               subscriptionId: subscription.id,
-              hasAccess: ['active', 'trial'].includes(normalizedStatus),
+              hasAccess: ['active', 'trial', 'trialing'].includes(normalizedStatus),
               endDate: endDate,
               isTrial: isTrial,
               daysLeft: daysLeft,
@@ -399,7 +399,7 @@ export function setupStripeRoutes(app: Express) {
         success: true,
         status: normalizedStatus,
         subscriptionId: subscription.id,
-        hasAccess: ['active', 'trial'].includes(normalizedStatus),
+        hasAccess: ['active', 'trial', 'trialing'].includes(normalizedStatus),
         endDate: endDate,
         isTrial: isTrial,
         daysLeft: daysLeft,

@@ -247,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               return res.json({
                 status: normalizedStatus,
-                hasAccess: ['active', 'trial'].includes(normalizedStatus),
+                hasAccess: ['active', 'trial', 'trialing'].includes(normalizedStatus),
                 endDate: endDate,
                 isTrial: isTrial,
                 daysLeft: daysLeft,
@@ -269,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               return res.json({
                 status: normalizedStatus,
-                hasAccess: ['active', 'trial'].includes(normalizedStatus),
+                hasAccess: ['active', 'trial', 'trialing'].includes(normalizedStatus),
                 endDate: fallbackEndDate,
                 isTrial: normalizedStatus === 'trial',
                 daysLeft: 3,
@@ -287,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             return res.json({
               status: normalizedStatus,
-              hasAccess: ['active', 'trial'].includes(normalizedStatus),
+              hasAccess: ['active', 'trial', 'trialing'].includes(normalizedStatus),
               endDate: endDate,
               isTrial: isTrial,
               daysLeft: daysLeft,
@@ -395,7 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         status: normalizedStatus,
-        hasAccess: ['active', 'trial'].includes(normalizedStatus),
+        hasAccess: ['active', 'trial', 'trialing'].includes(normalizedStatus),
         endDate: endDate,
         isTrial: isTrial,
         daysLeft: daysLeft,
