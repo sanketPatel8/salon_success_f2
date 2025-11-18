@@ -936,18 +936,6 @@ Welcome to Salon Success Manager! If you need any help, contact us at help@salon
       }
 
 
-      // Check for active subscription (backward compatibility)
-      if (user.subscriptionStatus === 'active') {
-        return res.json({
-          hasAccess: true,
-          status: 'active',
-          isTrial: false,
-          daysLeft: null,
-          endDate: user.subscriptionEndDate,
-          cancelAtPeriodEnd: false
-        });
-      }
-
       // No valid subscription
       return res.json({
         hasAccess: false,
