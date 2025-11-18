@@ -1804,7 +1804,16 @@ This is an automated notification from Salon Success Manager.
       });
     }
     
+    // Check if user exists
     const user = await storage.getUserByEmail(email);
+    
+    // If user doesn't exist, return error
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No account exists with this email address. Please register and try again."
+      });
+    }
     
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -1813,7 +1822,7 @@ This is an automated notification from Salon Success Manager.
     // Store reset token in database
     await storage.setPasswordResetToken(user.id, resetToken, resetExpires);
     
-    // FIXED: Create reset URL with https:// protocol for mobile compatibility
+    // Create reset URL with https:// protocol for mobile compatibility
     const resetUrl = `https://salonsuccessmanager.com/reset-password?token=${resetToken}`;
 
     console.log('🔍 Checking environment variables:', {
@@ -1860,7 +1869,7 @@ This is an automated notification from Salon Success Manager.
       });
     }
     
-    // FIXED: Outlook-compatible email template with proper button rendering
+    // Email template (unchanged)
     const mailOptions = {
       from: `"Salon Success Manager" <${emailConfig.auth.user}>`,
       to: email,

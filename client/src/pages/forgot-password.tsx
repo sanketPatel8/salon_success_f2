@@ -30,10 +30,38 @@ export default function ForgotPassword() {
     setIsLoading(true);
     
     try {
-      const response = await apiRequest("POST", "/api/v2/auth/reset-password", { email });
-      const data = await response.json();
+      // Use fetch directly instead of apiRequest to handle errors manually
+      const response = await fetch("/api/v2/auth/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+        credentials: "include",
+      });
       
-      console.log('Reset password response:', data);
+      const data = await response.json();
+      console.log('Reset password response:', data, 'Status:', response.status);
+      
+      // Handle 404 - email not found
+      if (response.status === 404) {
+        toast({
+          title: "Email not found",
+          description: data.message || "No account exists with this email address. Please register and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Handle other error statuses
+      if (!response.ok) {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to send reset link. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       // Check if the request was successful
       if (data.success) {
@@ -52,18 +80,19 @@ export default function ForgotPassword() {
           });
         }
       } else {
-        // Only show error if success is false
+        // Show specific error message
         toast({
-          title: "Error",
-          description: data.message || "Failed to process reset request",
+          title: "Email not found",
+          description: data.message || "No account exists with this email address. Please check and try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error('Reset password error:', error);
+      // Only network errors reach here
       toast({
-        title: "Error",
-        description: "Failed to send reset link. Please try again.",
+        title: "Network Error",
+        description: "Unable to connect. Please check your internet connection.",
         variant: "destructive",
       });
     } finally {
