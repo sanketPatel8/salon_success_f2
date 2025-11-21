@@ -141,7 +141,7 @@ export default function Dashboard() {
   const quickStats = [
     {
       title: "Current Hourly Rate",
-      value: metrics ? formatCurrency(metrics.hourlyRate) : "$0.00",
+      value: metrics ? formatCurrency(metrics.hourlyRate) : "0.00",
       change: "+12% from last month",
       changeType: "positive",
       icon: Clock,
