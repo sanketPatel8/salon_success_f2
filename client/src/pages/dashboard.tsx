@@ -3,80 +3,94 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Header from "@/components/header";
-import { Clock, Percent, DollarSign, Bath, Calculator, TrendingUp, Lightbulb, Zap, Upload, FileText, GraduationCap, Crown, AlertTriangle, Mail } from "lucide-react";
+import { Clock, Percent, DollarSign, Bath, Calculator, TrendingUp, Lightbulb, Zap, Upload, Mail, GraduationCap, AlertTriangle } from "lucide-react";
 import { formatPercentage } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-
-// Mock subscription check - in real app this would check user's subscription status
-const hasActiveSubscription = false;
 
 export default function Dashboard() {
   const { toast } = useToast();
   const { formatCurrency, setCurrencyFromUser, formatSymbol } = useCurrency();
   const [isEmailPending, setIsEmailPending] = useState(false);
-  const [, setLocation] = useLocation();
 
   // Check for session cookie and handle API 401 responses
   useEffect(() => {
-  console.log('🔍 Dashboard mounted - checking authentication...');
-  
-  const checkSession = async () => {
-    try {
-      const response = await fetch('/api/v2/auth/user', {
-        method: 'GET',
-        credentials: 'include',
-      });
-      
-      console.log('🔍 Auth check response status:', response.status);
-      if (response.status === 401) {
-        console.log('❌ Session invalid or expired - redirecting to login');
-        toast({
-          title: "Session Expired",
-          description: "Please log in to continue",
-          variant: "destructive",
+    console.log('🔍 Dashboard mounted - checking authentication...');
+    
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/v2/auth/user', {
+          method: 'GET',
+          credentials: 'include',
         });
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
-      } else if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Session valid for user:', data.email);
         
-        // 🔥 SET CURRENCY FROM USER DATA
-        if (data.currency) {
-          setCurrencyFromUser(data.currency);
+        console.log('🔍 Auth check response status:', response.status);
+        if (response.status === 401) {
+          console.log('❌ Session invalid or expired - redirecting to login');
+          toast({
+            title: "Session Expired",
+            description: "Please log in to continue",
+            variant: "destructive",
+          });
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+        } else if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Session valid for user:', data.email);
+          
+          if (data.currency) {
+            setCurrencyFromUser(data.currency);
+          }
         }
+      } catch (error) {
+        console.error('❌ Error checking session:', error);
       }
-    } catch (error) {
-      console.error('❌ Error checking session:', error);
-    }
-  };
+    };
 
-  checkSession();
-  const intervalId = setInterval(checkSession, 30000);
-  return () => clearInterval(intervalId);
-}, [toast, setCurrencyFromUser]);
+    checkSession();
+    const intervalId = setInterval(checkSession, 30000);
+    return () => clearInterval(intervalId);
+  }, [toast, setCurrencyFromUser]);
 
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ["/api/metrics"],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const { data: recentCalculations, isLoading: calculationsLoading } = useQuery({
     queryKey: ["/api/hourly-rate-calculations"],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const { data: recentTreatments, isLoading: treatmentsLoading } = useQuery({
     queryKey: ["/api/treatments"],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const { data: trialStatus, isLoading: trialLoading } = useQuery({
     queryKey: ["/api/user/trial-status"],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
-  const isLoading = metricsLoading || calculationsLoading || treatmentsLoading || trialLoading;
+  const { data: ceoMonthlyData, isLoading: ceoMonthlyLoading } = useQuery({
+    queryKey: ["/api/ceo-numbers/monthly-total"],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
+
+  const isLoading = metricsLoading || calculationsLoading || treatmentsLoading || trialLoading || ceoMonthlyLoading;
 
   const handleEmailReport = async () => {
     try {
@@ -97,7 +111,6 @@ export default function Dashboard() {
 
       if (response.ok && data.success) {
         if (data.fallback && data.emailData) {
-          // Use mailto fallback
           const subject = encodeURIComponent(data.emailData.subject);
           const body = encodeURIComponent(data.emailData.body);
           window.location.href = `mailto:?subject=${subject}&body=${body}`;
@@ -146,9 +159,12 @@ export default function Dashboard() {
     },
     {
       title: "Monthly Revenue",
-      value: metrics ? formatCurrency(metrics.monthlyRevenue) : "$0.00",
-      change: "-3% from last month",
-      changeType: "negative",
+      // UPDATED: Use CEO Numbers data instead of metrics
+      value: ceoMonthlyData ? formatCurrency(ceoMonthlyData.currentMonthTotal) : "$0.00",
+      change: ceoMonthlyData 
+        ? `${ceoMonthlyData.percentageChange >= 0 ? '+' : ''}${ceoMonthlyData.percentageChange}% from last month`
+        : "No data yet",
+      changeType: ceoMonthlyData?.changeType || "neutral",
       icon: DollarSign,
       bgColor: "bg-amber-100",
       iconColor: "text-warning"
@@ -199,9 +215,7 @@ export default function Dashboard() {
         description="Track your salon's performance, calculate optimal pricing, and manage business growth" 
       />
       
-      <main className="flex-1 p-8  overflow-y-auto">
-        
-
+      <main className="flex-1 p-8 overflow-y-auto">
         {trialStatus && trialStatus.status === "expired" && (
           <Alert className="border-red-200 bg-red-50 text-red-800 mb-6">
             <AlertTriangle className="h-4 w-4" />
@@ -331,7 +345,7 @@ export default function Dashboard() {
                     <div className="text-center py-8 text-slate-500">Loading recent activity...</div>
                   ) : (
                     <>
-                      {recentCalculations?.slice(0, 2).map((calc, index) => (
+                      {recentCalculations?.slice(0, 2).map((calc) => (
                         <div key={calc.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                           <div className="flex items-center space-x-4">
                             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">

@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import Header from "@/components/header";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Receipt, Plus, Trash2, Calendar, ChevronDown, ChevronRight } from "lucide-react";
+import { Receipt, Plus, Trash2, Calendar, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import Paywall from "@/components/paywall";
 
@@ -46,6 +46,8 @@ export default function ExpenseTracker() {
   const { formatCurrency, formatSymbol } = useCurrency();
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [expenseToDelete, setExpenseToDelete] = useState<number | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  const [filterMonth, setFilterMonth] = useState<string | null>(null);
   
   const { data: subscriptionStatus, isLoading: subscriptionLoading } = useQuery({
     queryKey: ["/api/subscription-status"],
@@ -54,49 +56,49 @@ export default function ExpenseTracker() {
   const { toast } = useToast();
 
   // Check for session cookie and handle API 401 responses
-    useEffect(() => {
-      console.log('🔍 Dashboard mounted - checking authentication...');
-      
-      const checkSession = async () => {
-        try {
-          // Make an API call to verify session is valid
-          const response = await fetch('/api/v2/auth/user', {
-            method: 'GET',
-            credentials: 'include',
+  useEffect(() => {
+    console.log('🔍 Dashboard mounted - checking authentication...');
+    
+    const checkSession = async () => {
+      try {
+        // Make an API call to verify session is valid
+        const response = await fetch('/api/v2/auth/user', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        console.log('🔍 Auth check response status:', response.status);
+        if (response.status === 401) {
+          console.log('❌ Session invalid or expired - redirecting to login');
+
+          toast({
+            title: "Session Expired",
+            description: "Please log in to continue",
+            variant: "destructive",
           });
           
-          console.log('🔍 Auth check response status:', response.status);
-          if (response.status === 401) {
-            console.log('❌ Session invalid or expired - redirecting to login');
-  
-            toast({
-              title: "Session Expired",
-              description: "Please log in to continue",
-              variant: "destructive",
-            });
-            
-            // Wait 2 seconds before redirecting so toast is visible
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 2000);
-            
-          } else if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Session valid for user:', data.email);
-          }
-        } catch (error) {
-          console.error('❌ Error checking session:', error);
+          // Wait 2 seconds before redirecting so toast is visible
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+          
+        } else if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Session valid for user:', data.email);
         }
-      };
-  
-      // Check immediately on mount
-      checkSession();
-      
-      // Set up periodic check every 30 seconds
-      const intervalId = setInterval(checkSession, 30000);
-      
-      return () => clearInterval(intervalId);
-    }, [toast]);
+      } catch (error) {
+        console.error('❌ Error checking session:', error);
+      }
+    };
+
+    // Check immediately on mount
+    checkSession();
+    
+    // Set up periodic check every 30 seconds
+    const intervalId = setInterval(checkSession, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [toast]);
 
   const { data: expenses, isLoading } = useQuery({
     queryKey: ["/api/expenses"],
@@ -182,6 +184,16 @@ export default function ExpenseTracker() {
     setExpandedMonths(newExpanded);
   };
 
+  const handleCategoryClick = (category: string, monthKey: string) => {
+    setFilterCategory(category);
+    setFilterMonth(monthKey);
+  };
+
+  const resetFilter = () => {
+    setFilterCategory(null);
+    setFilterMonth(null);
+  };
+
   // Group expenses by month
   const expensesByMonth = Array.isArray(expenses) ? expenses.reduce((acc: Record<string, {
     monthName: string;
@@ -219,6 +231,16 @@ export default function ExpenseTracker() {
     return expenseYear === currentYear ? sum + parseFloat(expense.amount.toString()) : sum;
   }, 0) : 0;
 
+  // Filter expenses based on selected category and month
+  const filteredExpenses = Array.isArray(expenses) ? expenses.filter((expense) => {
+    if (!filterCategory || !filterMonth) return true;
+    
+    const date = new Date(expense.date);
+    const expenseMonthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    
+    return expense.category === filterCategory && expenseMonthKey === filterMonth;
+  }) : [];
+
   // Show loading while checking subscription
   if (subscriptionLoading) {
     return (
@@ -233,23 +255,6 @@ export default function ExpenseTracker() {
       </>
     );
   }
-
-  // Check subscription status
-  // if (!(subscriptionStatus as any)?.active) {
-  //   return (
-  //     <>
-  //       <Header 
-  //         title="Expense Tracker" 
-  //         description="Track and categorize your business expenses" 
-  //       />
-  //       <Paywall 
-  //         title="Expense Tracker"
-  //         description="Monitor and control your business costs"
-  //         feature="expense tracking and categorization"
-  //       />
-  //     </>
-  //   );
-  // }
 
   return (
     <>
@@ -421,7 +426,14 @@ export default function ExpenseTracker() {
                             {Object.entries(monthData.categories)
                               .sort(([categoryA], [categoryB]) => categoryA.localeCompare(categoryB))
                               .map(([category, amount]) => (
-                              <div key={category} className="flex justify-between items-center py-2 px-3 bg-white rounded border-l-4 border-primary/20">
+                              <div 
+                                key={category} 
+                                className="flex justify-between items-center py-2 px-3 bg-white rounded border-l-4 border-primary/20 cursor-pointer hover:bg-slate-50 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCategoryClick(category, monthKey);
+                                }}
+                              >
                                 <span className="text-sm text-slate-700">{category}</span>
                                 <span className="text-sm font-semibold text-slate-800">{formatCurrency(amount)}</span>
                               </div>
@@ -440,27 +452,44 @@ export default function ExpenseTracker() {
             </CardContent>
           </Card>
 
-          {/* Recent Expenses */}
+          {/* Expenses List */}
           <Card className="border border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-xl font-bold text-slate-800">Expenses List</h3>
-                  <p className="text-slate-600 text-sm mt-1">List of Expenses</p>
+                  <p className="text-slate-600 text-sm mt-1">
+                    {filterCategory && filterMonth 
+                      ? `Filtered by ${filterCategory}`
+                      : 'All expenses'}
+                  </p>
                 </div>
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                   <Calendar className="text-purple-600 h-5 w-5" />
                 </div>
               </div>
 
+              {filterCategory && filterMonth && (
+                <div className="mb-4">
+                  <Button
+                    onClick={resetFilter}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Reset Filter
+                  </Button>
+                </div>
+              )}
+
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {isLoading ? (
                   <div className="text-center py-8 text-slate-500">Loading expenses...</div>
-                ) : expenses?.length ? (
-                  expenses
+                ) : filteredExpenses.length ? (
+                  filteredExpenses
                     .slice()
                     .sort((a, b) => a.description.localeCompare(b.description))
-                    .slice(0, 10)
                     .map((expense) => (
                     <div key={expense.id} className="p-3 bg-slate-50 rounded-lg">
                       <div className="flex items-start justify-between mb-2">
@@ -510,7 +539,9 @@ export default function ExpenseTracker() {
                   ))
                 ) : (
                   <div className="text-center py-8 text-slate-500">
-                    No expenses recorded yet. Add your first expense!
+                    {filterCategory && filterMonth 
+                      ? 'No expenses found for this filter'
+                      : 'No expenses recorded yet. Add your first expense!'}
                   </div>
                 )}
               </div>

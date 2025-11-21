@@ -2626,6 +2626,73 @@ Need help? Contact us at help@salonsuccessmanager.com
     }
   });
 
+  app.get("/api/ceo-numbers/monthly-total", requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId!;
+    
+    // Get all weekly incomes for this user's businesses
+    const weeklyIncomes = await storage.getWeeklyIncomesByUserId(userId);
+    
+    if (!weeklyIncomes || weeklyIncomes.length === 0) {
+      return res.json({
+        currentMonthTotal: 0,
+        lastMonthTotal: 0,
+        percentageChange: 0,
+        changeType: "neutral"
+      });
+    }
+    
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-11
+    
+    // Calculate current month total
+    let currentMonthTotal = 0;
+    weeklyIncomes.forEach(income => {
+      const weekDate = new Date(income.weekStartDate);
+      const incomeYear = weekDate.getFullYear();
+      const incomeMonth = weekDate.getMonth();
+      
+      if (incomeYear === currentYear && incomeMonth === currentMonth) {
+        currentMonthTotal += parseFloat(income.weeklyTotal);
+      }
+    });
+    
+    // Calculate last month total for comparison
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    
+    let lastMonthTotal = 0;
+    weeklyIncomes.forEach(income => {
+      const weekDate = new Date(income.weekStartDate);
+      const incomeYear = weekDate.getFullYear();
+      const incomeMonth = weekDate.getMonth();
+      
+      if (incomeYear === lastMonthYear && incomeMonth === lastMonth) {
+        lastMonthTotal += parseFloat(income.weeklyTotal);
+      }
+    });
+    
+    // Calculate percentage change
+    let percentageChange = 0;
+    if (lastMonthTotal > 0) {
+      percentageChange = ((currentMonthTotal - lastMonthTotal) / lastMonthTotal) * 100;
+    } else if (currentMonthTotal > 0) {
+      percentageChange = 100; // 100% increase if there was no income last month
+    }
+    
+    res.json({
+      currentMonthTotal,
+      lastMonthTotal,
+      percentageChange: Math.round(percentageChange * 10) / 10, // Round to 1 decimal
+      changeType: percentageChange >= 0 ? "positive" : "negative"
+    });
+  } catch (error) {
+    console.error("Error fetching CEO Numbers monthly total:", error);
+    res.status(500).json({ message: "Failed to fetch monthly total" });
+  }
+});
+
   app.put("/api/businesses/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

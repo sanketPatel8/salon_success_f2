@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, startOfWeek, addDays, isSameWeek, parseISO, addWeeks, subWeeks, startOfMonth, endOfMonth, getMonth, getYear, isSameMonth, subYears, endOfWeek } from "date-fns";
-import { CalendarDays, Plus, Target, TrendingUp, DollarSign, PiggyBank, Building2, ChevronLeft, ChevronRight, Calendar, ArrowUpDown, Edit2  } from "lucide-react";
+import { CalendarDays, Plus, Target, TrendingUp, DollarSign, PiggyBank, Building2, ChevronLeft, ChevronRight, Calendar, ArrowUpDown, Edit2, Trash2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import Header from "@/components/header";
@@ -215,6 +215,8 @@ export default function CEONumbers() {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [showEditBusinessDialog, setShowEditBusinessDialog] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
+  const [editingGoal, setEditingGoal] = useState<IncomeGoal | null>(null);
+  const [showEditGoalDialog, setShowEditGoalDialog] = useState(false);
   
   // Local state for input values to prevent blinking
   const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
@@ -288,6 +290,55 @@ const handleInputTouchStart = (inputRef: React.RefObject<HTMLInputElement>) => {
     queryKey: ["/api/money-pots"],
   });
 
+  const updateIncomeGoalMutation = useMutation({
+  mutationFn: (data: { id: number; targetAmount: string }) => 
+    apiRequest("PUT", `/api/income-goals/${data.id}`, { targetAmount: data.targetAmount }),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/income-goals"] });
+    setShowEditGoalDialog(false);
+    setEditingGoal(null);
+    toast({
+      title: "Goal Updated",
+      description: "Your income goal has been updated successfully!",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Error",
+      description: "Failed to update goal. Please try again.",
+      variant: "destructive",
+    });
+  },
+});
+
+const deleteIncomeGoalMutation = useMutation({
+  mutationFn: (goalId: number) => 
+    apiRequest("DELETE", `/api/income-goals/${goalId}`, {}),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/income-goals"] });
+    toast({
+      title: "Goal Deleted",
+      description: "Your income goal has been deleted successfully!",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Error",
+      description: "Failed to delete goal. Please try again.",
+      variant: "destructive",
+    });
+  },
+});
+
+ const hasGoal = (businessId: number, goalType: "Weekly" | "Monthly" | "Yearly") => {
+  return incomeGoals.find(g => 
+    g.businessId === businessId && g.goalType === goalType
+  );
+};
+
+
+
+
   // Mutations
   const createBusinessMutation = useMutation({
     mutationFn: (data: BusinessForm) => apiRequest("POST", "/api/businesses", data),
@@ -324,19 +375,34 @@ const handleInputTouchStart = (inputRef: React.RefObject<HTMLInputElement>) => {
 
 
   const createIncomeGoalMutation = useMutation({
-    mutationFn: (data: IncomeGoalForm) => apiRequest("POST", "/api/income-goals", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/income-goals"] });
-      setShowGoalDialog(false);
-      goalForm.reset({
-        businessId: businesses.length > 0 ? businesses[0].id : undefined,
-        goalType: "Weekly",
-        targetAmount: "",
-        year: new Date().getFullYear(),
-        month: new Date().getMonth() + 1,
-      });
-    },
-  });
+  mutationFn: (data: IncomeGoalForm) => apiRequest("POST", "/api/income-goals", data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/income-goals"] });
+    
+    // Toast notification
+    toast({
+      title: "Goal Created",
+      description: "Your income goal has been created successfully!",
+    });
+    
+    // Reset form and close dialog
+    goalForm.reset({
+      businessId: businesses.length > 0 ? businesses[0].id : undefined,
+      goalType: "Weekly",
+      targetAmount: "",
+      year: new Date().getFullYear(),
+      month: new Date().getMonth() + 1,
+    });
+    setShowGoalDialog(false);
+  },
+  onError: () => {
+    toast({
+      title: "Error",
+      description: "Failed to create goal. Please try again.",
+      variant: "destructive",
+    });
+  },
+});
 
   const createOrUpdateWeeklyIncomeMutation = useMutation({
   mutationFn: (data: WeeklyIncomeForm) => apiRequest("POST", "/api/weekly-incomes", data),
@@ -397,11 +463,11 @@ const handleInputTouchStart = (inputRef: React.RefObject<HTMLInputElement>) => {
     selectedBusiness === "all" || income.businessId === selectedBusiness
   );
 
-  const currentWeekIncome = filteredIncomes.find(income => 
+  const weekTotal = filteredIncomes
+  .filter(income => 
     isSameWeek(new Date(income.weekStartDate), currentWeek, { weekStartsOn: 1 })
-  );
-
-  const weekTotal = currentWeekIncome ? parseFloat(currentWeekIncome.weeklyTotal) : 0;
+  )
+  .reduce((sum, income) => sum + parseFloat(income.weeklyTotal), 0);
   
   // Calculate money pot allocations
   const potAllocations = moneyPots.map(pot => ({
@@ -486,8 +552,40 @@ const handleInputTouchStart = (inputRef: React.RefObject<HTMLInputElement>) => {
   };
 
   const handleGoalSubmit = (data: IncomeGoalForm) => {
-    createIncomeGoalMutation.mutate(data);
-  };
+  const existingGoal = hasGoal(data.businessId, data.goalType as "Weekly" | "Monthly" | "Yearly");
+  
+  if (existingGoal) {
+    toast({
+      title: "Goal Already Exists",
+      description: `A ${data.goalType.toLowerCase()} goal already exists for this business. Use the edit button to update it.`,
+      variant: "destructive",
+    });
+    return;
+  }
+  
+  createIncomeGoalMutation.mutate(data);
+};
+
+const handleEditGoal = (goal: IncomeGoal) => {
+  setEditingGoal(goal);
+  goalForm.reset({
+    businessId: goal.businessId,
+    goalType: goal.goalType as "Weekly" | "Monthly" | "Yearly",
+    targetAmount: goal.targetAmount.toString(),
+    year: goal.year,
+    month: goal.month,
+  });
+  setShowEditGoalDialog(true);
+};
+
+const handleEditGoalSubmit = (data: IncomeGoalForm) => {
+  if (editingGoal) {
+    updateIncomeGoalMutation.mutate({
+      id: editingGoal.id,
+      targetAmount: data.targetAmount,
+    });
+  }
+};
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -517,6 +615,37 @@ const handleInputTouchStart = (inputRef: React.RefObject<HTMLInputElement>) => {
       setSelectedBusiness(businesses[0].id);
     }
   }, [businesses, selectedBusiness]);
+
+  const getGoalProgress = (goal: IncomeGoal) => {
+  // Always calculate based on the goal's specific business
+  const businessIncomes = weeklyIncomes.filter(income => income.businessId === goal.businessId);
+  const currentDate = new Date();
+  let currentAmount = 0;
+  
+  if (goal.goalType === "Weekly") {
+    const currentWeekIncome = businessIncomes.find(income => 
+      isSameWeek(new Date(income.weekStartDate), currentWeek, { weekStartsOn: 1 })
+    );
+    currentAmount = currentWeekIncome ? parseFloat(currentWeekIncome.weeklyTotal) : 0;
+  } else if (goal.goalType === "Monthly") {
+    currentAmount = businessIncomes
+      .filter(income => {
+        const incomeDate = new Date(income.weekStartDate);
+        return incomeDate.getMonth() === currentDate.getMonth() && 
+               incomeDate.getFullYear() === currentDate.getFullYear();
+      })
+      .reduce((sum, income) => sum + parseFloat(income.weeklyTotal), 0);
+  } else if (goal.goalType === "Yearly") {
+    currentAmount = businessIncomes
+      .filter(income => {
+        const incomeDate = new Date(income.weekStartDate);
+        return incomeDate.getFullYear() === currentDate.getFullYear();
+      })
+      .reduce((sum, income) => sum + parseFloat(income.weeklyTotal), 0);
+  }
+  
+  return currentAmount;
+};
 
   // Show loading while checking subscription
   if (subscriptionLoading) {
@@ -1347,187 +1476,214 @@ const handleInputTouchStart = (inputRef: React.RefObject<HTMLInputElement>) => {
 
       {/* Income Goals */}
       <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-          <div>
-            <CardTitle className="text-base sm:text-lg">Income Goals</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Set and track your targets</CardDescription>
-          </div>
-          <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="w-full text-white sm:w-auto">
-                <Plus className="h-4 w-4 mr-2 text-white" />
-                Add Goal
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Set Income Goal</DialogTitle>
-                <DialogDescription>
-                  Set targets for your business growth
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...goalForm}>
-                <form onSubmit={goalForm.handleSubmit(handleGoalSubmit)} className="space-y-4">
-                  <FormField
-                    control={goalForm.control}
-                    name="businessId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business</FormLabel>
-                        <Select 
-                          onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
-                          defaultValue={field.value ? field.value.toString() : undefined}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a business" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {businesses.map((business) => (
-                              <SelectItem key={business.id} value={business.id.toString()}>
-                                {business.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={goalForm.control}
-                    name="goalType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Goal Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Weekly">Weekly</SelectItem>
-                            <SelectItem value="Monthly">Monthly</SelectItem>
-                            <SelectItem value="Yearly">Yearly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={goalForm.control}
-                    name="targetAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Target Amount ({formatSymbol()})</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={createIncomeGoalMutation.isPending} className="w-full text-white">
-                    {createIncomeGoalMutation.isPending ? "Creating..." : "Create Goal"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        <CardContent>
-          {(() => {
-            const filteredGoals = incomeGoals.filter(goal => {
-              if (selectedBusiness === "all") {
-                return true;
-              } else {
-                return goal.businessId === selectedBusiness;
-              }
-            });
+  <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+    <div>
+      <CardTitle className="text-base sm:text-lg">Income Goals</CardTitle>
+      <CardDescription className="text-xs sm:text-sm">Set and track your targets</CardDescription>
+    </div>
+    <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="w-full text-white sm:w-auto">
+          <Plus className="h-4 w-4 mr-2 text-white" />
+          Add Goal
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-[95vw] sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Set Income Goal</DialogTitle>
+          <DialogDescription>
+            Set targets for your business growth
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...goalForm}>
+          <form onSubmit={goalForm.handleSubmit(handleGoalSubmit)} className="space-y-4">
+            <FormField
+              control={goalForm.control}
+              name="businessId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Business</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                    defaultValue={field.value ? field.value.toString() : undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a business" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {businesses.map((business) => (
+                        <SelectItem key={business.id} value={business.id.toString()}>
+                          {business.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={goalForm.control}
+              name="goalType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Goal Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Weekly">Weekly</SelectItem>
+                      <SelectItem value="Monthly">Monthly</SelectItem>
+                      <SelectItem value="Yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={goalForm.control}
+              name="targetAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Amount ({formatSymbol()})</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={createIncomeGoalMutation.isPending} className="w-full text-white">
+              {createIncomeGoalMutation.isPending ? "Creating..." : "Create Goal"}
+            </Button>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  </CardHeader>
+  <CardContent>
+    {(() => {
+      // Filter goals based on selected business
+      const filteredGoals = selectedBusiness === "all" 
+        ? incomeGoals  // Show ALL goals when "All Businesses" is selected
+        : incomeGoals.filter(goal => goal.businessId === selectedBusiness);  // Show only selected business goals
 
-            if (filteredGoals.length === 0) {
-              return (
-                <p className="text-muted-foreground text-xs sm:text-sm">
-                  {selectedBusiness === "all" 
-                    ? "No brand-wide goals set yet" 
-                    : `No goals set for ${businesses.find(b => b.id === selectedBusiness)?.name || 'this business'} yet`
-                  }
-                </p>
-              );
+      if (filteredGoals.length === 0) {
+        return (
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            {selectedBusiness === "all" 
+              ? "No goals set yet" 
+              : `No goals set for ${businesses.find(b => b.id === selectedBusiness)?.name || 'this business'} yet`
             }
+          </p>
+        );
+      }
 
-            return (
-              <div className="space-y-3">
-                {filteredGoals.slice(0, 3).map((goal) => {
-                  let currentAmount = 0;
-                  
-                  if (selectedBusiness === "all") {
-                    currentAmount = goal.goalType === "Weekly" ? weekTotal :
-                                   goal.goalType === "Monthly" ? monthTotal : yearTotal;
-                  } else {
-                    const businessIncomes = weeklyIncomes.filter(income => income.businessId === selectedBusiness);
-                    const currentDate = new Date();
-                    
-                    if (goal.goalType === "Weekly") {
-                      const currentWeekIncome = businessIncomes.find(income => 
-                        isSameWeek(new Date(income.weekStartDate), currentWeek, { weekStartsOn: 1 })
-                      );
-                      currentAmount = currentWeekIncome ? parseFloat(currentWeekIncome.weeklyTotal) : 0;
-                    } else if (goal.goalType === "Monthly") {
-                      currentAmount = businessIncomes
-                        .filter(income => {
-                          const incomeDate = new Date(income.weekStartDate);
-                          return incomeDate.getMonth() === currentDate.getMonth() && 
-                                 incomeDate.getFullYear() === currentDate.getFullYear();
-                        })
-                        .reduce((sum, income) => sum + parseFloat(income.weeklyTotal), 0);
-                    } else {
-                      currentAmount = businessIncomes
-                        .filter(income => {
-                          const incomeDate = new Date(income.weekStartDate);
-                          return incomeDate.getFullYear() === currentDate.getFullYear();
-                        })
-                        .reduce((sum, income) => sum + parseFloat(income.weeklyTotal), 0);
-                    }
-                  }
+      return (
+        <div className="space-y-4">
+  {filteredGoals.map((goal) => {
+    // Always get progress based on goal's specific business income
+    const currentAmount = getGoalProgress(goal);
+    const progress = (currentAmount / parseFloat(goal.targetAmount)) * 100;
+    const business = businesses.find(b => b.id === goal.businessId);
+    
+    return (
+      <div key={goal.id} className="space-y-2 p-3 sm:p-4 border rounded-lg hover:bg-slate-50">
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex-1">
+            <span className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+              {goal.goalType} Goal
+              {business && (
+                <Badge variant="secondary" className="text-xs">
+                  {business.name}
+                </Badge>
+              )}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditGoal(goal)}
+              className="h-8 w-8 p-0 hover:bg-blue-100"
+              title="Edit goal"
+            >
+              <Edit2 className="h-4 w-4 text-blue-600" />
+            </Button>
+            <Button 
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteIncomeGoalMutation.mutate(goal.id)}
+              disabled={deleteIncomeGoalMutation.isPending}
+              className="h-8 w-8 p-0 hover:bg-red-100"
+              title="Delete goal"
+            >
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+            <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
+              {Math.round(progress)}%
+            </span>
+          </div>
+        </div>
+        
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className="bg-blue-600 h-2 rounded-full transition-all" 
+            style={{ width: `${Math.min(progress, 100)}%` }}
+          />
+        </div>
+        
+        <div className="flex justify-between items-center text-xs text-muted-foreground">
+          <span>{formatCurrency(currentAmount)}</span>
+          <span>{formatCurrency(parseFloat(goal.targetAmount))}</span>
+        </div>
+      </div>
+    );
+  })}
+</div>
+      );
+    })()}
+  </CardContent>
+</Card>
 
-                  const progress = (currentAmount / parseFloat(goal.targetAmount)) * 100;
-                  const business = businesses.find(b => b.id === goal.businessId);
-                  
-                  return (
-                    <div key={goal.id} className="space-y-2">
-                      <div className="flex justify-between text-xs sm:text-sm">
-                        <span className="flex items-center gap-2">
-                          {goal.goalType} Goal
-                          {business && (
-                            <Badge variant="secondary" className="text-xs">
-                              {business.name}
-                            </Badge>
-                          )}
-                        </span>
-                        <span>{Math.round(progress)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all" 
-                          style={{ width: `${Math.min(progress, 100)}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{formatCurrency(currentAmount)}</span>
-                        <span>{formatCurrency(parseFloat(goal.targetAmount))}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </CardContent>
-      </Card>
+<Dialog open={showEditGoalDialog} onOpenChange={setShowEditGoalDialog}>
+  <DialogContent className="max-w-[95vw] sm:max-w-md">
+    <DialogHeader>
+      <DialogTitle>Edit Income Goal</DialogTitle>
+      <DialogDescription>
+        Update your goal target amount
+      </DialogDescription>
+    </DialogHeader>
+    <Form {...goalForm}>
+      <form onSubmit={goalForm.handleSubmit(handleEditGoalSubmit)} className="space-y-4">
+        <FormField
+          control={goalForm.control}
+          name="targetAmount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Target Amount ({formatSymbol()})</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" placeholder="0.00" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={updateIncomeGoalMutation.isPending} className="w-full text-white">
+          {updateIncomeGoalMutation.isPending ? "Updating..." : "Update Goal"}
+        </Button>
+      </form>
+    </Form>
+  </DialogContent>
+</Dialog>
       </div>
     </div>
   );
