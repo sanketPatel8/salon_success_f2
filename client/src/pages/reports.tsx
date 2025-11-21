@@ -13,53 +13,52 @@ import type { Treatment, Expense, HourlyRateCalculation } from "@shared/schema";
 
 export default function Reports() {
   const { toast } = useToast();
-   const { formatCurrency, setCurrencyFromUser, formatSymbol } = useCurrency();
+  const { formatCurrency, setCurrencyFromUser, formatSymbol } = useCurrency();
   const [isEmailPending, setIsEmailPending] = useState(false);
 
   // Check for session cookie and handle API 401 responses
-    useEffect(() => {
-      console.log('🔍 Dashboard mounted - checking authentication...');
-      
-      const checkSession = async () => {
-        try {
-          // Make an API call to verify session is valid
-          const response = await fetch('/api/v2/auth/user', {
-            method: 'GET',
-            credentials: 'include',
+  useEffect(() => {
+    console.log('🔍 Dashboard mounted - checking authentication...');
+    
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/v2/auth/user', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        console.log('🔍 Auth check response status:', response.status);
+        if (response.status === 401) {
+          console.log('❌ Session invalid or expired - redirecting to login');
+
+          toast({
+            title: "Session Expired",
+            description: "Please log in to continue",
+            variant: "destructive",
           });
           
-          console.log('🔍 Auth check response status:', response.status);
-          if (response.status === 401) {
-            console.log('❌ Session invalid or expired - redirecting to login');
-  
-            toast({
-              title: "Session Expired",
-              description: "Please log in to continue",
-              variant: "destructive",
-            });
-            
-            // Wait 2 seconds before redirecting so toast is visible
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 2000);
-            
-          } else if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Session valid for user:', data.email);
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+          
+        } else if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Session valid for user:', data.email);
+          
+          if (data.currency) {
+            setCurrencyFromUser(data.currency);
           }
-        } catch (error) {
-          console.error('❌ Error checking session:', error);
         }
-      };
-  
-      // Check immediately on mount
-      checkSession();
-      
-      // Set up periodic check every 30 seconds
-      const intervalId = setInterval(checkSession, 30000);
-      
-      return () => clearInterval(intervalId);
-    }, [toast]);
+      } catch (error) {
+        console.error('❌ Error checking session:', error);
+      }
+    };
+
+    checkSession();
+    const intervalId = setInterval(checkSession, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [toast, setCurrencyFromUser]);
 
   const { data: subscriptionStatus, isLoading: subscriptionLoading } = useQuery({
     queryKey: ["/api/subscription-status"],
@@ -67,6 +66,14 @@ export default function Reports() {
 
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ["/api/metrics"],
+  });
+
+  // NEW: Fetch CEO Numbers monthly total with aggressive refetching
+  const { data: ceoMonthlyData, isLoading: ceoMonthlyLoading } = useQuery({
+    queryKey: ["/api/ceo-numbers/monthly-total"],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const { data: treatments = [], isLoading: treatmentsLoading } = useQuery<Treatment[]>({
@@ -81,7 +88,7 @@ export default function Reports() {
     queryKey: ["/api/hourly-rate-calculations"],
   });
 
-  const isLoading = metricsLoading || treatmentsLoading || expensesLoading || calculationsLoading;
+  const isLoading = metricsLoading || treatmentsLoading || expensesLoading || calculationsLoading || ceoMonthlyLoading;
 
   // Calculate derived values for exports
   const totalExpenses = expenses.reduce((sum, expense) => sum + parseFloat(expense.amount.toString()), 0);
@@ -89,12 +96,15 @@ export default function Reports() {
     ? treatments.reduce((sum, t) => sum + parseFloat(t.price.toString()), 0) / treatments.length 
     : 0;
 
-    const handleExportCSV = () => {
+  // Use CEO Numbers monthly revenue
+  const monthlyRevenue = ceoMonthlyData?.currentMonthTotal || 0;
+
+  const handleExportCSV = () => {
     const reportData = [
       ['Metric', 'Value'],
       ['Current Hourly Rate', formatCurrency(metrics?.hourlyRate || 0)],
       ['Average Profit Margin', formatPercentage(metrics?.avgProfitMargin || 0)],
-      ['Monthly Revenue', formatCurrency(metrics?.monthlyRevenue || 0)],
+      ['Monthly Revenue', formatCurrency(monthlyRevenue)],
       ['Active Treatments', (metrics?.activeTreatments || 0).toString()],
       ['Total Expenses', formatCurrency(totalExpenses)],
       ['Average Treatment Price', formatCurrency(avgTreatmentPrice)],
@@ -132,98 +142,96 @@ export default function Reports() {
   };
 
   const handleExportPDF = () => {
-  const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  let yPosition = 20;
-  
-  // Header
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Business Performance Report', pageWidth / 2, yPosition, { align: 'center' });
-  yPosition += 15;
-  
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
-  yPosition += 25;
-  
-  // Key Metrics Section
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Key Metrics', 15, yPosition);
-  yPosition += 15;
-  
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  
-  if (metrics && typeof metrics === 'object') {
-    const metricsData = [
-      `Hourly Rate: ${formatCurrency(metrics.hourlyRate)}`,
-      `Avg Profit Margin: ${parseFloat(metrics.avgProfitMargin || 0).toFixed(1)}%`,
-      `Monthly Revenue: ${formatCurrency(metrics.monthlyRevenue)}`,
-      `Active Treatments: ${metrics.activeTreatments || 0}`
-    ];
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPosition = 20;
     
-    metricsData.forEach(metric => {
-      doc.text(metric, 15, yPosition);
-      yPosition += 10;
-    });
-  }
-  
-  yPosition += 15;
-  
-  // Treatments Section
-  if (treatments && treatments.length > 0) {
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Business Performance Report', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 25;
+    
+    // Key Metrics Section
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('Treatment Performance', 15, yPosition);
+    doc.text('Key Metrics', 15, yPosition);
     yPosition += 15;
     
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     
-    treatments.forEach(treatment => {
-      if (yPosition > pageHeight - 20) {
-        doc.addPage();
-        yPosition = 20;
-      }
+    if (metrics && typeof metrics === 'object') {
+      const metricsData = [
+        `Hourly Rate: ${formatCurrency(metrics.hourlyRate)}`,
+        `Avg Profit Margin: ${parseFloat(metrics.avgProfitMargin || 0).toFixed(1)}%`,
+        `Monthly Revenue: ${formatCurrency(monthlyRevenue)}`,
+        `Active Treatments: ${metrics.activeTreatments || 0}`
+      ];
       
-      const treatmentText = `${treatment.name} - ${formatCurrency(treatment.price)} (${treatment.duration} min) - ${parseFloat(treatment.profitMargin).toFixed(1)}%`;
-      doc.text(treatmentText, 15, yPosition);
-      yPosition += 10;
-    });
-  }
-  
-  yPosition += 15;
-  
-  // Recent Expenses Section
-  if (expenses && expenses.length > 0) {
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Recent Expenses', 15, yPosition);
+      metricsData.forEach(metric => {
+        doc.text(metric, 15, yPosition);
+        yPosition += 10;
+      });
+    }
+    
     yPosition += 15;
     
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    
-    expenses.slice(0, 10).forEach(expense => {
-      if (yPosition > pageHeight - 20) {
-        doc.addPage();
-        yPosition = 20;
-      }
+    // Treatments Section
+    if (treatments && treatments.length > 0) {
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Treatment Performance', 15, yPosition);
+      yPosition += 15;
       
-      const expenseDate = new Date(expense.date).toLocaleDateString();
-      const expenseText = `${expense.category} - ${formatCurrency(expense.amount)} - ${expenseDate} - ${expense.description || 'N/A'}`;
-      doc.text(expenseText, 15, yPosition);
-      yPosition += 10;
-    });
-  }
-  
-  doc.save(`business-report-${new Date().toISOString().split('T')[0]}.pdf`);
-};
-
-
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      
+      treatments.forEach(treatment => {
+        if (yPosition > pageHeight - 20) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        const treatmentText = `${treatment.name} - ${formatCurrency(treatment.price)} (${treatment.duration} min) - ${parseFloat(treatment.profitMargin).toFixed(1)}%`;
+        doc.text(treatmentText, 15, yPosition);
+        yPosition += 10;
+      });
+    }
+    
+    yPosition += 15;
+    
+    // Recent Expenses Section
+    if (expenses && expenses.length > 0) {
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Recent Expenses', 15, yPosition);
+      yPosition += 15;
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      
+      expenses.slice(0, 10).forEach(expense => {
+        if (yPosition > pageHeight - 20) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        const expenseDate = new Date(expense.date).toLocaleDateString();
+        const expenseText = `${expense.category} - ${formatCurrency(expense.amount)} - ${expenseDate} - ${expense.description || 'N/A'}`;
+        doc.text(expenseText, 15, yPosition);
+        yPosition += 10;
+      });
+    }
+    
+    doc.save(`business-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   const handleEmailReport = async () => {
     try {
@@ -244,7 +252,6 @@ export default function Reports() {
 
       if (response.ok && data.success) {
         if (data.fallback && data.emailData) {
-          // Use mailto fallback
           const subject = encodeURIComponent(data.emailData.subject);
           const body = encodeURIComponent(data.emailData.body);
           window.location.href = `mailto:?subject=${subject}&body=${body}`;
@@ -294,23 +301,6 @@ export default function Reports() {
       </>
     );
   }
-
-  // Check subscription status
-  // if (!subscriptionStatus?.active) {
-  //   return (
-  //     <>
-  //       <Header 
-  //         title="Business Reports & Analytics" 
-  //         description="Generate comprehensive business reports and insights" 
-  //       />
-  //       <Paywall 
-  //         title="Business Reports & Analytics"
-  //         description="Access detailed financial reports and insights"
-  //         feature="business analytics and reporting"
-  //       />
-  //     </>
-  //   );
-  // }
 
   return (
     <>
@@ -395,8 +385,13 @@ export default function Reports() {
                 <div>
                   <p className="text-slate-600 text-sm font-medium">Monthly Revenue</p>
                   <p className="text-2xl font-bold text-slate-800 mt-1">
-                    {isLoading ? "..." : formatCurrency(metrics?.monthlyRevenue || 0)}
+                    {isLoading ? "..." : formatCurrency(monthlyRevenue)}
                   </p>
+                  {ceoMonthlyData && (
+                    <p className={`text-xs mt-1 ${ceoMonthlyData.changeType === 'positive' ? 'text-success' : 'text-red-500'}`}>
+                      {ceoMonthlyData.percentageChange >= 0 ? '+' : ''}{ceoMonthlyData.percentageChange}% from last month
+                    </p>
+                  )}
                 </div>
                 <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
                   <DollarSign className="text-warning h-6 w-6" />
@@ -514,17 +509,17 @@ export default function Reports() {
                     <h4 className="font-semibold text-slate-800 mb-3">Revenue Breakdown</h4>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-slate-600">Projected Monthly Revenue:</span>
-                        <span className="font-semibold">{formatCurrency(metrics?.monthlyRevenue || 0)}</span>
+                        <span className="text-slate-600">Current Monthly Revenue:</span>
+                        <span className="font-semibold">{formatCurrency(monthlyRevenue)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Monthly Expenses:</span>
                         <span className="font-semibold text-red-600">{formatCurrency(totalExpenses)}</span>
                       </div>
                       <div className="flex justify-between pt-2 border-t border-slate-200">
-                        <span className="font-medium text-slate-800">Net Profit (Est.):</span>
+                        <span className="font-medium text-slate-800">Net Profit:</span>
                         <span className="font-bold text-success">
-                          {formatCurrency((parseFloat(metrics?.monthlyRevenue || "0") - totalExpenses))}
+                          {formatCurrency(monthlyRevenue - totalExpenses)}
                         </span>
                       </div>
                     </div>

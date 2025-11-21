@@ -160,7 +160,7 @@ export default function Dashboard() {
     {
       title: "Monthly Revenue",
       // UPDATED: Use CEO Numbers data instead of metrics
-      value: ceoMonthlyData ? formatCurrency(ceoMonthlyData.currentMonthTotal) : "$0.00",
+      value: ceoMonthlyData ? formatCurrency(ceoMonthlyData.currentMonthTotal) : "0.00",
       change: ceoMonthlyData 
         ? `${ceoMonthlyData.percentageChange >= 0 ? '+' : ''}${ceoMonthlyData.percentageChange}% from last month`
         : "No data yet",
