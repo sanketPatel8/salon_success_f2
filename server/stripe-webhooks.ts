@@ -11,13 +11,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 // ActiveCampaign Configuration
 const AC_API_URL = process.env.ACTIVECAMPAIGN_API_URL!;
 const AC_API_KEY = process.env.ACTIVECAMPAIGN_API_KEY!;
-const AC_MANAGE_TAG_ID = process.env.ACTIVECAMPAIGN_MANAGE_TAG_ID!; // The tag ID to check for management
+const AC_MANAGE_TAG_ID = process.env.ACTIVECAMPAIGN_MANAGE_TAG_ID!;
 
 // Tag Names
 const TAGS = {
   TRIAL_STARTED: 'trial-started',
   PAID_MEMBER: 'paid-member',
   INACTIVE_USER: 'inactive-user',
+  SALON_SUCCESS_MANAGER: 'salonsuccessmanager',
 };
 
 /**
@@ -85,7 +86,6 @@ async function getOrCreateTag(tagName: string): Promise<string> {
   try {
     console.log(`🔍 Looking for tag: ${tagName}`);
 
-    // Search for existing tag
     const searchResponse = await axios.get(`${AC_API_URL}/api/3/tags`, {
       headers: { 'Api-Token': AC_API_KEY },
       params: { search: tagName },
@@ -97,7 +97,6 @@ async function getOrCreateTag(tagName: string): Promise<string> {
       return tagId;
     }
 
-    // Create new tag if not found
     console.log(`➕ Creating new tag: ${tagName}`);
     const createResponse = await axios.post(
       `${AC_API_URL}/api/3/tags`,
@@ -120,7 +119,7 @@ async function getOrCreateTag(tagName: string): Promise<string> {
 }
 
 /**
- * Add tag to contact
+ * Add tag to contact and remove salonsuccessmanager tag if it exists
  */
 async function addTagToContact(contactId: string, tagName: string) {
   try {
@@ -140,10 +139,30 @@ async function addTagToContact(contactId: string, tagName: string) {
     );
 
     console.log(`✅ Tag "${tagName}" added to contact ${contactId}`);
+
+    // Remove salonsuccessmanager tag if the new tag is a status tag
+    if (
+      tagName === TAGS.TRIAL_STARTED ||
+      tagName === TAGS.PAID_MEMBER ||
+      tagName === TAGS.INACTIVE_USER
+    ) {
+      console.log(`🔄 New tag is a status tag, checking for ${TAGS.SALON_SUCCESS_MANAGER} tag...`);
+      await removeTagFromContact(contactId, TAGS.SALON_SUCCESS_MANAGER);
+    }
   } catch (error: any) {
     // Tag might already exist on contact
     if (error.response?.status === 422 || error.response?.status === 409) {
       console.log(`ℹ️ Tag "${tagName}" already on contact ${contactId}`);
+      
+      // Still attempt to remove salonsuccessmanager tag
+      if (
+        tagName === TAGS.TRIAL_STARTED ||
+        tagName === TAGS.PAID_MEMBER ||
+        tagName === TAGS.INACTIVE_USER
+      ) {
+        console.log(`🔄 Tag already exists, checking for ${TAGS.SALON_SUCCESS_MANAGER} tag...`);
+        await removeTagFromContact(contactId, TAGS.SALON_SUCCESS_MANAGER);
+      }
     } else {
       console.error(`❌ Error adding tag:`, error.response?.data || error.message);
       throw error;
@@ -160,7 +179,6 @@ async function removeTagFromContact(contactId: string, tagName: string) {
 
     const tagId = await getOrCreateTag(tagName);
 
-    // Get contact tags to find the relationship
     const contactTagsResponse = await axios.get(
       `${AC_API_URL}/api/3/contacts/${contactId}/contactTags`,
       { headers: { 'Api-Token': AC_API_KEY } }
@@ -206,7 +224,7 @@ async function handleTrialStarted(user: any, subscription: Stripe.Subscription) 
       return;
     }
 
-    // Add trial-started tag
+    // Add trial-started tag (will automatically remove salonsuccessmanager if present)
     await addTagToContact(contactId, TAGS.TRIAL_STARTED);
     
     // Remove other status tags
@@ -248,7 +266,7 @@ async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscript
     // Remove inactive-user tag
     await removeTagFromContact(contactId, TAGS.INACTIVE_USER);
 
-    // Add paid-member tag
+    // Add paid-member tag (will automatically remove salonsuccessmanager if present)
     await addTagToContact(contactId, TAGS.PAID_MEMBER);
 
     console.log('✅ PAYMENT TAGS UPDATED\n');
@@ -286,7 +304,7 @@ async function handleInactiveUser(user: any, subscription: Stripe.Subscription |
     // Remove trial-started tag
     await removeTagFromContact(contactId, TAGS.TRIAL_STARTED);
 
-    // Add inactive-user tag
+    // Add inactive-user tag (will automatically remove salonsuccessmanager if present)
     await addTagToContact(contactId, TAGS.INACTIVE_USER);
 
     console.log('✅ INACTIVE USER TAGS UPDATED\n');
@@ -295,6 +313,7 @@ async function handleInactiveUser(user: any, subscription: Stripe.Subscription |
   }
 }
 
+// Rest of the code remains the same...
 export function setupStripeWebhooks(app: Express) {
   console.log('🔧 Setting up Stripe webhook endpoint...');
 
@@ -347,15 +366,6 @@ export function setupStripeWebhooks(app: Express) {
                   expand: ['customer', 'items.data.price'],
                 }
               );
-              console.log('📦 Retrieved subscription with dates:', {
-                id: subscription.id,
-                current_period_end: subscription.current_period_end,
-                current_period_start: subscription.current_period_start,
-                items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
-                trial_end: subscription.trial_end,
-                billing_cycle_anchor: subscription.billing_cycle_anchor,
-                status: subscription.status,
-              });
               await handleSubscriptionCreated(subscription);
             }
             break;
@@ -364,10 +374,6 @@ export function setupStripeWebhooks(app: Express) {
           case 'customer.subscription.created': {
             const eventSubscription = event.data.object as Stripe.Subscription;
             console.log('🆕 Subscription created:', eventSubscription.id);
-            console.log('📅 Event subscription dates (might be incomplete):', {
-              current_period_end: eventSubscription.current_period_end,
-              trial_end: eventSubscription.trial_end,
-            });
 
             const subscription = await stripe.subscriptions.retrieve(
               eventSubscription.id,
@@ -375,16 +381,6 @@ export function setupStripeWebhooks(app: Express) {
                 expand: ['customer', 'items.data.price'],
               }
             );
-
-            console.log('📦 Retrieved full subscription:', {
-              id: subscription.id,
-              current_period_end: subscription.current_period_end,
-              current_period_start: subscription.current_period_start,
-              items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
-              trial_end: subscription.trial_end,
-              billing_cycle_anchor: subscription.billing_cycle_anchor,
-              status: subscription.status,
-            });
 
             await handleSubscriptionCreated(subscription);
             break;
@@ -393,10 +389,6 @@ export function setupStripeWebhooks(app: Express) {
           case 'customer.subscription.updated': {
             const eventSubscription = event.data.object as Stripe.Subscription;
             console.log('🔄 Subscription updated:', eventSubscription.id);
-            console.log('📅 Event subscription dates (might be incomplete):', {
-              current_period_end: eventSubscription.current_period_end,
-              trial_end: eventSubscription.trial_end,
-            });
 
             const subscription = await stripe.subscriptions.retrieve(
               eventSubscription.id,
@@ -404,16 +396,6 @@ export function setupStripeWebhooks(app: Express) {
                 expand: ['customer', 'items.data.price'],
               }
             );
-
-            console.log('📦 Retrieved full subscription:', {
-              id: subscription.id,
-              current_period_end: subscription.current_period_end,
-              current_period_start: subscription.current_period_start,
-              items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
-              trial_end: subscription.trial_end,
-              billing_cycle_anchor: subscription.billing_cycle_anchor,
-              status: subscription.status,
-            });
 
             await handleSubscriptionUpdated(subscription);
             break;
@@ -429,10 +411,6 @@ export function setupStripeWebhooks(app: Express) {
           case 'invoice.payment_succeeded': {
             const invoice = event.data.object as Stripe.Invoice;
             console.log('💰 Payment succeeded:', invoice.id);
-            console.log('📅 Invoice period:', {
-              period_start: invoice.period_start,
-              period_end: invoice.period_end,
-            });
 
             if (invoice.subscription) {
               const subscription = await stripe.subscriptions.retrieve(
@@ -441,16 +419,6 @@ export function setupStripeWebhooks(app: Express) {
                   expand: ['customer', 'items.data.price'],
                 }
               );
-
-              console.log('📦 Retrieved subscription from invoice:', {
-                id: subscription.id,
-                current_period_end: subscription.current_period_end,
-                current_period_start: subscription.current_period_start,
-                items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
-                trial_end: subscription.trial_end,
-                billing_cycle_anchor: subscription.billing_cycle_anchor,
-                status: subscription.status,
-              });
 
               await handleSubscriptionUpdated(subscription);
             }
@@ -485,14 +453,6 @@ export function setupStripeWebhooks(app: Express) {
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   console.log('\n=== HANDLE SUBSCRIPTION CREATED ===');
   console.log('📝 Subscription ID:', subscription.id);
-  console.log('📅 Raw dates from Stripe:', {
-    current_period_end: subscription.current_period_end,
-    current_period_start: subscription.current_period_start,
-    items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
-    trial_end: subscription.trial_end,
-    billing_cycle_anchor: subscription.billing_cycle_anchor,
-    status: subscription.status,
-  });
 
   const customerId =
     typeof subscription.customer === 'string'
@@ -532,7 +492,6 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   console.log('✅ Found user:', user.id, user.email);
 
-  // Calculate end date with proper priority and fallback
   let endDateTimestamp: number | undefined;
   let dateSource = 'none';
 
@@ -542,7 +501,6 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   } else if (subscription.items?.data?.[0]?.current_period_end) {
     endDateTimestamp = subscription.items.data[0].current_period_end;
     dateSource = 'items[0].current_period_end';
-    console.log('Using items[0].current_period_end:', endDateTimestamp);
   } else if (subscription.trial_end) {
     endDateTimestamp = subscription.trial_end;
     dateSource = 'trial_end';
@@ -552,21 +510,10 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     anchorDate.setMonth(anchorDate.getMonth() + 1);
     endDateTimestamp = Math.floor(anchorDate.getTime() / 1000);
     dateSource = 'billing_cycle_anchor+1month';
-    console.warn('⚠️ Using billing_cycle_anchor as fallback - adding 1 month');
   }
-
-  console.log('📅 Date calculation:', {
-    timestamp: endDateTimestamp,
-    source: dateSource,
-    hasValue: !!endDateTimestamp,
-    subscriptionHasCurrentPeriodEnd: !!subscription.current_period_end,
-    itemsHasCurrentPeriodEnd: !!subscription.items?.data?.[0]?.current_period_end,
-  });
 
   if (!endDateTimestamp) {
     console.error('❌ CRITICAL: No valid timestamp found!');
-    console.error('Full subscription object:', JSON.stringify(subscription, null, 2));
-
     await storage.updateUserStripeInfo(user.id, customerId, subscription.id);
     await storage.updateSubscriptionStatus(
       user.id,
@@ -577,26 +524,12 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   const endDate = new Date(endDateTimestamp * 1000);
 
-  console.log('📅 Final calculated date:', {
-    unix: endDateTimestamp,
-    iso: endDate.toISOString(),
-    readable: endDate.toLocaleString('en-US', { timeZone: 'UTC' }),
-    source: dateSource,
-  });
-
   let status = subscription.status;
   if (subscription.status === 'trialing') {
     status = 'trial';
   }
 
   await storage.updateUserStripeInfo(user.id, customerId, subscription.id);
-
-  console.log('💾 About to update subscription status with:', {
-    userId: user.id,
-    status,
-    endDate: endDate.toISOString(),
-  });
-
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
   // ===== ACTIVE CAMPAIGN TAG UPDATES (Only for contacts with management tag) =====
@@ -612,14 +545,6 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   console.log('\n=== HANDLE SUBSCRIPTION UPDATED ===');
   console.log('📝 Subscription ID:', subscription.id);
-  console.log('📅 Raw dates from Stripe:', {
-    current_period_end: subscription.current_period_end,
-    current_period_start: subscription.current_period_start,
-    items_current_period_end: subscription.items?.data?.[0]?.current_period_end,
-    trial_end: subscription.trial_end,
-    billing_cycle_anchor: subscription.billing_cycle_anchor,
-    status: subscription.status,
-  });
 
   const users = await storage.getAllUsers();
   const user = users.find(u => u.stripeSubscriptionId === subscription.id);
@@ -631,7 +556,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   console.log('✅ Found user:', user.id, user.email);
 
-  // Calculate end date with proper priority and fallback
   let endDateTimestamp: number | undefined;
   let dateSource = 'none';
 
@@ -641,7 +565,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   } else if (subscription.items?.data?.[0]?.current_period_end) {
     endDateTimestamp = subscription.items.data[0].current_period_end;
     dateSource = 'items[0].current_period_end';
-    console.log('Using items[0].current_period_end:', endDateTimestamp);
   } else if (subscription.trial_end) {
     endDateTimestamp = subscription.trial_end;
     dateSource = 'trial_end';
@@ -651,31 +574,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     anchorDate.setMonth(anchorDate.getMonth() + 1);
     endDateTimestamp = Math.floor(anchorDate.getTime() / 1000);
     dateSource = 'billing_cycle_anchor+1month';
-    console.warn('⚠️ Using billing_cycle_anchor as fallback - adding 1 month');
   }
-
-  console.log('📅 Date calculation:', {
-    timestamp: endDateTimestamp,
-    source: dateSource,
-    hasValue: !!endDateTimestamp,
-    subscriptionHasCurrentPeriodEnd: !!subscription.current_period_end,
-    itemsHasCurrentPeriodEnd: !!subscription.items?.data?.[0]?.current_period_end,
-  });
 
   if (!endDateTimestamp) {
     console.error('❌ CRITICAL: No valid timestamp found!');
-    console.error('Full subscription object:', JSON.stringify(subscription, null, 2));
     return;
   }
 
   const endDate = new Date(endDateTimestamp * 1000);
-
-  console.log('📅 Final calculated date:', {
-    unix: endDateTimestamp,
-    iso: endDate.toISOString(),
-    readable: endDate.toLocaleString('en-US', { timeZone: 'UTC' }),
-    source: dateSource,
-  });
 
   let status = subscription.status;
   if (subscription.status === 'trialing') {
@@ -687,12 +593,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   } else if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
     status = 'inactive';
   }
-
-  console.log('💾 About to update subscription status with:', {
-    userId: user.id,
-    status,
-    endDate: endDate.toISOString(),
-  });
 
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
@@ -720,20 +620,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   await storage.updateSubscriptionStatus(user.id, 'inactive');
   console.log(`✅ Subscription deleted for user ${user.email}`);
 
-  // ===== ACTIVE CAMPAIGN TAG UPDATES (Only for contacts with management tag) =====
   await handleInactiveUser(user, subscription);
-}
-
-async function handleTrialWillEnd(subscription: Stripe.Subscription) {
-  const users = await storage.getAllUsers();
-  const user = users.find(u => u.stripeSubscriptionId === subscription.id);
-
-  if (!user) {
-    console.error('User not found for subscription:', subscription.id);
-    return;
-  }
-
-  console.log(`⏰ Trial ending soon for user ${user.email}`);
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
@@ -748,6 +635,5 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   await storage.updateSubscriptionStatus(user.id, 'past_due');
   console.log(`💔 Payment failed for user ${user.email}`);
 
-  // ===== ACTIVE CAMPAIGN TAG UPDATES (Only for contacts with management tag) =====
   await handleInactiveUser(user);
 }
