@@ -240,10 +240,18 @@ async function handleTrialStarted(user: any, subscription: Stripe.Subscription) 
 /**
  * Update tags for successful payment / active subscription
  * Only updates if contact exists in ActiveCampaign AND has the management tag
+ * 🔧 FIX: Added safety check to prevent tagging non-active subscriptions
  */
 async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscription) {
   console.log('\n=== SUCCESSFUL PAYMENT - TAG UPDATE ===');
   console.log(`👤 User: ${user.email}`);
+  console.log(`📊 Subscription status: ${subscription.status}`);
+
+  // 🔧 FIX: Safety check - don't tag as paid if subscription isn't actually active
+  if (subscription.status !== 'active') {
+    console.log(`⚠️ Subscription status is ${subscription.status}, not 'active' - skipping paid-member tag`);
+    return;
+  }
 
   try {
     const contactId = await findACContact(user.email);
@@ -545,6 +553,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   console.log('\n=== HANDLE SUBSCRIPTION UPDATED ===');
   console.log('📝 Subscription ID:', subscription.id);
+  console.log('📊 Subscription status from Stripe:', subscription.status);
 
   const users = await storage.getAllUsers();
   const user = users.find(u => u.stripeSubscriptionId === subscription.id);
@@ -594,14 +603,18 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     status = 'inactive';
   }
 
+  console.log('💾 Updating local status to:', status);
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
-  // ===== ACTIVE CAMPAIGN TAG UPDATES (Only for contacts with management tag) =====
-  if (subscription.status === 'trialing') {
+  // 🔧 FIX: Use computed 'status' variable instead of subscription.status directly
+  // This ensures we use the correctly mapped status, not the raw Stripe status
+  console.log('🏷️ Determining ActiveCampaign tag updates based on status:', status);
+  
+  if (status === 'trial') {
     await handleTrialStarted(user, subscription);
-  } else if (subscription.status === 'active') {
+  } else if (status === 'active') {
     await handleSuccessfulPayment(user, subscription);
-  } else if (subscription.status === 'past_due' || subscription.status === 'canceled') {
+  } else if (status === 'past_due' || status === 'inactive') {
     await handleInactiveUser(user, subscription);
   }
 
