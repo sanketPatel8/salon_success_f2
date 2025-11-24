@@ -246,27 +246,33 @@ async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscript
   console.log('\n=== SUCCESSFUL PAYMENT - TAG UPDATE ===');
   console.log(`👤 User: ${user.email}`);
   console.log(`📊 Subscription status: ${subscription.status}`);
-
-  // 🔧 FIX: Safety check - don't tag as paid if subscription isn't actually active
-  if (subscription.status !== 'active') {
-    console.log(`⚠️ Subscription status is ${subscription.status}, not 'active' - skipping paid-member tag`);
-    return;
-  }
-
   try {
     const contactId = await findACContact(user.email);
-    
+
     if (!contactId) {
       console.log(`⏭️ Contact not found in ActiveCampaign - skipping tag update`);
       return;
     }
 
-    // Check if contact has the management tag
     const hasManagementTag = await contactHasTag(contactId, AC_MANAGE_TAG_ID);
     if (!hasManagementTag) {
       console.log(`⏭️ Contact does not have management tag ${AC_MANAGE_TAG_ID} - skipping tag update`);
       return;
     }
+
+  // 🔧 FIX: Safety check - don't tag as paid if subscription isn't actually active
+  if (subscription.status !== 'active') {
+      await removeTagFromContact(contactId, TAGS.TRIAL_STARTED);
+
+      await removeTagFromContact(contactId, TAGS.PAID_MEMBER);
+    
+      await addTagToContact(contactId, TAGS.INACTIVE_USER);
+    
+    console.log(`⚠️ Subscription status is ${subscription.status}, not 'active' - skipping paid-member tag`);
+    
+    return;
+  }
+    
 
     // Remove trial-started tag
     await removeTagFromContact(contactId, TAGS.TRIAL_STARTED);
