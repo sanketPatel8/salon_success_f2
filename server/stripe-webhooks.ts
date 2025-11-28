@@ -11,7 +11,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 // ActiveCampaign Configuration
 const AC_API_URL = process.env.ACTIVECAMPAIGN_API_URL!;
 const AC_API_KEY = process.env.ACTIVECAMPAIGN_API_KEY!;
-const AC_MANAGE_TAG_ID = process.env.ACTIVECAMPAIGN_MANAGE_TAG_ID!;
 
 // Tag Names
 const TAGS = {
@@ -69,37 +68,6 @@ async function findACContact(email: string): Promise<string | null> {
   } catch (error: any) {
     console.error('❌ Error finding AC contact:', error.response?.data || error.message);
     return null;
-  }
-}
-
-/**
- * Check if contact has a specific tag
- * Returns true if contact has the tag, false otherwise
- */
-async function contactHasTag(contactId: string, tagId: string): Promise<boolean> {
-  try {
-    console.log(`🏷️ Checking if contact ${contactId} has tag ${tagId}`);
-
-    const response = await axios.get(
-      `${AC_API_URL}/api/3/contacts/${contactId}/contactTags`,
-      { headers: { 'Api-Token': AC_API_KEY } }
-    );
-
-    const contactTags = response.data.contactTags || [];
-    const hasTag = contactTags.some(
-      (ct: any) => ct.tag === tagId || ct.tag === tagId.toString()
-    );
-
-    if (hasTag) {
-      console.log(`✅ Contact ${contactId} has tag ${tagId}`);
-    } else {
-      console.log(`❌ Contact ${contactId} does NOT have tag ${tagId}`);
-    }
-
-    return hasTag;
-  } catch (error: any) {
-    console.error('❌ Error checking contact tag:', error.response?.data || error.message);
-    return false;
   }
 }
 
@@ -227,7 +195,7 @@ async function removeTagFromContact(contactId: string, tagName: string) {
 
 /**
  * Update tags for trial started status
- * Only updates if contact exists in ActiveCampaign AND has the management tag
+ * Only updates if contact exists in ActiveCampaign
  */
 async function handleTrialStarted(user: any, subscription: Stripe.Subscription) {
   console.log('\n=== TRIAL STARTED - TAG UPDATE ===');
@@ -238,13 +206,6 @@ async function handleTrialStarted(user: any, subscription: Stripe.Subscription) 
     
     if (!contactId) {
       console.log(`⏭️ Contact not found in ActiveCampaign - skipping tag update`);
-      return;
-    }
-
-    // Check if contact has the management tag
-    const hasManagementTag = await contactHasTag(contactId, AC_MANAGE_TAG_ID);
-    if (!hasManagementTag) {
-      console.log(`⏭️ Contact does not have management tag ${AC_MANAGE_TAG_ID} - skipping tag update`);
       return;
     }
 
@@ -263,8 +224,8 @@ async function handleTrialStarted(user: any, subscription: Stripe.Subscription) 
 
 /**
  * Update tags for successful payment / active subscription
- * Only updates if contact exists in ActiveCampaign AND has the management tag
- * 🔧 FIXED: Now properly removes trial-started tag when transitioning to paid
+ * Only updates if contact exists in ActiveCampaign
+ * Now properly removes trial-started tag when transitioning to paid
  */
 async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscription) {
   console.log('\n=== SUCCESSFUL PAYMENT - TAG UPDATE ===');
@@ -279,13 +240,7 @@ async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscript
       return;
     }
 
-    const hasManagementTag = await contactHasTag(contactId, AC_MANAGE_TAG_ID);
-    if (!hasManagementTag) {
-      console.log(`⏭️ Contact does not have management tag ${AC_MANAGE_TAG_ID} - skipping tag update`);
-      return;
-    }
-
-    // Remove trial-started tag - THIS NOW ALWAYS EXECUTES
+    // Remove trial-started tag
     await removeTagFromContact(contactId, TAGS.TRIAL_STARTED);
     
     // Remove inactive-user tag
@@ -302,7 +257,7 @@ async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscript
 
 /**
  * Update tags for inactive user (failed payment, trial expired, or canceled)
- * Only updates if contact exists in ActiveCampaign AND has the management tag
+ * Only updates if contact exists in ActiveCampaign
  */
 async function handleInactiveUser(user: any, subscription: Stripe.Subscription | null = null) {
   console.log('\n=== INACTIVE USER - TAG UPDATE ===');
@@ -313,13 +268,6 @@ async function handleInactiveUser(user: any, subscription: Stripe.Subscription |
     
     if (!contactId) {
       console.log(`⏭️ Contact not found in ActiveCampaign - skipping tag update`);
-      return;
-    }
-
-    // Check if contact has the management tag
-    const hasManagementTag = await contactHasTag(contactId, AC_MANAGE_TAG_ID);
-    if (!hasManagementTag) {
-      console.log(`⏭️ Contact does not have management tag ${AC_MANAGE_TAG_ID} - skipping tag update`);
       return;
     }
 
@@ -547,14 +495,13 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   const endDate = new Date(endDateTimestamp * 1000);
   
-  // 🔧 FIXED: Use centralized status mapping function
   const status = mapStripeStatus(subscription.status);
   console.log('📊 Mapped status:', status);
 
   await storage.updateUserStripeInfo(user.id, customerId, subscription.id);
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
-  // ===== ACTIVE CAMPAIGN TAG UPDATES (Only for contacts with management tag) =====
+  // ===== ACTIVE CAMPAIGN TAG UPDATES (For all contacts found in ActiveCampaign) =====
   if (status === 'trial') {
     await handleTrialStarted(user, subscription);
   } else if (status === 'active') {
@@ -608,20 +555,17 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   const endDate = new Date(endDateTimestamp * 1000);
 
-  // 🔧 FIXED: Use centralized status mapping function for consistency
   const status = mapStripeStatus(subscription.status);
   console.log('📊 Mapped status:', status);
 
   console.log('💾 Updating local status to:', status);
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
-  // 🔧 FIXED: Proper status check before calling tag update functions
   console.log('🏷️ Determining ActiveCampaign tag updates based on status:', status);
   
   if (status === 'trial') {
     await handleTrialStarted(user, subscription);
   } else if (status === 'active') {
-    // ✅ This now properly calls handleSuccessfulPayment which WILL remove trial-started
     await handleSuccessfulPayment(user, subscription);
   } else if (status === 'past_due' || status === 'inactive') {
     await handleInactiveUser(user, subscription);
