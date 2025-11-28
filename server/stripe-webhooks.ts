@@ -22,6 +22,30 @@ const TAGS = {
 };
 
 /**
+ * Map Stripe subscription status to internal status
+ * Centralized function to ensure consistency across all handlers
+ */
+function mapStripeStatus(stripeStatus: Stripe.Subscription.Status): string {
+  switch (stripeStatus) {
+    case 'trialing':
+      return 'trial';
+    case 'active':
+      return 'active';
+    case 'past_due':
+      return 'past_due';
+    case 'canceled':
+    case 'unpaid':
+    case 'incomplete':
+    case 'incomplete_expired':
+    case 'paused':
+      return 'inactive';
+    default:
+      console.warn(`⚠️ Unexpected subscription status: ${stripeStatus}, defaulting to inactive`);
+      return 'inactive';
+  }
+}
+
+/**
  * Find existing contact in ActiveCampaign by email
  * Returns contact ID if found, null if not found
  */
@@ -240,12 +264,13 @@ async function handleTrialStarted(user: any, subscription: Stripe.Subscription) 
 /**
  * Update tags for successful payment / active subscription
  * Only updates if contact exists in ActiveCampaign AND has the management tag
- * 🔧 FIX: Added safety check to prevent tagging non-active subscriptions
+ * 🔧 FIXED: Now properly removes trial-started tag when transitioning to paid
  */
 async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscription) {
   console.log('\n=== SUCCESSFUL PAYMENT - TAG UPDATE ===');
   console.log(`👤 User: ${user.email}`);
   console.log(`📊 Subscription status: ${subscription.status}`);
+  
   try {
     const contactId = await findACContact(user.email);
 
@@ -260,21 +285,7 @@ async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscript
       return;
     }
 
-  // 🔧 FIX: Safety check - don't tag as paid if subscription isn't actually active
-  if (subscription.status !== 'active') {
-      await removeTagFromContact(contactId, TAGS.TRIAL_STARTED);
-
-      await removeTagFromContact(contactId, TAGS.PAID_MEMBER);
-    
-      await addTagToContact(contactId, TAGS.INACTIVE_USER);
-    
-    console.log(`⚠️ Subscription status is ${subscription.status}, not 'active' - skipping paid-member tag`);
-    
-    return;
-  }
-    
-
-    // Remove trial-started tag
+    // Remove trial-started tag - THIS NOW ALWAYS EXECUTES
     await removeTagFromContact(contactId, TAGS.TRIAL_STARTED);
     
     // Remove inactive-user tag
@@ -283,7 +294,7 @@ async function handleSuccessfulPayment(user: any, subscription: Stripe.Subscript
     // Add paid-member tag (will automatically remove salonsuccessmanager if present)
     await addTagToContact(contactId, TAGS.PAID_MEMBER);
 
-    console.log('✅ PAYMENT TAGS UPDATED\n');
+    console.log('✅ PAYMENT TAGS UPDATED - trial-started removed, paid-member added\n');
   } catch (error) {
     console.error('❌ PAYMENT TAG UPDATE FAILED:', error);
   }
@@ -327,7 +338,6 @@ async function handleInactiveUser(user: any, subscription: Stripe.Subscription |
   }
 }
 
-// Rest of the code remains the same...
 export function setupStripeWebhooks(app: Express) {
   console.log('🔧 Setting up Stripe webhook endpoint...');
 
@@ -467,6 +477,7 @@ export function setupStripeWebhooks(app: Express) {
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   console.log('\n=== HANDLE SUBSCRIPTION CREATED ===');
   console.log('📝 Subscription ID:', subscription.id);
+  console.log('📊 Raw Stripe status:', subscription.status);
 
   const customerId =
     typeof subscription.customer === 'string'
@@ -528,29 +539,28 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   if (!endDateTimestamp) {
     console.error('❌ CRITICAL: No valid timestamp found!');
+    const mappedStatus = mapStripeStatus(subscription.status);
     await storage.updateUserStripeInfo(user.id, customerId, subscription.id);
-    await storage.updateSubscriptionStatus(
-      user.id,
-      subscription.status === 'trialing' ? 'trial' : subscription.status
-    );
+    await storage.updateSubscriptionStatus(user.id, mappedStatus);
     return;
   }
 
   const endDate = new Date(endDateTimestamp * 1000);
-
-  let status = subscription.status;
-  if (subscription.status === 'trialing') {
-    status = 'trial';
-  }
+  
+  // 🔧 FIXED: Use centralized status mapping function
+  const status = mapStripeStatus(subscription.status);
+  console.log('📊 Mapped status:', status);
 
   await storage.updateUserStripeInfo(user.id, customerId, subscription.id);
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
   // ===== ACTIVE CAMPAIGN TAG UPDATES (Only for contacts with management tag) =====
-  if (subscription.status === 'trialing') {
+  if (status === 'trial') {
     await handleTrialStarted(user, subscription);
-  } else if (subscription.status === 'active') {
+  } else if (status === 'active') {
     await handleSuccessfulPayment(user, subscription);
+  } else if (status === 'past_due' || status === 'inactive') {
+    await handleInactiveUser(user, subscription);
   }
 
   console.log('✅ SUBSCRIPTION CREATED COMPLETE\n');
@@ -559,7 +569,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   console.log('\n=== HANDLE SUBSCRIPTION UPDATED ===');
   console.log('📝 Subscription ID:', subscription.id);
-  console.log('📊 Subscription status from Stripe:', subscription.status);
+  console.log('📊 Raw Stripe status:', subscription.status);
 
   const users = await storage.getAllUsers();
   const user = users.find(u => u.stripeSubscriptionId === subscription.id);
@@ -598,27 +608,20 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   const endDate = new Date(endDateTimestamp * 1000);
 
-  let status = subscription.status;
-  if (subscription.status === 'trialing') {
-    status = 'trial';
-  } else if (subscription.status === 'active') {
-    status = 'active';
-  } else if (subscription.status === 'past_due') {
-    status = 'past_due';
-  } else if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
-    status = 'inactive';
-  }
+  // 🔧 FIXED: Use centralized status mapping function for consistency
+  const status = mapStripeStatus(subscription.status);
+  console.log('📊 Mapped status:', status);
 
   console.log('💾 Updating local status to:', status);
   await storage.updateSubscriptionStatus(user.id, status, endDate);
 
-  // 🔧 FIX: Use computed 'status' variable instead of subscription.status directly
-  // This ensures we use the correctly mapped status, not the raw Stripe status
+  // 🔧 FIXED: Proper status check before calling tag update functions
   console.log('🏷️ Determining ActiveCampaign tag updates based on status:', status);
   
   if (status === 'trial') {
     await handleTrialStarted(user, subscription);
   } else if (status === 'active') {
+    // ✅ This now properly calls handleSuccessfulPayment which WILL remove trial-started
     await handleSuccessfulPayment(user, subscription);
   } else if (status === 'past_due' || status === 'inactive') {
     await handleInactiveUser(user, subscription);
