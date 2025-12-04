@@ -451,6 +451,25 @@ const deleteIncomeGoalMutation = useMutation({
     return monthlyTotals;
   };
 
+  const getMonthlyAvailableTotals = (incomes: WeeklyIncome[], year: number) => {
+  const monthlyAvailableTotals: { [key: number]: number } = {};
+  
+  incomes
+    .filter(income => {
+      const incomeDate = new Date(income.weekStartDate);
+      return getYear(incomeDate) === year;
+    })
+    .forEach(income => {
+      const month = getMonth(new Date(income.weekStartDate));
+      const weekTotal = parseFloat(income.weeklyTotal);
+      // Calculate available amount for this week by subtracting all pot allocations
+      const weekAvailable = weekTotal * ((100 - totalAllocatedPercentage) / 100);
+      monthlyAvailableTotals[month] = (monthlyAvailableTotals[month] || 0) + weekAvailable;
+    });
+  
+  return monthlyAvailableTotals;
+};
+
   const getIncomesByMonthYear = (incomes: WeeklyIncome[], month: number, year: number) => {
     return incomes.filter(income => {
       const incomeDate = new Date(income.weekStartDate);
@@ -495,9 +514,11 @@ const deleteIncomeGoalMutation = useMutation({
     })
     .reduce((sum, income) => sum + parseFloat(income.weeklyTotal), 0);
 
-  // Monthly totals for current and comparison years
-  const currentYearMonthlyTotals = getMonthlyTotals(filteredIncomes, selectedYear);
-  const comparisonYearMonthlyTotals = getMonthlyTotals(filteredIncomes, comparisonYear);
+    // Monthly totals for current and comparison years
+const currentYearMonthlyTotals = getMonthlyTotals(filteredIncomes, selectedYear);
+const comparisonYearMonthlyTotals = getMonthlyTotals(filteredIncomes, comparisonYear);
+const currentYearMonthlyAvailableTotals = getMonthlyAvailableTotals(filteredIncomes, selectedYear);
+const comparisonYearMonthlyAvailableTotals = getMonthlyAvailableTotals(filteredIncomes, comparisonYear);
 
   // Available years for comparison
   const yearSet = new Set<number>();
@@ -1239,58 +1260,61 @@ const handleEditGoalSubmit = (data: IncomeGoalForm) => {
             <div className="space-y-4 sm:space-y-6">
               {/* Mobile Card View */}
               <div className="block sm:hidden space-y-3">
-                {weeklyIncomes
-                  .filter(income => selectedBusiness === "all" || income.businessId === selectedBusiness)
-                  .sort((a, b) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime())
-                  .slice(0, 20)
-                  .map((income) => {
-                    const business = businesses.find(b => b.id === income.businessId);
-                    const weekStart = new Date(income.weekStartDate);
-                    const weekEnd = addDays(weekStart, 6);
-                    const total = parseFloat(income.weeklyTotal);
-                    const vatAmount = total * 0.20;
-                    const profitAmount = total * 0.05;
-                    const availableAmount = total * 0.75;
-                    const isCurrentWeek = isSameWeek(weekStart, currentWeek, { weekStartsOn: 1 });
-                    
-                    return (
-                      <Card key={income.id} className={isCurrentWeek ? 'bg-blue-50 border-blue-200' : ''}>
-                        <CardContent className="p-3 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="font-semibold text-sm">
-                                {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
-                              </div>
-                              {selectedBusiness === "all" && business && (
-                                <div className="text-xs text-muted-foreground">{business.name}</div>
-                              )}
-                            </div>
-                            {isCurrentWeek && <Badge className="text-xs">Current</Badge>}
-                          </div>
-                          <Separator />
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                              <div className="text-muted-foreground">Total Takings</div>
-                              <div className="font-bold text-blue-600">{formatCurrency(total)}</div>
-                            </div>
-                            <div>
-                              <div className="text-muted-foreground">VAT/Tax (20%)</div>
-                              <div className="font-semibold text-orange-600">{formatCurrency(vatAmount)}</div>
-                            </div>
-                            <div>
-                              <div className="text-muted-foreground">Profit Pot (5%)</div>
-                              <div className="font-semibold text-green-600">{formatCurrency(profitAmount)}</div>
-                            </div>
-                            <div>
-                              <div className="text-muted-foreground">Available (75%)</div>
-                              <div className="font-semibold text-blue-600">{formatCurrency(availableAmount)}</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+  {weeklyIncomes
+    .filter(income => selectedBusiness === "all" || income.businessId === selectedBusiness)
+    .sort((a, b) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime())
+    .slice(0, 20)
+    .map((income) => {
+      const business = businesses.find(b => b.id === income.businessId);
+      const weekStart = new Date(income.weekStartDate);
+      const weekEnd = addDays(weekStart, 6);
+      const total = parseFloat(income.weeklyTotal);
+      const isCurrentWeek = isSameWeek(weekStart, currentWeek, { weekStartsOn: 1 });
+      
+      return (
+        <Card key={income.id} className={isCurrentWeek ? 'bg-blue-50 border-blue-200' : ''}>
+          <CardContent className="p-3 space-y-2">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold text-sm">
+                  {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
+                </div>
+                {selectedBusiness === "all" && business && (
+                  <div className="text-xs text-muted-foreground">{business.name}</div>
+                )}
               </div>
+              {isCurrentWeek && <Badge className="text-xs">Current</Badge>}
+            </div>
+            <Separator />
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <div className="text-muted-foreground">Total Takings</div>
+                <div className="font-bold text-blue-600">{formatCurrency(total)}</div>
+              </div>
+              {moneyPots.map((pot) => {
+                const potAmount = (total * parseFloat(pot.percentage.toString())) / 100;
+                return (
+                  <div key={pot.id}>
+                    <div className="text-muted-foreground flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: pot.color || "hsl(var(--primary))" }} />
+                      {pot.name} ({pot.percentage}%)
+                    </div>
+                    <div className="font-semibold" style={{ color: pot.color }}>{formatCurrency(potAmount)}</div>
+                  </div>
+                );
+              })}
+              {totalAllocatedPercentage < 100 && (
+                <div>
+                  <div className="text-muted-foreground">Available ({(100 - totalAllocatedPercentage).toFixed(1)}%)</div>
+                  <div className="font-semibold text-blue-600">{formatCurrency(total * ((100 - totalAllocatedPercentage) / 100))}</div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    })}
+</div>
 
               {/* Desktop Table View */}
               <div className="hidden sm:block overflow-x-auto">
@@ -1301,9 +1325,14 @@ const handleEditGoalSubmit = (data: IncomeGoalForm) => {
                       <th className="text-left py-3 px-4 font-semibold border-r border-slate-300">Week Ending</th>
                       {selectedBusiness === "all" && <th className="text-left py-3 px-4 font-semibold border-r border-slate-300">Business</th>}
                       <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-blue-50">Total Takings</th>
-                      <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-orange-50">VAT/Tax (20%)</th>
-                      <th className="text-right py-3 px-4 font-semibold border-r border-slate-300 bg-green-50">Profit Pot (5%)</th>
-                      <th className="text-right py-3 px-4 font-semibold bg-blue-50">Available (75%)</th>
+                      {moneyPots.map((pot) => (
+                        <th key={pot.id} className="text-right py-3 px-4 font-semibold border-r border-slate-300" style={{ backgroundColor: `${pot.color}15` }}>
+                          {pot.name} ({pot.percentage}%)
+                        </th>
+                      ))}
+                      {totalAllocatedPercentage < 100 && (
+                        <th className="text-right py-3 px-4 font-semibold bg-blue-50">Available ({(100 - totalAllocatedPercentage).toFixed(1)}%)</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -1316,9 +1345,6 @@ const handleEditGoalSubmit = (data: IncomeGoalForm) => {
                         const weekStart = new Date(income.weekStartDate);
                         const weekEnd = addDays(weekStart, 6);
                         const total = parseFloat(income.weeklyTotal);
-                        const vatAmount = total * 0.20;
-                        const profitAmount = total * 0.05;
-                        const availableAmount = total * 0.75;
                         const isCurrentWeek = isSameWeek(weekStart, currentWeek, { weekStartsOn: 1 });
                         
                         return (
@@ -1336,15 +1362,19 @@ const handleEditGoalSubmit = (data: IncomeGoalForm) => {
                             <td className="text-right py-3 px-4 font-bold border-r border-slate-200 bg-blue-25">
                               {formatCurrency(total)}
                             </td>
-                            <td className="text-right py-3 px-4 font-semibold border-r border-slate-200 text-orange-600 bg-orange-25">
-                              {formatCurrency(vatAmount)}
-                            </td>
-                            <td className="text-right py-3 px-4 font-semibold border-r border-slate-200 text-green-600 bg-green-25">
-                              {formatCurrency(profitAmount)}
-                            </td>
-                            <td className="text-right py-3 px-4 font-semibold text-blue-600 bg-blue-25">
-                              {formatCurrency(availableAmount)}
-                            </td>
+                            {moneyPots.map((pot) => {
+                              const potAmount = (total * parseFloat(pot.percentage.toString())) / 100;
+                              return (
+                                <td key={pot.id} className="text-right py-3 px-4 font-semibold border-r border-slate-200" style={{ color: pot.color, backgroundColor: `${pot.color}10` }}>
+                                  {formatCurrency(potAmount)}
+                                </td>
+                              );
+                            })}
+                            {totalAllocatedPercentage < 100 && (
+                              <td className="text-right py-3 px-4 font-semibold text-blue-600 bg-blue-25">
+                                {formatCurrency(total * ((100 - totalAllocatedPercentage) / 100))}
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
@@ -1368,7 +1398,7 @@ const handleEditGoalSubmit = (data: IncomeGoalForm) => {
                       const comparisonYearTotal = comparisonYearMonthlyTotals[monthIndex] || 0;
                       const difference = currentYearTotal - comparisonYearTotal;
                       const growthPercent = comparisonYearTotal > 0 ? ((difference / comparisonYearTotal) * 100) : (currentYearTotal > 0 ? 100 : 0);
-                      const availableAmount = currentYearTotal * 0.75;
+                      const availableAmount = currentYearMonthlyAvailableTotals[monthIndex] || 0;
                       
                       // Determine which year to show based on which has data
                       let displayYear = selectedYear;
@@ -1432,7 +1462,7 @@ const handleEditGoalSubmit = (data: IncomeGoalForm) => {
                           const comparisonYearTotal = comparisonYearMonthlyTotals[monthIndex] || 0;
                           const difference = currentYearTotal - comparisonYearTotal;
                           const growthPercent = comparisonYearTotal > 0 ? ((difference / comparisonYearTotal) * 100) : (currentYearTotal > 0 ? 100 : 0);
-                          const availableAmount = currentYearTotal * 0.75;
+                          const availableAmount = currentYearMonthlyAvailableTotals[monthIndex] || 0;
                           
                           // Determine which year to show based on which has data
                           let displayYear = selectedYear;
