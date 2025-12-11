@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Calculator, Home, Clock, Percent, Receipt, TrendingUp, FileText, DollarSign, Crown, Package, LogOut, HelpCircle, Palette, Menu, X, Target  } from "lucide-react";
+import { Calculator, Home, Clock, Percent, Receipt, TrendingUp, FileText, DollarSign, Crown, Package, LogOut, HelpCircle, Palette, Menu, X, Target, Users  } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoPath from "@assets/KatieGodfrey-Logo_Black.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ const navigation = [
   { name: "Teams Targets", href: "/team-target", icon: Target },
   { name: "Revenue Projections", href: "/revenue", icon: TrendingUp },
   { name: "Reports & Export", href: "/reports", icon: FileText },
+  { name: "Community Access", href: "/community", icon: Users },
 
 ];
 
@@ -101,6 +102,7 @@ export default function Sidebar() {
             {navigation.map((item) => {
               const isActive = location === item.href;
               const Icon = item.icon;
+              const isCommunityAccess = item.name === "Community Access";
               
               return (
                 <li key={item.name}>
@@ -111,6 +113,10 @@ export default function Sidebar() {
                       "flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-colors",
                       item.isPro
                         ? "text-primary bg-gradient-to-r from-pink-50 to-pink-100 hover:from-pink-100 hover:to-pink-200 border border-primary/20"
+                        : isCommunityAccess && isActive
+                        ? "text-[#3B82F6] bg-blue-50"
+                        : isCommunityAccess
+                        ? "text-slate-600 hover:text-[#3B82F6] hover:bg-slate-50"
                         : isActive
                         ? "text-primary bg-blue-50"
                         : "text-slate-600 hover:text-primary hover:bg-slate-50"

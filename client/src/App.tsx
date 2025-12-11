@@ -34,6 +34,7 @@ import SubscriptionGuard from "./pages/subscriptionGuard.tsx";
 import TeamTarget from "./pages/team-target.tsx";
 import Cancel from "./pages/cancel.tsx";
 import ThankYou from "./pages/thank-you.tsx";
+import Community from "./pages/community.tsx";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -176,6 +177,12 @@ function Router() {
           <Route path="/reports">
             <SubscriptionGuard>
               <Reports />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/community">
+            <SubscriptionGuard pageType="community">
+              <Community />
             </SubscriptionGuard>
           </Route>
 
