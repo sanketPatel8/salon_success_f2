@@ -88,6 +88,25 @@ function AddEventCalendar({
           .ae-emd-cal-events .ae-emd-event-date {
             font-size: 11px !important;
           }
+          
+          /* Force header items to stack on mobile */
+          .ae-emd-cal-events .ae-emd-head {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 8px !important;
+          }
+          
+          .ae-emd-cal-events .ae-emd-head > * {
+            width: 100% !important;
+            display: block !important;
+          }
+          
+          /* Stack "Upcoming events" dropdown and "Follow Calendar" button */
+          .ae-emd-cal-events .ae-emd-head .ae-emd-left,
+          .ae-emd-cal-events .ae-emd-head .ae-emd-right {
+            width: 100% !important;
+            margin: 0 !important;
+          }
         }
         
         @media (min-width: 641px) and (max-width: 1024px) {

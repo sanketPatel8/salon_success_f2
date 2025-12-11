@@ -103,7 +103,7 @@ export default function SubscriptionGuard({
   // Community page style
   if (pageType === 'community') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen mt-[30px] md:mt-0 bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full bg-white rounded-2xl shadow-lg p-12 text-center">
           {/* Lock Icon */}
           <div className="mx-auto w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mb-6">
@@ -165,7 +165,7 @@ export default function SubscriptionGuard({
 
   // Default style (your original design)
   return (
-    <div className="container max-w-2xl mx-auto py-12 px-4">
+    <div className="container mt-[40px] md:mt-0 max-w-2xl mx-auto py-12 px-4">
       <div className="border border-pink-200 rounded-lg bg-white shadow-sm">
         <div className="text-center p-6 border-b">
           <div className="mx-auto w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mb-4">
