@@ -120,14 +120,14 @@ export function setupSimpleAuth(app: express.Application) {
   }
 });
 
-  app.post("/api/auth/register", async (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
     try {
       console.log("📌 /auth/register called");
 
-      const { email, password, name, businessType, currency } = req.body;
-      console.log("📌 Received body:", { email, name, businessType, currency });
+      const { email, password, name, businessType, instagramLink, currency } = req.body;
+      console.log("📌 Received body:", { email, name, businessType, instagramLink, currency });
 
-      if (!email || !password || !name || !businessType || !currency) {
+      if (!email || !password || !name || !businessType || !instagramLink || !currency) {
         console.log("❌ Missing required fields");
         return res.status(400).json({ message: "All fields are required" });
       }
@@ -149,6 +149,7 @@ export function setupSimpleAuth(app: express.Application) {
         password,
         name,
         businessType,
+        instagramLink,
         currency,
       });
       console.log("📌 New user created:", newUser);
@@ -687,6 +688,7 @@ This is an automated notification from Salon Success Manager.
       createdAt: string;
       businessType: string;
       currency: string;
+      instagramLink: string; // ADD THIS LINE
     }
     try {
       const users: User[] = await storage.getAllUsers();

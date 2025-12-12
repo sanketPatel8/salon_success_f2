@@ -82,6 +82,7 @@ export default function Register() {
       return apiRequest("POST", "/api/auth/register", {
         ...registerData,
         currency: data.currency,
+        instagramLink: data.instagramLink,
       });
     },
     onSuccess: (response: any) => {
@@ -256,6 +257,24 @@ export default function Register() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="instagramLink"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Instagram Link</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="https://instagram.com/yourbusiness"
+                        type="url"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

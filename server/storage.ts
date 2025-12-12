@@ -372,16 +372,16 @@ async updateSubscriptionStatus(
     return this.users.delete(userId);
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+async createUser(insertUser: InsertUser): Promise<User> {
   console.log("🚀 createUser called!");
   const id = this.currentUserId++;
   const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-  console.log(insertUser, " 📌 insertUser");
   
   const user: User = { 
     ...insertUser, 
     id,
     password: hashedPassword,
+    instagramLink: insertUser.instagramLink || null,
     stripeCustomerId: null,
     stripeSubscriptionId: null,
     subscriptionStatus: "inactive", 
@@ -392,7 +392,7 @@ async updateSubscriptionStatus(
     createdAt: new Date(),
     updatedAt: new Date(),
     currency: insertUser.currency || "USD",
-    currency_current_price: null,
+    currencyCurrentPrice: null,
   };
   
   this.users.set(id, user);

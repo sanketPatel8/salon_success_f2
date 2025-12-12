@@ -48,26 +48,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    try {
-      const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-      
-      const [user] = await db
-        .insert(users)
-        .values({
-          ...insertUser,
-          password: hashedPassword,
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          subscriptionStatus: "inactive", 
-          subscriptionEndDate: null,
-          emailVerified: false,
-          passwordResetToken: null,
-          passwordResetExpires: null,
-          currency: insertUser.currency || "USD",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .returning();
+  try {
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...insertUser,
+        password: hashedPassword,
+        instagramLink: insertUser.instagramLink || null,
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        subscriptionStatus: "inactive", 
+        subscriptionEndDate: null,
+        emailVerified: false,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        currency: insertUser.currency || "USD",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
       
       console.log("✅ User created with INACTIVE status (no trial until payment)");
       return user;

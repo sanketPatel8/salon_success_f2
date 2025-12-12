@@ -17,7 +17,8 @@ import {
   LogOut,
   Calendar,
   TrendingUp,
-  Trash2
+  Trash2,
+  Instagram
 } from "lucide-react";
 
 interface User {
@@ -26,6 +27,7 @@ interface User {
   name: string;
   businessType: string;
   currency: string;
+  instagramLink: string;
   subscriptionStatus: string;
   subscriptionEndDate: string | null;
   createdAt: string;
@@ -321,6 +323,17 @@ export default function AdminDashboard() {
                             <p className="font-medium">{user.name}</p>
                             <p className="text-sm text-gray-500">{user.email}</p>
                             <p className="text-xs text-gray-400">{user.businessType}</p>
+                            {user.instagramLink && (
+                              <a 
+                                href={user.instagramLink} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-pink-600 hover:text-pink-800 flex items-center gap-1 mt-1"
+                              >
+                                <Instagram className="w-3 h-3" />
+                                Instagram
+                              </a>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -341,29 +354,6 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex space-x-2">
-                          {/* <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateUserMutation.mutate({ 
-                              userId: user.id, 
-                              status: "active",
-                              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-                            })}
-                            disabled={updateUserMutation.isPending}
-                          >
-                            Activate
-                          </Button> */}
-                          {/* <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateUserMutation.mutate({ 
-                              userId: user.id, 
-                              status: "trialing" 
-                            })}
-                            disabled={updateUserMutation.isPending}
-                          >
-                            Trial
-                          </Button> */}
                           <Button
                             size="sm"
                             variant="outline"
