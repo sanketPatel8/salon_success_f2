@@ -18,7 +18,9 @@ import {
   Calendar,
   TrendingUp,
   Trash2,
-  Instagram
+  Instagram,
+  Menu,
+  X
 } from "lucide-react";
 
 interface User {
@@ -54,6 +56,7 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const adminPassword = localStorage.getItem("adminPassword");
@@ -196,76 +199,76 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-3 md:py-4">
             <div className="flex items-center">
-              <Settings className="w-8 h-8 text-blue-600 mr-3" />
+              <Settings className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-600 mr-2 md:mr-3" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-500">Salon Success Manager</p>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Salon Success Manager</p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+            <Button variant="outline" onClick={handleLogout} size="sm" className="md:size-default">
+              <LogOut className="w-4 h-4 mr-0 md:mr-2" />
+              <span className="hidden md:inline">Logout</span>
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 md:mb-8">
+            <Card className="col-span-1">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                <p className="text-xs text-muted-foreground">
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold">{stats.totalUsers}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
                   +{stats.recentUsers} this week
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
-                <Crown className="h-4 w-4 text-muted-foreground" />
+            <Card className="col-span-1">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Active</CardTitle>
+                <Crown className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.activeSubscriptions}</div>
-                <p className="text-xs text-muted-foreground">
-                  {((stats.activeSubscriptions / stats.totalUsers) * 100).toFixed(1)}% conversion
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold">{stats.activeSubscriptions}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  {((stats.activeSubscriptions / stats.totalUsers) * 100).toFixed(1)}% conv.
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Trial Users</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
+            <Card className="col-span-1">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Trial</CardTitle>
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.trialUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  In trial period
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold">{stats.trialUsers}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  In trial
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Free Access</CardTitle>
-                <Gift className="h-4 w-4 text-muted-foreground" />
+            <Card className="col-span-1">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">Free</CardTitle>
+                <Gift className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.freeUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  Promo code users
+              <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                <div className="text-xl sm:text-2xl font-bold">{stats.freeUsers}</div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  Promo
                 </p>
               </CardContent>
             </Card>
@@ -274,17 +277,17 @@ export default function AdminDashboard() {
 
         {/* Business Types */}
         {stats && Object.keys(stats.businessTypes).length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Business Types</CardTitle>
-              <CardDescription>Distribution of user business types</CardDescription>
+          <Card className="mb-6 md:mb-8">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg md:text-xl">Business Types</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Distribution of user business types</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {Object.entries(stats.businessTypes).map(([type, count]) => (
-                  <div key={type} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <span className="text-sm font-medium">{type}</span>
-                    <Badge variant="secondary">{count}</Badge>
+                  <div key={type} className="flex items-center justify-between p-2 sm:p-3 bg-slate-50 rounded-lg">
+                    <span className="text-xs sm:text-sm font-medium truncate mr-2">{type}</span>
+                    <Badge variant="secondary" className="text-xs">{count}</Badge>
                   </div>
                 ))}
               </div>
@@ -294,43 +297,43 @@ export default function AdminDashboard() {
 
         {/* User Management */}
         <Card>
-          <CardHeader>
-            <CardTitle>User Management</CardTitle>
-            <CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg md:text-xl">User Management</CardTitle>
+            <CardDescription className="text-xs sm:text-sm mb-3 sm:mb-4">
               Search and manage user accounts
             </CardDescription>
             <div className="flex items-center space-x-2">
               <div className="relative flex-1">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                 <Input
-                  placeholder="Search users by email, name, or business type..."
+                  placeholder="Search users..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
+                  className="pl-7 sm:pl-8 text-xs sm:text-sm"
                 />
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-4 md:p-6">
             {usersData && (
               <>
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {usersData.users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
-                            <p className="text-xs text-gray-400">{user.businessType}</p>
+                    <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border border-slate-200 rounded-lg gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm sm:text-base truncate">{user.name}</p>
+                            <p className="text-xs sm:text-sm text-gray-500 truncate">{user.email}</p>
+                            <p className="text-[10px] sm:text-xs text-gray-400 truncate">{user.businessType}</p>
                             {user.instagramLink && (
                               <a 
                                 href={user.instagramLink} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="text-xs text-pink-600 hover:text-pink-800 flex items-center gap-1 mt-1"
+                                className="text-[10px] sm:text-xs text-pink-600 hover:text-pink-800 flex items-center gap-1 mt-1"
                               >
-                                <Instagram className="w-3 h-3" />
+                                <Instagram className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                 Instagram
                               </a>
                             )}
@@ -338,22 +341,22 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                        <div className="w-full sm:w-auto sm:text-right">
                           <div className="flex items-center space-x-2">
                             {getStatusIcon(user.subscriptionStatus)}
-                            <Badge className={getStatusColor(user.subscriptionStatus)}>
+                            <Badge className={`${getStatusColor(user.subscriptionStatus)} text-[10px] sm:text-xs`}>
                               {user.subscriptionStatus}
                             </Badge>
                           </div>
                           {user.subscriptionEndDate && (
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
                               Ends: {new Date(user.subscriptionEndDate).toLocaleDateString()}
                             </p>
                           )}
                         </div>
 
-                        <div className="flex space-x-2">
+                        <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
                           <Button
                             size="sm"
                             variant="outline"
@@ -363,6 +366,7 @@ export default function AdminDashboard() {
                               endDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
                             })}
                             disabled={updateUserMutation.isPending}
+                            className="text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3"
                           >
                             Free 6mo
                           </Button>
@@ -374,8 +378,9 @@ export default function AdminDashboard() {
                               status: "inactive"
                             })}
                             disabled={updateUserMutation.isPending}
+                            className="text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3"
                           >
-                            Revoke Access
+                            Revoke
                           </Button>
                           <Button
                             size="sm"
@@ -386,8 +391,9 @@ export default function AdminDashboard() {
                               }
                             }}
                             disabled={deleteUserMutation.isPending}
+                            className="h-7 sm:h-8 w-7 sm:w-8 p-0"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                           </Button>
                         </div>
                       </div>
@@ -397,8 +403,8 @@ export default function AdminDashboard() {
 
                 {/* Pagination */}
                 {usersData.totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-6">
-                    <div className="text-sm text-gray-500">
+                  <div className="flex flex-col sm:flex-row items-center justify-between mt-4 sm:mt-6 gap-3 sm:gap-0">
+                    <div className="text-xs sm:text-sm text-gray-500">
                       Showing {usersData.users.length} of {usersData.total} users
                     </div>
                     <div className="flex space-x-2">
@@ -407,10 +413,11 @@ export default function AdminDashboard() {
                         size="sm"
                         onClick={() => setPage(page - 1)}
                         disabled={page === 1}
+                        className="text-xs sm:text-sm h-7 sm:h-8"
                       >
                         Previous
                       </Button>
-                      <span className="flex items-center px-3 text-sm">
+                      <span className="flex items-center px-2 sm:px-3 text-xs sm:text-sm">
                         Page {page} of {usersData.totalPages}
                       </span>
                       <Button
@@ -418,6 +425,7 @@ export default function AdminDashboard() {
                         size="sm"
                         onClick={() => setPage(page + 1)}
                         disabled={page === usersData.totalPages}
+                        className="text-xs sm:text-sm h-7 sm:h-8"
                       >
                         Next
                       </Button>
