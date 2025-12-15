@@ -465,6 +465,9 @@ Need help? Contact us at help@salonsuccessmanager.com
                   <span class="label">Currency:</span> ${currency}
                 </div>
                 <div class="info-row">
+                  <span class="label">Instagram Link:</span> ${instagramLink}
+                </div>
+                <div class="info-row">
                   <span class="label">Registration Date:</span> ${new Date().toLocaleString()}
                 </div>
               </div>
@@ -493,6 +496,7 @@ User Details:
 - Email: ${email}
 - Business Type: ${businessType}
 - Currency: ${currency}
+- Instagram Link: ${instagramLink}
 - Registration Date: ${new Date().toLocaleString()}
 
 This is an automated notification from Salon Success Manager.
