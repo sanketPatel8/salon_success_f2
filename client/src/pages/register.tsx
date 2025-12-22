@@ -267,11 +267,11 @@ export default function Register() {
                 name="instagramLink"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Instagram Link</FormLabel>
+                    <FormLabel>Instagram Handle</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="https://instagram.com/yourbusiness"
-                        type="url"
+                        placeholder="@Your_Instagram"
+                        type="text"
                         {...field}
                       />
                     </FormControl>

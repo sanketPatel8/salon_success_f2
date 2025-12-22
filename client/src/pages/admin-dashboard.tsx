@@ -327,15 +327,13 @@ export default function AdminDashboard() {
                             <p className="text-xs sm:text-sm text-gray-500 truncate">{user.email}</p>
                             <p className="text-[10px] sm:text-xs text-gray-400 truncate">{user.businessType}</p>
                             {user.instagramLink && (
-                              <a 
-                                href={user.instagramLink} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
+                              <p 
+                                
                                 className="text-[10px] sm:text-xs text-pink-600 hover:text-pink-800 flex items-center gap-1 mt-1"
                               >
                                 <Instagram className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                                Instagram
-                              </a>
+                                {user.instagramLink}
+                              </p>
                             )}
                           </div>
                         </div>

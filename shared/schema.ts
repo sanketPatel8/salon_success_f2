@@ -132,7 +132,7 @@ export const insertUserSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   name: z.string().min(1, "Name is required"),
   businessType: z.string().min(1, "Business type is required"),
-  instagramLink: z.string().url("Please enter a valid Instagram URL").min(1, "Instagram link is required"), 
+  instagramLink: z.string().min(1, "Instagram handle is required"), 
   currency: z.string().min(1, "currency type is required"),
 });
 
