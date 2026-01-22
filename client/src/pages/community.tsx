@@ -279,7 +279,7 @@ export default function Community() {
                 <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-2 sm:p-2.5 lg:p-3 rounded-lg sm:rounded-xl shrink-0">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-600" />
                 </div>
-                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Private Facebook Community</h2>
+                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Private WhatsApp Community</h2>
               </div>
               
               <p className="text-gray-600 text-xs sm:text-sm md:text-base mb-2.5 sm:mb-3 lg:mb-4">
@@ -292,10 +292,10 @@ export default function Community() {
 
               <Button 
                 className="w-full bg-primary hover:bg-primary/80 text-white shadow-md text-xs sm:text-sm md:text-base py-2 sm:py-2.5"
-                onClick={() => window.open('https://www.facebook.com/groups/salonsuccessmanager/', '_blank')}
+                onClick={() => window.open('https://chat.whatsapp.com/KIfXaedC3HH3kg5MX8FsDC', '_blank')}
               >
                 <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
-                Join the Facebook Group
+                Join the WhatsApp Group
               </Button>
             </CardContent>
           </Card>
