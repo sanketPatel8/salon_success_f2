@@ -275,9 +275,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTreatment(id: number, treatment: Partial<InsertTreatment>): Promise<Treatment | undefined> {
+    const [existing] = await db
+      .select()
+      .from(treatments)
+      .where(eq(treatments.id, id))
+      .limit(1);
+
+    if (!existing) {
+      return undefined;
+    }
+
+    const nextPrice = parseFloat(
+      (treatment.price ?? existing.price).toString(),
+    );
+    const nextOverheadCost = parseFloat(
+      (treatment.overheadCost ?? existing.overheadCost).toString(),
+    );
+    const nextProfit = nextPrice - nextOverheadCost;
+    const nextProfitMargin = nextPrice > 0 ? (nextProfit / nextPrice) * 100 : 0;
+
     const [result] = await db
       .update(treatments)
-      .set(treatment)
+      .set({
+        ...treatment,
+        profitMargin: nextProfitMargin.toFixed(2),
+      })
       .where(eq(treatments.id, id))
       .returning();
     return result;

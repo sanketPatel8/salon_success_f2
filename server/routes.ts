@@ -28,6 +28,51 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-11-20.acacia",
 });
 
+const parseStoredNumber = (value: unknown): number => {
+  const parsed = Number.parseFloat(value?.toString() || "0");
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const refreshTreatmentCostsForHourlyRate = async (
+  userId: number,
+  hourlyRateValue: unknown,
+) => {
+  const hourlyRate = parseStoredNumber(hourlyRateValue);
+
+  if (hourlyRate <= 0) {
+    return;
+  }
+
+  const treatments = await storage.getTreatmentsByUserId(userId);
+
+  await Promise.all(
+    treatments.map(
+      (treatment: {
+        id: number;
+        duration: number;
+        productCost?: unknown;
+        averageTeamWorking?: unknown;
+      }) => {
+        const durationHours =
+          treatment.duration > 0 ? treatment.duration / 60 : 0;
+        const productCost = parseStoredNumber(treatment.productCost);
+        const averageTeamWorking = Math.max(
+          1,
+          Math.round(parseStoredNumber(treatment.averageTeamWorking) || 1),
+        );
+        const treatmentCost =
+          durationHours > 0
+            ? (hourlyRate / averageTeamWorking) * durationHours + productCost
+            : productCost;
+
+        return storage.updateTreatment(treatment.id, {
+          overheadCost: treatmentCost.toFixed(2),
+        });
+      },
+    ),
+  );
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
 
 
@@ -2396,6 +2441,14 @@ Need help? Contact us at help@salonsuccessmanager.com
         userId: userId
       });
       const calculation = await storage.createHourlyRateCalculation(data);
+      try {
+        await refreshTreatmentCostsForHourlyRate(userId, calculation.calculatedRate);
+      } catch (syncError) {
+        console.error(
+          "Failed to refresh treatment costs after hourly rate update:",
+          syncError,
+        );
+      }
       res.json(calculation);
     } catch (error) {
       if (error instanceof z.ZodError) {

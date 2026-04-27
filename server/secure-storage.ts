@@ -188,9 +188,8 @@ export class SecureStorage implements IStorage {
   async createTreatment(treatment: InsertTreatment): Promise<Treatment> {
     const id = this.currentTreatmentId++;
     const price = parseFloat(treatment.price.toString());
-    const productCost = parseFloat(treatment.productCost.toString());
     const overheadCost = parseFloat(treatment.overheadCost.toString());
-    const totalCosts = productCost + overheadCost;
+    const totalCosts = overheadCost;
     const profit = price - totalCosts;
     const profitMargin = price > 0 ? (profit / price) * 100 : 0;
     
@@ -220,6 +219,16 @@ export class SecureStorage implements IStorage {
       ...existing,
       ...treatment,
     };
+
+    if (treatment.price || treatment.overheadCost) {
+      const price = parseFloat(updated.price.toString());
+      const overheadCost = parseFloat(updated.overheadCost.toString());
+      const totalCosts = overheadCost;
+      const profit = price - totalCosts;
+      const profitMargin = price > 0 ? (profit / price) * 100 : 0;
+      updated.profitMargin = profitMargin.toString();
+    }
+
     this.treatments.set(id, updated);
     return updated;
   }

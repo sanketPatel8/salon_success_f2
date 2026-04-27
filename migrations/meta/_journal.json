@@ -8,6 +8,13 @@
       "when": 1759299465680,
       "tag": "0000_flowery_phalanx",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776769734551,
+      "tag": "0001_elite_pandemic",
+      "breakpoints": true
     }
   ]
 }

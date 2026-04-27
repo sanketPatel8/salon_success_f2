@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/header";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Paywall from "@/components/paywall";
+import TutorialVideoCard from "@/components/tutorial-video-card";
 
 type StockPurchaseForm = z.infer<typeof insertStockPurchaseSchema>;
 
@@ -275,6 +276,14 @@ export default function StockBudgetCalculator() {
       <Header
         title="Stock Budget Calculator"
         description="Track your product purchases over 3-6 months to establish accurate monthly stock budgets for better financial planning."
+      />
+
+      <TutorialVideoCard
+        className="mx-4"
+        title="Want help building your stock budget?"
+        description="Watch a quick walkthrough on recording product purchases and using your averages to plan a realistic stock budget."
+        videoTitle="Stock Budget Calculator Walkthrough"
+        embedUrl="https://www.youtube.com/embed/6asFsiRPe4Y?si=AU187b2ukR6oGGE4"
       />
 
       {/* Budget Insights */}

@@ -6,6 +6,7 @@ import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Trash2, Plus, TrendingUp, Target, Award, Edit } from "lucide-react";
+import TutorialVideoCard from "@/components/tutorial-video-card";
 
 // Mock subscription check - in real app this would check user's subscription status
 const hasActiveSubscription = false;
@@ -200,6 +201,15 @@ export default function TeamTarget() {
         title="Team Targets" 
         description="Calculate and track salary multiplier targets for your team. Industry standard: 3x salary." 
       />
+
+      <div className="m-8 mb-0">
+        <TutorialVideoCard
+          title="Want help setting team targets?"
+          description="Watch a quick walkthrough on adding team members and understanding the 2x and 3x salary target calculations."
+          videoTitle="Team Targets Walkthrough"
+          embedUrl="https://www.youtube.com/embed/clDsLETPOCk?si=p6jL16fDn3PILb19"
+        />
+      </div>
 
       {/* Add Team Member Form */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 m-8">

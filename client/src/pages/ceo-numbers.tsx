@@ -20,6 +20,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import Header from "@/components/header";
 import Paywall from "@/components/paywall";
+import TutorialVideoCard from "@/components/tutorial-video-card";
 import type { Business, WeeklyIncome, IncomeGoal, MoneyPot } from "@shared/schema";
 import { insertBusinessSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast.ts";
@@ -691,6 +692,13 @@ const handleEditGoalSubmit = (data: IncomeGoalForm) => {
       />
 
       <div className="px-2 sm:px-4 space-y-4 sm:space-y-6  mb-4">
+
+      <TutorialVideoCard
+        title="Want help understanding your CEO Numbers?"
+        description="Watch a quick walkthrough on checking weekly income, tracking goals, and reading your key business numbers."
+        videoTitle="CEO Numbers Walkthrough"
+        embedUrl="https://www.youtube.com/embed/kYJWnxgD3i8?si=hb--H2spR1ykHfuI"
+      />
 
       {/* Business Selection & Controls */}
       <div className="flex flex-col gap-3 sm:gap-4">

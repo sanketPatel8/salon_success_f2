@@ -11,6 +11,7 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import Paywall from "@/components/paywall";
 import type { Treatment } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast.ts";
+import TutorialVideoCard from "@/components/tutorial-video-card";
 
 interface ProjectionInputs {
   selectedTreatment: string;
@@ -167,6 +168,14 @@ export default function RevenueProjections() {
       />
       
       <main className="flex-1 p-8 overflow-y-auto">
+        <TutorialVideoCard
+          className="mb-8"
+          title="Want help forecasting revenue?"
+          description="Watch a quick walkthrough on choosing a treatment, entering sessions, and reading monthly or yearly revenue projections."
+          videoTitle="Revenue Projections Walkthrough"
+          embedUrl="https://www.youtube.com/embed/rodKb3nrfSw?si=Ci8VLSAA6v8zUOBf"
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Projection Inputs */}
           <Card className="border border-slate-200">

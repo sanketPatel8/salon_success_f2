@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Receipt, Plus, Trash2, Calendar, ChevronDown, ChevronRight, X, TrendingUp } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import Paywall from "@/components/paywall";
+import TutorialVideoCard from "@/components/tutorial-video-card";
 
 const expenseSchema = z.object({
   category: z.string().min(1, "Category is required"),
@@ -284,6 +285,14 @@ export default function ExpenseTracker() {
       />
 
       <main className="flex-1 p-8 overflow-y-auto">
+        <TutorialVideoCard
+          className="mb-8"
+          title="Want help tracking expenses properly?"
+          description="Watch a quick walkthrough on adding expenses, using categories, and reading your monthly expense breakdown."
+          videoTitle="Expense Tracker Walkthrough"
+          embedUrl="https://www.youtube.com/embed/v2pwmNMtnGM?si=Vtg6bjKIBEVQXO3h"
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* ── Add Expense Form ─────────────────────────────────────── */}

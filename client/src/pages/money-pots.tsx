@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { insertMoneyPotSchema } from "@shared/schema";
 import type { MoneyPot } from "@shared/schema";
+import TutorialVideoCard from "@/components/tutorial-video-card";
 
 const moneyPotFormSchema = insertMoneyPotSchema
   .omit({ userId: true })
@@ -312,6 +313,14 @@ export default function MoneyPots() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <TutorialVideoCard
+        className="mb-6"
+        title="Want help setting up your money pots?"
+        description="Watch a quick walkthrough on splitting income into pots for VAT, profit, expenses, tax, and future savings."
+        videoTitle="Money Pots Walkthrough"
+        embedUrl="https://www.youtube.com/embed/h5Fl1lpLQU4?si=af18_kt_YO2wn7_D"
+      />
 
       {totalPercentage > 0 && (
         <Card className="mb-6">

@@ -53,6 +53,8 @@ export const treatments = pgTable("treatments", {
   name: text("name").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   duration: integer("duration").notNull(), // in minutes
+  productCost: decimal("product_cost", { precision: 10, scale: 2 }).notNull().default("0"),
+  averageTeamWorking: integer("average_team_working").notNull().default(1),
   overheadCost: decimal("overhead_cost", { precision: 10, scale: 2 }).notNull(),
   profitMargin: decimal("profit_margin", { precision: 5, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
