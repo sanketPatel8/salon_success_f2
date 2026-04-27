@@ -46,14 +46,9 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
+import TutorialVideoCard from "@/components/tutorial-video-card.tsx";
 
 const WEEKS_PER_MONTH = 4.33;
-const HOURLY_RATE_VIDEO = {
-  embedUrl: "https://www.youtube.com/embed/FdnvxSMMf0w?si=wxmyOTugAMc6Huwi",
-  title: "Hourly Rate Walkthrough",
-  description:
-    "Play a quick tutorial if you want a guided walkthrough before entering your numbers.",
-};
 
 const simpleCalculatorSchema = z.object({
   monthlyExpenses: z.string().min(1, "Monthly expenses is required"),
@@ -102,12 +97,11 @@ export default function HourlyRateCalculator() {
   const { formatCurrency, formatSymbol } = useCurrency();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const hasVideo = Boolean(HOURLY_RATE_VIDEO.embedUrl);
 
   const { data: subscriptionStatus, isLoading: subscriptionLoading } =
     useQuery<SubscriptionStatus>({
-    queryKey: ["/api/subscription-status"],
-  });
+      queryKey: ["/api/subscription-status"],
+    });
 
   const { data: calculationHistory = [] } = useQuery<CalculationHistoryItem[]>({
     queryKey: ["/api/hourly-rate-calculations"],
@@ -152,7 +146,6 @@ export default function HourlyRateCalculator() {
     return () => clearInterval(intervalId);
   }, [toast]);
 
-
   const parseNumberInput = (value: string): number => {
     const cleanValue = value.replace(/,/g, "").replace(/[^0-9.-]/g, "");
     return parseFloat(cleanValue) || 0;
@@ -171,7 +164,9 @@ export default function HourlyRateCalculator() {
       integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
-    return decimalPart !== undefined ? `${integerPart}.${decimalPart}` : integerPart;
+    return decimalPart !== undefined
+      ? `${integerPart}.${decimalPart}`
+      : integerPart;
   };
 
   const validatePercentageInput = (value: string): string => {
@@ -226,7 +221,9 @@ export default function HourlyRateCalculator() {
       return apiRequest("POST", "/api/hourly-rate-calculations", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/hourly-rate-calculations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/hourly-rate-calculations"],
+      });
       queryClient.invalidateQueries({
         queryKey: ["/api/hourly-rate-calculations/latest"],
       });
@@ -246,15 +243,28 @@ export default function HourlyRateCalculator() {
     },
   });
 
-  const calculateSimpleRate = (monthlyExpenses: string, weeklyHours: string) => {
+  const calculateSimpleRate = (
+    monthlyExpenses: string,
+    weeklyHours: string,
+  ) => {
     const expenses = parseNumberInput(monthlyExpenses);
     const hours = parseNumberInput(weeklyHours);
 
     if (expenses > 0 && hours > 0) {
       const monthlyHours = hours * WEEKS_PER_MONTH;
       const hourlyRate = expenses / monthlyHours;
-      const profitableMin = calculateHourlyRate(expenses, 20, hours, 0).hourlyRate;
-      const profitableMax = calculateHourlyRate(expenses, 30, hours, 0).hourlyRate;
+      const profitableMin = calculateHourlyRate(
+        expenses,
+        20,
+        hours,
+        0,
+      ).hourlyRate;
+      const profitableMax = calculateHourlyRate(
+        expenses,
+        30,
+        hours,
+        0,
+      ).hourlyRate;
 
       setSimpleResults({
         hourlyRate,
@@ -317,8 +327,6 @@ export default function HourlyRateCalculator() {
     saveCalculationMutation.mutate(calculationData);
   };
 
-
-
   return (
     <>
       <Header
@@ -328,7 +336,12 @@ export default function HourlyRateCalculator() {
 
       <main className="flex-1 overflow-y-auto p-4">
         <div className="mx-auto max-w-6xl space-y-6">
-          
+          <TutorialVideoCard
+            title="Want help setting up your Salon's Hourly Rate?"
+            description="Use this to find your non-negotiable hourly minimum before checking the prices of your treatments."
+            videoTitle="Hourly Rate Calculator Walkthrough"
+            embedUrl="https://www.youtube.com/embed/FdnvxSMMf0w?si=wxmyOTugAMc6Huwi"
+          />
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
             <Card className="border border-slate-200">
@@ -339,8 +352,8 @@ export default function HourlyRateCalculator() {
                       What You NEED to Earn Per Hour
                     </CardTitle>
                     <CardDescription className="mt-2 text-sm text-slate-600">
-                      This shows the minimum you must earn per hour to cover your
-                      costs and break even in your business.
+                      This shows the minimum you must earn per hour to cover
+                      your costs and break even in your business.
                     </CardDescription>
                   </div>
                   <div className="hidden rounded-xl bg-blue-100 p-3 md:flex">
@@ -378,11 +391,14 @@ export default function HourlyRateCalculator() {
                                 type="text"
                                 placeholder="0"
                                 className="pl-8"
-                                onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                                  const formattedValue = handleCurrencyInputChange(
-                                    event,
-                                    field.onChange,
-                                  );
+                                onChange={(
+                                  event: ChangeEvent<HTMLInputElement>,
+                                ) => {
+                                  const formattedValue =
+                                    handleCurrencyInputChange(
+                                      event,
+                                      field.onChange,
+                                    );
                                   calculateSimpleRate(
                                     formattedValue,
                                     simpleForm.getValues("weeklyHours"),
@@ -392,9 +408,9 @@ export default function HourlyRateCalculator() {
                             </div>
                           </FormControl>
                           <FormDescription>
-                            This is your TOTAL monthly business spend (rent, wages,
-                            stock, bills, subscriptions, EVERYTHING). This should be
-                            the same every month on average.
+                            This is your TOTAL monthly business spend (rent,
+                            wages, stock, bills, subscriptions, EVERYTHING).
+                            This should be the same every month on average.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -419,11 +435,14 @@ export default function HourlyRateCalculator() {
                               {...field}
                               type="text"
                               placeholder="0"
-                              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                                const formattedValue = handleCurrencyInputChange(
-                                  event,
-                                  field.onChange,
-                                );
+                              onChange={(
+                                event: ChangeEvent<HTMLInputElement>,
+                              ) => {
+                                const formattedValue =
+                                  handleCurrencyInputChange(
+                                    event,
+                                    field.onChange,
+                                  );
                                 calculateSimpleRate(
                                   simpleForm.getValues("monthlyExpenses"),
                                   formattedValue,
@@ -432,8 +451,8 @@ export default function HourlyRateCalculator() {
                             />
                           </FormControl>
                           <FormDescription>
-                            How many hours your business is open per week (not per
-                            person).
+                            How many hours your business is open per week (not
+                            per person).
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -479,7 +498,9 @@ export default function HourlyRateCalculator() {
                                 <p className="text-sm text-slate-700">
                                   You need to generate{" "}
                                   <span className="font-semibold text-slate-900">
-                                    {formatCurrency(simpleResults.weeklyBreakEven)}
+                                    {formatCurrency(
+                                      simpleResults.weeklyBreakEven,
+                                    )}
                                   </span>{" "}
                                   per week to break even.
                                 </p>
@@ -491,7 +512,9 @@ export default function HourlyRateCalculator() {
                                 <p className="text-sm text-slate-700">
                                   You need to generate{" "}
                                   <span className="font-semibold text-slate-900">
-                                    {formatCurrency(simpleResults.monthlyBreakEven)}
+                                    {formatCurrency(
+                                      simpleResults.monthlyBreakEven,
+                                    )}
                                   </span>{" "}
                                   per month to break even.
                                 </p>
@@ -505,8 +528,8 @@ export default function HourlyRateCalculator() {
                             Add your numbers to reveal your break-even targets.
                           </p>
                           <p className="text-sm text-slate-600">
-                            This section will show the hourly, weekly, and monthly
-                            amounts your business needs to generate.
+                            This section will show the hourly, weekly, and
+                            monthly amounts your business needs to generate.
                           </p>
                         </div>
                       )}
@@ -530,7 +553,9 @@ export default function HourlyRateCalculator() {
                         }
                       >
                         <Save className="mr-2 h-4 w-4" />
-                        {saveCalculationMutation.isPending ? "Saving..." : "Save Rate"}
+                        {saveCalculationMutation.isPending
+                          ? "Saving..."
+                          : "Save Rate"}
                       </Button>
                     </div>
                   </form>
@@ -539,42 +564,6 @@ export default function HourlyRateCalculator() {
             </Card>
 
             <div className="space-y-6">
-              <Card className="border border-slate-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-xl bg-sky-100 p-3">
-                      <CircleHelp className="h-5 w-5 text-sky-700" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-bold text-slate-800">
-                        How do I use this section?
-                      </h3>
-                      <p className="text-sm text-slate-600">
-                        Use this to find your non-negotiable hourly minimum before
-                        checking the prices of your treatments.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                    Add your average monthly costs and total weekly opening hours.
-                    The calculator will show what your business needs to generate per
-                    hour, per week, and per month just to break even.
-                  </div>
-
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                    <Button type="button" variant="outline" onClick={() => setIsHelpOpen(true)}>
-                      Quick explanation
-                    </Button>
-                    {hasVideo && (
-                      <Button type="button" className="bg-slate-900 text-white" onClick={() => setIsVideoOpen(true)}>
-                        <PlayCircle className="mr-2 h-4 w-4" />
-                        Play tutorial
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
 
               <Card className="border border-slate-200">
                 <CardContent className="p-6">
@@ -584,8 +573,8 @@ export default function HourlyRateCalculator() {
                         Advanced Planning
                       </h3>
                       <p className="mt-1 text-sm text-slate-600">
-                        Add profit and tax targets if you want a more ambitious hourly
-                        rate as well.
+                        Add profit and tax targets if you want a more ambitious
+                        hourly rate as well.
                       </p>
                     </div>
                     <div className="hidden rounded-xl bg-blue-100 p-3 md:flex">
@@ -622,11 +611,14 @@ export default function HourlyRateCalculator() {
                                     type="text"
                                     placeholder="0"
                                     className="pl-8"
-                                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                                      const formattedValue = handleCurrencyInputChange(
-                                        event,
-                                        field.onChange,
-                                      );
+                                    onChange={(
+                                      event: ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                      const formattedValue =
+                                        handleCurrencyInputChange(
+                                          event,
+                                          field.onChange,
+                                        );
                                       calculateAdvancedRate(
                                         formattedValue,
                                         advancedForm.getValues("desiredProfit"),
@@ -665,13 +657,18 @@ export default function HourlyRateCalculator() {
                                     type="text"
                                     placeholder="0"
                                     className="pr-8"
-                                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                                      const validatedValue = validatePercentageInput(
-                                        event.target.value,
-                                      );
+                                    onChange={(
+                                      event: ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                      const validatedValue =
+                                        validatePercentageInput(
+                                          event.target.value,
+                                        );
                                       field.onChange(validatedValue);
                                       calculateAdvancedRate(
-                                        advancedForm.getValues("monthlyExpenses"),
+                                        advancedForm.getValues(
+                                          "monthlyExpenses",
+                                        ),
                                         validatedValue,
                                         advancedForm.getValues("weeklyHours"),
                                         advancedForm.getValues("taxRate"),
@@ -708,11 +705,14 @@ export default function HourlyRateCalculator() {
                                   {...field}
                                   type="text"
                                   placeholder="0"
-                                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                                    const formattedValue = handleCurrencyInputChange(
-                                      event,
-                                      field.onChange,
-                                    );
+                                  onChange={(
+                                    event: ChangeEvent<HTMLInputElement>,
+                                  ) => {
+                                    const formattedValue =
+                                      handleCurrencyInputChange(
+                                        event,
+                                        field.onChange,
+                                      );
                                     calculateAdvancedRate(
                                       advancedForm.getValues("monthlyExpenses"),
                                       advancedForm.getValues("desiredProfit"),
@@ -750,13 +750,18 @@ export default function HourlyRateCalculator() {
                                     type="text"
                                     placeholder="0"
                                     className="pr-8"
-                                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                                      const validatedValue = validatePercentageInput(
-                                        event.target.value,
-                                      );
+                                    onChange={(
+                                      event: ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                      const validatedValue =
+                                        validatePercentageInput(
+                                          event.target.value,
+                                        );
                                       field.onChange(validatedValue);
                                       calculateAdvancedRate(
-                                        advancedForm.getValues("monthlyExpenses"),
+                                        advancedForm.getValues(
+                                          "monthlyExpenses",
+                                        ),
                                         advancedForm.getValues("desiredProfit"),
                                         advancedForm.getValues("weeklyHours"),
                                         validatedValue,
@@ -784,7 +789,8 @@ export default function HourlyRateCalculator() {
                           </span>
                         </div>
                         <p className="mt-2 text-sm text-slate-600">
-                          This version includes your target profit and tax allowance.
+                          This version includes your target profit and tax
+                          allowance.
                         </p>
                       </div>
                     </form>
@@ -803,7 +809,8 @@ export default function HourlyRateCalculator() {
                       Recent Calculations
                     </h3>
                     <p className="mt-1 text-sm text-slate-600">
-                      Your last {calculationHistory.length} hourly rate calculations
+                      Your last {calculationHistory.length} hourly rate
+                      calculations
                     </p>
                   </div>
                   <div className="flex rounded-xl bg-green-100 p-3">
@@ -834,7 +841,9 @@ export default function HourlyRateCalculator() {
                           </span>
                         </div>
                         <span className="text-lg font-bold text-primary">
-                          {formatCurrency(parseFloat(calculation.calculatedRate))}
+                          {formatCurrency(
+                            parseFloat(calculation.calculatedRate),
+                          )}
                         </span>
                       </div>
 
@@ -842,7 +851,9 @@ export default function HourlyRateCalculator() {
                         <div>
                           <span className="text-slate-500">Expenses:</span>
                           <div className="font-medium">
-                            {formatCurrency(parseFloat(calculation.monthlyExpenses))}
+                            {formatCurrency(
+                              parseFloat(calculation.monthlyExpenses),
+                            )}
                           </div>
                         </div>
                         <div>
@@ -873,37 +884,14 @@ export default function HourlyRateCalculator() {
         </div>
       </main>
 
-      <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
-        <DialogContent className="max-w-4xl overflow-hidden border-slate-200 bg-white p-0">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle>{HOURLY_RATE_VIDEO.title}</DialogTitle>
-            <DialogDescription>{HOURLY_RATE_VIDEO.description}</DialogDescription>
-          </DialogHeader>
-          <div className="p-6 pt-4">
-            <div className="overflow-hidden rounded-xl bg-slate-100">
-              <div className="aspect-video">
-                <iframe
-                  className="h-full w-full"
-                  src={HOURLY_RATE_VIDEO.embedUrl}
-                  title={HOURLY_RATE_VIDEO.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                  style={{ border: 0 }}
-                />
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
         <DialogContent className="max-w-lg border-slate-200 bg-white">
           <DialogHeader>
             <DialogTitle>How do I use this section?</DialogTitle>
             <DialogDescription>
-              Use these quick steps to find your break-even hourly rate and check
-              whether your pricing is working hard enough for your business.
+              Use these quick steps to find your break-even hourly rate and
+              check whether your pricing is working hard enough for your
+              business.
             </DialogDescription>
           </DialogHeader>
 
@@ -913,13 +901,13 @@ export default function HourlyRateCalculator() {
               business pays out each month.
             </div>
             <div className="rounded-xl bg-slate-50 p-4">
-              Enter the total number of hours the business is open each week, not
-              the hours for one team member.
+              Enter the total number of hours the business is open each week,
+              not the hours for one team member.
             </div>
             <div className="rounded-xl bg-slate-50 p-4">
-              Use the break-even hourly figure as your minimum benchmark. Then open
-              the pricing calculator to check whether each treatment clears that
-              hourly target.
+              Use the break-even hourly figure as your minimum benchmark. Then
+              open the pricing calculator to check whether each treatment clears
+              that hourly target.
             </div>
           </div>
         </DialogContent>
