@@ -2,97 +2,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Clock, Percent, Receipt, Package, TrendingUp, DollarSign, FileText, Star, Users, Target, Shield, Crown, X } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import katiePhotoPath from "@assets/katie-photo.png";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { buildDefaultHomepageCmsContent } from "@shared/homepage-cms";
 
-const features = [
-  {
-    icon: Clock,
-    title: "Hourly Rate Calculator",
-    description: "Work out how much it costs you per hour to run your business, so you can check if your treatments are actually priced correctly."
-  },
-  {
-    icon: Percent,
-    title: "Treatment Pricing Calculator", 
-    description: "Work out how much you should be charging for every single service. You can even break down the profit in every treatment or training course."
-  },
-  {
-    icon: DollarSign,
-    title: "CEO Numbers Dashboard",
-    description: "Katie Godfrey’s famous system used by thousands of salon owners to finally make sense of their business finances."
-  },
-  {
-    icon: Package,
-    title: "Stock Budget Calculator",
-    description: "Does it feel like all your money is constantly going on stock? Create a monthly budget to help you stay in control and stop overspending."
-  },
-  {
-    icon: TrendingUp,
-    title: "Revenue Goals & Projections",
-    description: "Set clear income targets and see exactly how many clients or courses you need to hit them."
-  },
-  {
-    icon: Receipt,
-    title: "Expense Tracker & Profit Margins",
-    description: "Know exactly where your money’s going and what’s actually bringing in profit."
-  },
-  {
-    icon: FileText,
-    title: "Professional Reports & Dashboards",
-    description: "Simple visuals, no spreadsheets, no jargon. Just clarity."
-  },
-  {
-    icon: Target,
-    title: "Team Targets Setter",
-    description: "Easily set your team targets that they need to hit to keep the business profitable."
-  }
-];
-
-const testimonials = [
-  {
-    name: "Kay Taylor",
-    business: "Hair Salon Owner",
-    quote: "This tool completely transformed how I price my services. I'm now making 40% more profit!",
-    rating: 5
-  },
-  {
-    name: "Emma Johnson", 
-    business: "Beauty Clinic",
-    quote: "The expense tracking alone has saved me thousands.",
-    rating: 5
-  },
-  {
-    name: "Lisa Williams",
-    business: "Training Academy",
-    quote: "Running a training academy means juggling so many numbers. This app keeps it all clear and organised.",
-    rating: 5
-  }
-];
-
-const pricingBenefits = [
-  "Unlimited access to all calculators",
-  "Advanced reporting and exports",
-  "Multi-business tracking",
-  "Professional PDF reports",
-  "Email support",
-  "Data security and backups",
-  "Mobile responsive design",
-  "Regular feature updates",
-  "Monthly live accountability calls",
-  "Community & training portal"
-];
-
-const benefits = [
-    "Understanding exactly what to charge",
-    "Easy to use calculators which will show you your profit margins",
-    "A clear plan to hit your income goals",
-    "Less financial stress and more freedom",
-    "The feeling of finally running your business like a CEO without winging it"
-  ];
+const featureIcons = [Clock, Percent, DollarSign, Package, TrendingUp, Receipt, FileText, Target];
 
 export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
+  const [, navigate] = useLocation();
+  const defaultContent = buildDefaultHomepageCmsContent();
+  const { data } = useQuery({
+    queryKey: ["/api/homepage-content"],
+    queryFn: async () => {
+      const response = await fetch("/api/homepage-content");
+      if (!response.ok) {
+        throw new Error("Failed to load homepage content");
+      }
+      return response.json() as Promise<{ content: typeof defaultContent }>;
+    },
+    retry: false,
+  });
+  const content = data?.content ?? defaultContent;
 
   useEffect(() => {
     // Base Meta Pixel Code
@@ -124,10 +57,10 @@ export default function Landing() {
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/login">
-                <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">Sign In</Button>
+                <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">{content.header.signInText}</Button>
               </Link>
               <Link href="/register">
-                <Button size="sm" className="text-xs text-white sm:text-sm px-2 sm:px-4">Get Your Free Trial</Button>
+                <Button size="sm" className="text-xs text-white sm:text-sm px-2 sm:px-4">{content.header.trialButtonText}</Button>
               </Link>
             </div>
           </div>
@@ -148,12 +81,12 @@ export default function Landing() {
                 {/* <h2 className="text-xl sm:text-2xl font-bold text-primary">The Salon Success Manager</h2> */}
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
-                Understand Your Numbers. Stop Winging It.
-                <span className="text-primary"> Love Your Business Again.</span>
+                {content.hero.headline}
+                <span className="text-primary"> {content.hero.highlightedText}</span>
               </h1>
               
               <p className="text-base sm:text-lg lg:text-xl text-slate-600 mb-6 sm:mb-8 leading-relaxed">
-                Running a salon, clinic, or training academy shouldn’t feel like guesswork. You deserve to know where your money is going, how much you’re really making, and exactly what to do to increase your income and profit, without feeling like you need to be an accountant.
+                {content.hero.description}
               </p>
               {/* <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
                 Stop Guessing. Start Managing 
@@ -166,16 +99,16 @@ export default function Landing() {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
                 <Link href="/register">
                   <Button size="lg" className="w-full sm:w-auto text-white text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
-                    Get Your Free Trial
+                    {content.hero.primaryCtaText}
                     <span className="ml-2">→</span>
                   </Button>
                 </Link>
                 <Button onClick={() => setShowDemo(true)} size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
-                  Watch Demo
+                  {content.hero.demoCtaText}
                 </Button>
               </div>
               <p className="text-xs sm:text-sm text-slate-500 mt-3 sm:mt-4">
-                £27/month • Cancel anytime • Have a promo code? Enter after signup
+                {content.hero.trialNote}
               </p>
             </div>
             
@@ -295,27 +228,26 @@ export default function Landing() {
       <div className="w-full lg:w-1/2 text-center lg:text-left">
         {/* Main Headline */}
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-8 leading-tight">
-          Stop Guessing. Start Managing Like a CEO.
+          {content.ceoSection.title}
         </h1>
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl text-gray-800 mb-6 leading-relaxed">
-          Most salon owners are incredible at what they do, but when it comes to numbers? 
-          It's confusing, overwhelming, and easy to avoid.
+          {content.ceoSection.subtitle}
         </p>
 
         {/* Product Introduction */}
         <p className="text-xl md:text-2xl text-primary font-semibold mb-6">
-          That's where Salon Success Manager comes in.
+          {content.ceoSection.introHighlight}
         </p>
 
         {/* Description */}
         <div className="mb-12">
           <p className="text-base md:text-lg text-gray-800 leading-relaxed mb-4">
-            The no-jargon financial tool built specifically for the hair, beauty, and aesthetics industry.
+            {content.ceoSection.descriptionLineOne}
           </p>
           <p className="text-lg md:text-xl font-medium text-gray-800">
-            It's the easiest way to finally take control of your pricing, profits, and business growth.
+            {content.ceoSection.descriptionLineTwo}
           </p>
         </div>
       </div>
@@ -339,13 +271,13 @@ export default function Landing() {
               <div className="flex-1">
                 <div className="text-sm sm:text-base lg:text-lg text-slate-700 italic leading-relaxed mb-3 sm:mb-4">
                   <p>
-                  "So many professionals come to me saying they’re fully booked but have nothing left at the end of the month. Nine times out of ten, it comes down to incorrect pricing and not knowing their break - even point or the real cost of running their business day - to - day. It’s not because they are bad with money, it’s because they have never been shown how to understand it.
+                  "{content.founderQuote.paragraphOne}
                   </p>
                   <p className="mt-3">
-                  This web app takes away the stress, the spreadsheets, and the scary accountant terms. It’s everything I teach my private clients and have used in my own salons for years. When you understand what money your business needs to make, you can build the business more easily. Start to enjoy the parts of business that your currently avoiding."
+                  {content.founderQuote.paragraphTwo}"
                   </p>
                 </div>
-                <p className="text-xs italic sm:text-sm font-semibold text-primary">- Katie Godfrey, Business Strategist, Author & Podcaster</p>
+                <p className="text-xs italic sm:text-sm font-semibold text-primary">{content.founderQuote.attribution}</p>
               </div>
             </div>
           </div>
@@ -357,10 +289,10 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
-              See Your Business Dashboard in Action
+              {content.appPreview.title}
             </h2>
             <p className="text-base sm:text-lg text-slate-600">
-              Get real-time insights and manage every aspect of your salon business
+              {content.appPreview.subtitle}
             </p>
           </div>
 
@@ -600,7 +532,7 @@ export default function Landing() {
               </div>
 
               <button
-                onClick={() => router.push('/hourly-rate')}
+                onClick={() => navigate('/hourly-rate')}
                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-10 px-4 py-2 w-full bg-primary text-white hover-bg-[#FFB6C1]"
               >
                 Open Calculator
@@ -645,7 +577,7 @@ export default function Landing() {
               </div>
 
               <button
-                onClick={() => router.push('/profit-margin')}
+                onClick={() => navigate('/profit-margin')}
                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-10 px-4 py-2 w-full bg-success text-white hover-bg-[#FFB6C1]"
               >
                 Open Calculator
@@ -664,16 +596,16 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
-              Everything You Need to Manage Your Business
+              {content.featuresSection.title}
             </h2>
             <p className="text-base sm:text-lg text-slate-600">
-              Professional tools designed specifically for salon and clinic owners
+              {content.featuresSection.subtitle}
             </p>
           </div>
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
+            {content.featuresSection.items.map((feature, index) => {
+              const Icon = featureIcons[index % featureIcons.length];
               return (
                 <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader>
@@ -698,23 +630,23 @@ export default function Landing() {
       <div className="max-w-5xl mx-auto">
         {/* Main Heading */}
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-4">
-          You Don't Just Get the App, You Get the Support.
+          {content.supportSection.title}
         </h2>
         
         {/* Subheading */}
         <p className="text-md md:text-lg text-gray-600 text-center mb-16">
-          Because we know information alone isn't enough...
+          {content.supportSection.subtitle}
         </p>
 
         {/* Included With Your Subscription */}
         <h3 className="text-xl md:text-2xl font-bold text-gray-900 text-center mb-12">
-          Included With Your Subscription:
+          {content.supportSection.introTitle}
         </h3>
 
         {/* Features List */}
         <div className="space-y-6">
-          {/* Feature 1 - Monthly Live Accountability Sessions */}
-          <div className="bg-[#F8FBFF] rounded-lg border border-[#CFE4FE] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+          {content.supportSection.items.map((item, index) => (
+          <div key={`support-item-${index}`} className="bg-[#F8FBFF] rounded-lg border border-[#CFE4FE] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
             <div className="flex gap-6 items-start">
               {/* Icon */}
               <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-md flex items-center justify-center">
@@ -726,58 +658,15 @@ export default function Landing() {
               {/* Content */}
               <div className="flex-1">
                 <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
-                  Monthly Live Accountability Sessions
+                  {item.title}
                 </h4>
                 <p className="text-base md:text-md text-gray-700 leading-relaxed">
-                  Join Katie every month on Zoom to keep on top of your numbers and actually use the tools. Ask any questions you like to understand money and business.
+                  {item.description}
                 </p>
               </div>
             </div>
           </div>
-
-          {/* Feature 2 - Access to Business Training */}
-          <div className="bg-[#F8FBFF] rounded-lg border border-[#CFE4FE] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="flex gap-6 items-start">
-              {/* Icon */}
-              <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-md flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-              </div>
-              
-              {/* Content */}
-              <div className="flex-1">
-                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
-                  Access to £1,500+ Worth of Business Training
-                </h4>
-                <p className="text-base md:text-md text-gray-700 leading-relaxed">
-                  Exclusive video library covering pricing, money mindset, marketing, and growth which is drip fed over a period of time to stop the overwhelm.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature 3 - Private Facebook Community */}
-          <div className="bg-[#F8FBFF] rounded-lg border border-[#CFE4FE] p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="flex gap-6 items-start">
-              {/* Icon */}
-              <div className="flex-shrink-0 w-12 h-12 bg-primary rounded-md flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-                </svg>
-              </div>
-              
-              {/* Content */}
-              <div className="flex-1">
-                <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
-                  Private Facebook Community
-                </h4>
-                <p className="text-base md:text-md text-gray-700 leading-relaxed">
-                  Connect with other salon, clinic, and academy owners who are taking control of their profits too. If you have a question or stuck with the system, just drop us a message in the group.
-                </p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>
@@ -797,18 +686,18 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
-              Trusted by Salon Owners Worldwide
+              {content.testimonialsSection.title}
             </h2>
             <div className="flex items-center justify-center gap-1 sm:gap-2 mb-3 sm:mb-4">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-yellow-400 text-yellow-400" />
               ))}
-              <span className="ml-2 text-sm sm:text-base text-slate-200">4.9/5 from 200+ reviews</span>
+              <span className="ml-2 text-sm sm:text-base text-slate-200">{content.testimonialsSection.ratingText}</span>
             </div>
           </div>
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
-            {testimonials.map((testimonial, index) => (
+            {content.testimonialsSection.items.map((testimonial, index) => (
               <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center mb-3 sm:mb-4">
@@ -840,30 +729,30 @@ export default function Landing() {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
-              Simple, No-Brainer Pricing
+              {content.pricingSection.title}
             </h2>
             <p className="text-base sm:text-lg text-slate-600">
-              One plan, all features, incredible value
+              {content.pricingSection.subtitle}
             </p>
           </div>
 
           <Card className="border-2 border-primary shadow-xl">
             <CardHeader className="text-center pb-2">
               <Badge variant="default" className="w-fit mx-auto mb-3 sm:mb-4 text-xs sm:text-sm">
-                Most Popular
+                {content.pricingSection.badgeText}
               </Badge>
-              <CardTitle className="text-xl sm:text-2xl">Start with a 3 - day free trial - cancel anytime.</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl">{content.pricingSection.cardTitle}</CardTitle>
               <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4">
                 {/* <span className="text-3xl sm:text-4xl font-bold text-slate-900">£27</span>
                 <span className="text-sm sm:text-base text-slate-500">/month</span> */}
               </div>
               <CardDescription className="text-sm sm:text-base mt-2">
-                After that, it’s just <span className="font-semibold text-black">£27/month</span> for the tools, support, and clarity that will change your business.
+                {content.pricingSection.description}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4 sm:pt-6">
               <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                {pricingBenefits.map((benefit, index) => (
+                {content.pricingSection.benefits.map((benefit, index) => (
                   <div key={index} className="flex items-center gap-2 sm:gap-3">
                     <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
                     <span className="text-sm sm:text-base text-slate-700">{benefit}</span>
@@ -874,11 +763,11 @@ export default function Landing() {
               <div className="space-y-3 sm:space-y-4">
                 <Link href="/register">
                   <Button size="lg" className="w-full text-base sm:text-lg py-3 sm:py-4">
-                    Start Your Free 3-Day Trial
+                    {content.pricingSection.primaryCtaText}
                   </Button>
                 </Link>
                 <p className="text-center text-xs sm:text-sm text-slate-500">
-                  No contracts • Cancel anytime
+                  {content.pricingSection.note}
                 </p>
               </div>
             </CardContent>
@@ -890,14 +779,14 @@ export default function Landing() {
       <div className="max-w-5xl mx-auto">
         {/* Main Heading */}
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-center mb-16">
-          What You Will Experience
+          {content.experienceSection.title}
         </h2>
 
         {/* White Card Container */}
         <div className="bg-white rounded-xl shadow-lg p-8 md:p-12">
           {/* Benefits List */}
           <div className="space-y-6 mb-12">
-            {benefits.map((benefit, index) => (
+            {content.experienceSection.benefits.map((benefit, index) => (
               <div key={index} className="flex items-start gap-4">
                 {/* Green Checkmark Circle */}
                 <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
@@ -929,7 +818,7 @@ export default function Landing() {
             <button
             onClick={() => window.location.href = "/register"} 
             className="group bg-primary hover:from-pink-500 hover:to-pink-600 text-white text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-2 rounded-md shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-3">
-              Start Your Free 3-Day Trial
+              {content.experienceSection.primaryCtaText}
               <svg 
                 className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" 
                 fill="none" 
@@ -947,7 +836,7 @@ export default function Landing() {
             
             {/* Subtext */}
             <p className="text-sm md:text-base text-gray-500">
-              No contracts • Cancel anytime
+              {content.experienceSection.note}
             </p>
           </div>
         </div>
@@ -958,20 +847,20 @@ export default function Landing() {
       <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-primary text-white">
         <div className="container mx-auto max-w-5xl text-center">
           <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
-            Ready to Finally Understand Your Numbers?
+            {content.finalCta.title}
           </h2>
           <p className="text-base sm:text-xl mb-6 sm:mb-8 text-primary-foreground/90">
-            Join hundreds of salon owners transforming their profits, pricing, and peace of mind with Salon Success Manager.
+            {content.finalCta.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 justify-center">
             <div className="flex flex-col items-center">
               <Link href="/register">
                 <Button size="lg" variant="secondary" className="w-full text-black sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4">
-                  Start Your 3 - Day Free Trial Now
+                  {content.finalCta.primaryCtaText}
                 </Button>
               </Link>
               <p className="text-sm text-black/90 pt-2">
-                £27/month after trial • Cancel anytime
+                {content.finalCta.note}
               </p>
             </div>
             {/* <Link href="/contact">
@@ -991,34 +880,34 @@ export default function Landing() {
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             <div>
               <div className="mb-3 sm:mb-4">
-                <h3 className="font-bold text-base sm:text-lg">Salon Success Manager</h3>
-                <p className="text-xs sm:text-sm text-slate-400">by Katie Godfrey</p>
+                <h3 className="font-bold text-base sm:text-lg">{content.footer.brandTitle}</h3>
+                <p className="text-xs sm:text-sm text-slate-400">{content.footer.brandSubtitle}</p>
               </div>
               <p className="text-slate-400 text-xs sm:text-sm">
-                Professional business management tools for salon and clinic owners.
+                {content.footer.description}
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Company</h4>
+              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">{content.footer.companyHeading}</h4>
               <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
-                <li><a href="https://kgbusinessmentor.com/" className="hover:text-white">About Katie</a></li>
-                <li><a href="mailto:info@kgbusinessmentor.com" className="hover:text-white">Contact</a></li>
-                <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
+                <li><a href={content.footer.aboutKatieUrl} className="hover:text-white">{content.footer.aboutKatieText}</a></li>
+                <li><a href={`mailto:${content.footer.contactEmail}`} className="hover:text-white">{content.footer.contactText}</a></li>
+                <li><Link href="/privacy" className="hover:text-white">{content.footer.privacyText}</Link></li>
               </ul>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Get Started</h4>
+              <h4 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">{content.footer.getStartedHeading}</h4>
               <ul className="space-y-2 text-xs sm:text-sm text-slate-400">
-                <li><Link href="/register" className="hover:text-white">Get Your Free Trial</Link></li>
-                <li><Link href="/login" className="hover:text-white">Sign In</Link></li>
+                <li><Link href="/register" className="hover:text-white">{content.footer.trialLinkText}</Link></li>
+                <li><Link href="/login" className="hover:text-white">{content.footer.signInText}</Link></li>
               </ul>
             </div>
           </div>
           
           <div className="border-t border-slate-800 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-xs sm:text-sm text-slate-400">
-            <p>&copy; 2025 Katie Godfrey Business Mentor. All rights reserved.</p>
+            <p>{content.footer.copyrightText}</p>
           </div>
         </div>
       </footer>

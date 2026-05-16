@@ -209,6 +209,58 @@ export const teamTargets = pgTable("team_target", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const aiMentorSettings = pgTable("ai_mentor_settings", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  instructions: text("instructions").notNull(),
+  welcomeHeadline: text("welcome_headline").notNull(),
+  welcomeMessage: text("welcome_message").notNull(),
+  conversationStarters: jsonb("conversation_starters").$type<string[]>().notNull(),
+  knowledgeSources: jsonb("knowledge_sources").$type<string[]>().notNull(),
+  knowledgeFiles: jsonb("knowledge_files").$type<any[]>().notNull(),
+  model: text("model").notNull(),
+  vectorStoreId: text("vector_store_id"),
+  enabled: boolean("enabled").default(true).notNull(),
+  visibleToMembers: boolean("visible_to_members").default(true).notNull(),
+  webSearchEnabled: boolean("web_search_enabled").default(true).notNull(),
+  allowPortalContext: boolean("allow_portal_context").default(true).notNull(),
+  lastKnowledgeSyncAt: timestamp("last_knowledge_sync_at"),
+  lastKnowledgeSyncStatus: text("last_knowledge_sync_status")
+    .default("idle")
+    .notNull(),
+  lastKnowledgeSyncMessage: text("last_knowledge_sync_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const aiConversations = pgTable("ai_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  status: text("status").default("active").notNull(),
+  lastMessageAt: timestamp("last_message_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const aiMessages = pgTable("ai_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => aiConversations.id),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  source: text("source").default("openai").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown> | null>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const homepageCmsContent = pgTable("homepage_cms_content", {
+  id: serial("id").primaryKey(),
+  content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertHourlyRateCalculation = z.infer<typeof insertHourlyRateCalculationSchema>;
@@ -229,3 +281,11 @@ export type InsertMoneyPot = z.infer<typeof insertMoneyPotSchema>;
 export type MoneyPot = typeof moneyPots.$inferSelect;
 export type TeamTarget = typeof teamTargets.$inferSelect;
 export type InsertTeamTarget = typeof teamTargets.$inferInsert;
+export type AiMentorSettings = typeof aiMentorSettings.$inferSelect;
+export type InsertAiMentorSettings = typeof aiMentorSettings.$inferInsert;
+export type AiConversation = typeof aiConversations.$inferSelect;
+export type InsertAiConversation = typeof aiConversations.$inferInsert;
+export type AiMessage = typeof aiMessages.$inferSelect;
+export type HomepageCmsContent = typeof homepageCmsContent.$inferSelect;
+export type InsertHomepageCmsContent = typeof homepageCmsContent.$inferInsert;
+export type InsertAiMessage = typeof aiMessages.$inferInsert;

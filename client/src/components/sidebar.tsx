@@ -1,12 +1,14 @@
 import { Link, useLocation } from "wouter";
-import { Calculator, Home, Clock, Percent, Receipt, TrendingUp, FileText, DollarSign, Crown, Package, LogOut, HelpCircle, Palette, Menu, X, Target, Users  } from "lucide-react";
+import { Calculator, Home, Clock, Percent, Receipt, TrendingUp, FileText, DollarSign, Crown, Package, LogOut, HelpCircle, Palette, Menu, X, Target, Users, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoPath from "@assets/KatieGodfrey-Logo_Black.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
+  { name: "AI Mentor", href: "/ai-mentor", icon: Sparkles },
   { name: "Hourly Rate Calculator", href: "/hourly-rate", icon: Clock },
   { name: "Pricing Calculator", href: "/profit-margin", icon: Percent },
   { name: "Money Pots", href: "/money-pots", icon: Palette },
@@ -23,6 +25,29 @@ const navigation = [
 export default function Sidebar() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const aiSettingsQuery = useQuery({
+    queryKey: ["/api/ai/settings", "sidebar"],
+    queryFn: async (): Promise<{ visibleToMembers: boolean }> => {
+      const response = await fetch("/api/ai/settings", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load AI Mentor settings");
+      }
+
+      return response.json();
+    },
+    retry: false,
+  });
+
+  const visibleNavigation = navigation.filter((item) => {
+    if (item.href !== "/ai-mentor") {
+      return true;
+    }
+
+    return aiSettingsQuery.data?.visibleToMembers !== false;
+  });
 
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
@@ -99,7 +124,7 @@ export default function Sidebar() {
         
         <nav className="flex-1 p-4 overflow-y-auto lg:mt-[0px] mt-[55px]">
           <ul className="space-y-2">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const isActive = location === item.href;
               const Icon = item.icon;
               const isCommunityAccess = item.name === "Community Access";

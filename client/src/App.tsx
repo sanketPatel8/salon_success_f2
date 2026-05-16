@@ -35,6 +35,7 @@ import TeamTarget from "./pages/team-target.tsx";
 import Cancel from "./pages/cancel.tsx";
 import ThankYou from "./pages/thank-you.tsx";
 import Community from "./pages/community.tsx";
+import AiMentor from "./pages/ai-mentor.tsx";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -85,6 +86,8 @@ function Router() {
       <Switch>
         <Route path="/admin" component={AdminLogin} />
         <Route path="/admin/dashboard" component={AdminDashboard} />
+        <Route path="/admin/ai-mentor" component={AdminDashboard} />
+        <Route path="/admin/homepage-cms" component={AdminDashboard} />
         <Route component={NotFound} />
       </Switch>
     );
@@ -128,6 +131,12 @@ function Router() {
           <Route path="/hourly-rate">
             <SubscriptionGuard>
               <HourlyRateCalculator />
+            </SubscriptionGuard>
+          </Route>
+
+          <Route path="/ai-mentor">
+            <SubscriptionGuard>
+              <AiMentor />
             </SubscriptionGuard>
           </Route>
 

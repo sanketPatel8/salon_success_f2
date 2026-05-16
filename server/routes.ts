@@ -9,6 +9,8 @@ import { activeCampaign } from "./activecampaign";
 import { TrialManager } from "./trial-manager";
 import { requireAuth } from "./simple-auth";
 import { sendDeveloperNotification } from "./sendgrid";
+import { registerAiMentorRoutes } from "./ai-mentor.js";
+import { registerHomepageCmsRoutes } from "./homepage-cms.js";
 import { 
   insertHourlyRateCalculationSchema, 
   insertTreatmentSchema, 
@@ -74,6 +76,8 @@ const refreshTreatmentCostsForHourlyRate = async (
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  registerAiMentorRoutes(app);
+  registerHomepageCmsRoutes(app);
 
 
   // In your Express server (e.g., server/index.ts or routes file)
