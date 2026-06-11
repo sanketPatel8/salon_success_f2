@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "AI Mentor", href: "/ai-mentor", icon: Sparkles },
+  { name: "KG AI Mentor", href: "/ai-mentor", icon: Sparkles },
   { name: "Hourly Rate Calculator", href: "/hourly-rate", icon: Clock },
   { name: "Pricing Calculator", href: "/profit-margin", icon: Percent },
   { name: "Money Pots", href: "/money-pots", icon: Palette },

@@ -318,16 +318,15 @@ export default function Help() {
   };
 
   const features = [
-    "Perfect Pricing Calculator",
-    "Track Your Salon's Income",
-    "Keep on Top of Your Expenses",
-    "Money goal setting tracker",
-    "Katie's famous CEO Numbers formula",
-    "Money Pot System",
-    "Instant Profit Insights",
-    "One Place for All Your Businesses",
-    "Simple, Professional Reports",
-    "Bonus Support & Community"
+    "24/7 business support through KG AI! All Katie’s systems that has generated millions",
+    "⁠Support on marketing, teams, money, gaining clients and more",
+    "⁠Monthly accountability calls",
+    "⁠WhatsApp group support",
+    "⁠Treatment pricing calculator",
+    "⁠Money goals tracker",
+    "⁠Katie’s famous CEO numbers formula",
+    "Simple reports",
+    "⁠and more!"
   ];
 
   return (
