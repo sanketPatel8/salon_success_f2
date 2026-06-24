@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { activeCampaign } from "./activecampaign";
+import { hasPaymentGraceAccess } from "./subscription-access";
 import { insertUserSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -58,6 +59,10 @@ export async function newRequireActiveSubscription(req: express.Request, res: ex
 
     // Check subscription status
     if (user.subscriptionStatus === 'active') {
+      return next();
+    }
+
+    if (hasPaymentGraceAccess(user)) {
       return next();
     }
 

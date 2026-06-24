@@ -92,6 +92,7 @@ export class SecureStorage implements IStorage {
       stripeSubscriptionId: null,
       subscriptionStatus: "trial",
       subscriptionEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
+      paymentFailedAt: null,
       emailVerified: false,
       passwordResetToken: null,
       passwordResetExpires: null,
@@ -480,5 +481,18 @@ export class SecureStorage implements IStorage {
     this.users.set(userId, updated);
     const { password: _, ...userWithoutPassword } = updated;
     return userWithoutPassword as User;
+  }
+
+  async updatePaymentFailedAt(userId: number, failedAt: Date | null): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+
+    const updated: User = {
+      ...user,
+      paymentFailedAt: failedAt,
+      updatedAt: new Date(),
+    };
+    this.users.set(userId, updated);
+    return updated;
   }
 }

@@ -11,6 +11,7 @@ import { requireAuth } from "./simple-auth";
 import { sendDeveloperNotification } from "./sendgrid";
 import { registerAiMentorRoutes } from "./ai-mentor.js";
 import { registerHomepageCmsRoutes } from "./homepage-cms.js";
+import { hasPaymentGraceAccess } from "./subscription-access";
 import { 
   insertHourlyRateCalculationSchema, 
   insertTreatmentSchema, 
@@ -807,6 +808,16 @@ Welcome to Salon Success Manager! If you need any help, contact us at help@salon
         });
       }
 
+      if (hasPaymentGraceAccess(user)) {
+        return res.json({
+          hasAccess: true,
+          status: 'past_due',
+          isTrial: false,
+          daysLeft: null,
+          paymentGracePeriod: true
+        });
+      }
+
       // Check for trial subscription
       if (user.subscriptionStatus === 'trial' && user.subscriptionEndDate) {
         const now = new Date();
@@ -966,7 +977,13 @@ Welcome to Salon Success Manager! If you need any help, contact us at help@salon
           });
           
           return res.json({
-            hasAccess: subscription.status === 'active' || subscription.status === 'trialing',
+            hasAccess:
+              subscription.status === 'active' ||
+              subscription.status === 'trialing' ||
+              (
+                subscription.status === 'past_due' &&
+                hasPaymentGraceAccess({ ...user, subscriptionStatus: 'past_due' })
+              ),
             status: subscription.status,
             isTrial: subscription.status === 'trialing',
             daysLeft: subscription.status === 'trialing' 
@@ -2336,6 +2353,7 @@ Need help? Contact us at help@salonsuccessmanager.com
               user.businessType,
               true
             );
+            await activeCampaign.setMembershipTag(user.email, 'paid');
             
             // Send developer notification
             await sendDeveloperNotification(
@@ -2376,6 +2394,7 @@ Need help? Contact us at help@salonsuccessmanager.com
               user.businessType,
               true
             );
+            await activeCampaign.setMembershipTag(user.email, 'paid');
             
             // Send developer notification
             await sendDeveloperNotification(

@@ -44,6 +44,7 @@ export interface IStorage {
   updateUserStripeInfo(userId: number, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User | undefined>;
   updateSubscriptionStatus(userId: number, status: string, endDate?: Date): Promise<User | undefined>;
   updateSubscriptionEndDate(userId: number, endDate: Date): Promise<User | undefined>;
+  updatePaymentFailedAt(userId: number, failedAt: Date | null): Promise<User | undefined>;
   deleteUser(userId: number): Promise<boolean>;
   getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
 
@@ -163,6 +164,7 @@ export class MemStorage implements IStorage {
       stripeSubscriptionId: null,
       subscriptionStatus: "trial",
       subscriptionEndDate: null,
+      paymentFailedAt: null,
       emailVerified: true,
       passwordResetToken: null,
       passwordResetExpires: null,
@@ -353,6 +355,19 @@ async updateSubscriptionStatus(
   
   return updatedUser;
 }
+
+  async updatePaymentFailedAt(userId: number, failedAt: Date | null): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+
+    const updatedUser: User = {
+      ...user,
+      paymentFailedAt: failedAt,
+      updatedAt: new Date(),
+    };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
   
 
   async updateSubscriptionEndDate(userId: number, endDate: Date): Promise<User | undefined> {
@@ -386,6 +401,7 @@ async createUser(insertUser: InsertUser): Promise<User> {
     stripeSubscriptionId: null,
     subscriptionStatus: "inactive", 
     subscriptionEndDate: null,
+    paymentFailedAt: null,
     emailVerified: false,
     passwordResetToken: null,
     passwordResetExpires: null,

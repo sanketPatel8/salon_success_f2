@@ -5,8 +5,9 @@ type User = {
   email: string;
   name: string;
   businessType: string;
-  subscriptionStatus: 'inactive' | 'trial' | 'active' | 'free_access' | 'cancelled';
+  subscriptionStatus: 'inactive' | 'trial' | 'active' | 'free_access' | 'cancelled' | 'past_due';
   subscriptionEndDate: string | null;
+  paymentFailedAt: string | null;
 };
 
 export function useAuth() {
@@ -17,6 +18,11 @@ export function useAuth() {
 
   const hasAccess = user && (
     user.subscriptionStatus === 'active' || 
+    (
+      user.subscriptionStatus === 'past_due' &&
+      user.paymentFailedAt &&
+      Date.now() - new Date(user.paymentFailedAt).getTime() < 10 * 24 * 60 * 60 * 1000
+    ) ||
     (user.subscriptionStatus === 'free_access' && user.subscriptionEndDate && new Date() <= new Date(user.subscriptionEndDate))
   );
 

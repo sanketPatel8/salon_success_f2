@@ -61,6 +61,7 @@ export class DatabaseStorage implements IStorage {
         stripeSubscriptionId: null,
         subscriptionStatus: "inactive", 
         subscriptionEndDate: null,
+        paymentFailedAt: null,
         emailVerified: false,
         passwordResetToken: null,
         passwordResetExpires: null,
@@ -187,6 +188,18 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({
         subscriptionEndDate: endDate,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updatePaymentFailedAt(userId: number, failedAt: Date | null): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({
+        paymentFailedAt: failedAt,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId))

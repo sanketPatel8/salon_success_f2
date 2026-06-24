@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   subscriptionStatus: text("subscription_status").default("inactive"),
   subscriptionEndDate: timestamp("subscription_end_date"),
+  paymentFailedAt: timestamp("payment_failed_at"),
   emailVerified: boolean("email_verified").default(false),
   passwordResetToken: text("password_reset_token"),
   passwordResetExpires: timestamp("password_reset_expires"),

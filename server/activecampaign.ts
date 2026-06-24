@@ -238,13 +238,22 @@ class ActiveCampaignService {
     }
   }
 
-  private async applyTagToContact(contactId: string, tagName: string): Promise<void> {
+  private async applyTagToContact(contactId: string, tagName: string): Promise<boolean> {
     try {
       const tagId = await this.findOrCreateTag(tagName);
       
       if (!tagId) {
         console.error(`Failed to find or create tag: ${tagName}`);
-        return;
+        return false;
+      }
+
+      const existingTags = await this.makeRequest(`contacts/${contactId}/contactTags`);
+      const alreadyApplied = existingTags.contactTags?.some(
+        (item: { tag: string }) => item.tag.toString() === tagId.toString()
+      );
+      if (alreadyApplied) {
+        console.log(`Tag ${tagName} already applied to contact ${contactId}`);
+        return true;
       }
 
       const contactTagPayload = {
@@ -256,9 +265,66 @@ class ActiveCampaignService {
 
       await this.makeRequest('contactTags', 'POST', contactTagPayload);
       console.log(`Tag ${tagName} applied to contact ${contactId}`);
+      return true;
     } catch (error) {
       console.error(`Error applying tag ${tagName} to contact ${contactId}:`, error);
-      // Don't throw - contact creation is more important than tagging
+      return false;
+    }
+  }
+
+  private async removeTagFromContact(contactId: string, tagName: string): Promise<void> {
+    try {
+      const tagId = await this.findOrCreateTag(tagName);
+      if (!tagId) return;
+
+      const response = await this.makeRequest(`contacts/${contactId}/contactTags`);
+      const contactTag = response.contactTags?.find(
+        (item: { id: string; tag: string }) => item.tag.toString() === tagId.toString()
+      );
+
+      if (contactTag) {
+        await this.makeRequest(`contactTags/${contactTag.id}`, 'DELETE');
+        console.log(`Tag ${tagName} removed from contact ${contactId}`);
+      }
+    } catch (error) {
+      console.error(`Error removing tag ${tagName} from contact ${contactId}:`, error);
+    }
+  }
+
+  async setMembershipTag(
+    email: string,
+    status: 'trial' | 'paid' | 'inactive'
+  ): Promise<void> {
+    if (!this.isConfigured) {
+      console.log('ActiveCampaign not configured - skipping membership tag update');
+      return;
+    }
+
+    const contactId = await this.findContactByEmail(email);
+    if (!contactId) {
+      console.log(`Contact not found in ActiveCampaign: ${email}`);
+      return;
+    }
+
+    const targetTag = status === 'trial'
+      ? 'trial-started'
+      : status === 'paid'
+        ? 'paid-member'
+        : 'inactive-user';
+
+    const tagsToRemove = ['salonsuccessmanager', 'trial-started', 'paid-member', 'inactive-user']
+      .filter(tag => tag !== targetTag);
+
+    const tagApplied = await this.applyTagToContact(contactId, targetTag);
+    if (!tagApplied) {
+      console.error(
+        `Membership tag update stopped for ${email}: could not apply ${targetTag}`
+      );
+      return;
+    }
+
+    for (const tag of tagsToRemove) {
+      await this.removeTagFromContact(contactId, tag);
     }
   }
 

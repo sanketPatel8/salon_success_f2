@@ -1,4 +1,5 @@
 import type { User } from "@shared/schema";
+import { hasPaymentGraceAccess } from "./subscription-access";
 
 export class TrialManager {
   /**
@@ -38,6 +39,10 @@ export class TrialManager {
       return true;
     }
 
+    if (hasPaymentGraceAccess(user)) {
+      return true;
+    }
+
     return false;
   }
 
@@ -65,6 +70,14 @@ export class TrialManager {
         hasAccess: true,
         status: "active",
         message: "Active subscription"
+      };
+    }
+
+    if (hasPaymentGraceAccess(user)) {
+      return {
+        hasAccess: true,
+        status: "active",
+        message: "Payment retry in progress"
       };
     }
 

@@ -3,6 +3,7 @@ import express from 'express';
 import Stripe from 'stripe';
 import axios from 'axios';
 import { storage } from './storage';
+import { activeCampaign } from './activecampaign';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-10-29.clover',
@@ -19,6 +20,28 @@ const TAGS = {
   INACTIVE_USER: 'inactive-user',
   SALON_SUCCESS_MANAGER: 'salonsuccessmanager',
 };
+
+const PAYMENT_GRACE_PERIOD_MS = 10 * 24 * 60 * 60 * 1000;
+const PAYMENT_GRACE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+
+function isPaymentGraceExpired(paymentFailedAt: Date | string | null | undefined): boolean {
+  return Boolean(
+    paymentFailedAt &&
+    Date.now() - new Date(paymentFailedAt).getTime() >= PAYMENT_GRACE_PERIOD_MS
+  );
+}
+
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  const invoiceWithLegacySubscription = invoice as Stripe.Invoice & {
+    subscription?: string | Stripe.Subscription | null;
+  };
+  const subscription =
+    invoiceWithLegacySubscription.subscription ??
+    invoice.parent?.subscription_details?.subscription;
+
+  if (!subscription) return null;
+  return typeof subscription === 'string' ? subscription : subscription.id;
+}
 
 /**
  * Map Stripe subscription status to internal status
@@ -384,9 +407,10 @@ export function setupStripeWebhooks(app: Express) {
             const invoice = event.data.object as Stripe.Invoice;
             console.log('💰 Payment succeeded:', invoice.id);
 
-            if (invoice.subscription) {
+            const subscriptionId = getInvoiceSubscriptionId(invoice);
+            if (subscriptionId) {
               const subscription = await stripe.subscriptions.retrieve(
-                invoice.subscription as string,
+                subscriptionId,
                 {
                   expand: ['customer', 'items.data.price'],
                 }
@@ -400,7 +424,7 @@ export function setupStripeWebhooks(app: Express) {
           case 'invoice.payment_failed': {
             const invoice = event.data.object as Stripe.Invoice;
             console.log('💔 Payment failed:', invoice.id);
-            if (invoice.subscription) {
+            if (getInvoiceSubscriptionId(invoice)) {
               await handlePaymentFailed(invoice);
             }
             break;
@@ -420,6 +444,13 @@ export function setupStripeWebhooks(app: Express) {
   );
 
   console.log('✅ Stripe webhook endpoint registered');
+
+  void reconcileExpiredPaymentGracePeriods();
+  const gracePeriodTimer = setInterval(
+    () => void reconcileExpiredPaymentGracePeriods(),
+    PAYMENT_GRACE_CHECK_INTERVAL_MS
+  );
+  gracePeriodTimer.unref();
 }
 
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
@@ -503,10 +534,24 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
   // ===== ACTIVE CAMPAIGN TAG UPDATES (For all contacts found in ActiveCampaign) =====
   if (status === 'trial') {
+    await storage.updatePaymentFailedAt(user.id, null);
     await handleTrialStarted(user, subscription);
   } else if (status === 'active') {
+    await storage.updatePaymentFailedAt(user.id, null);
     await handleSuccessfulPayment(user, subscription);
-  } else if (status === 'past_due' || status === 'inactive') {
+  } else if (status === 'past_due') {
+    const paymentFailedAt = user.paymentFailedAt || new Date();
+    if (!user.paymentFailedAt) {
+      await storage.updatePaymentFailedAt(user.id, paymentFailedAt);
+    }
+    if (isPaymentGraceExpired(paymentFailedAt)) {
+      await storage.updateSubscriptionStatus(user.id, 'inactive', endDate);
+      await handleInactiveUser(user, subscription);
+    } else {
+      await handleSuccessfulPayment(user, subscription);
+    }
+  } else if (status === 'inactive') {
+    await storage.updatePaymentFailedAt(user.id, null);
     await handleInactiveUser(user, subscription);
   }
 
@@ -564,10 +609,24 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   console.log('🏷️ Determining ActiveCampaign tag updates based on status:', status);
   
   if (status === 'trial') {
+    await storage.updatePaymentFailedAt(user.id, null);
     await handleTrialStarted(user, subscription);
   } else if (status === 'active') {
+    await storage.updatePaymentFailedAt(user.id, null);
     await handleSuccessfulPayment(user, subscription);
-  } else if (status === 'past_due' || status === 'inactive') {
+  } else if (status === 'past_due') {
+    const paymentFailedAt = user.paymentFailedAt || new Date();
+    if (!user.paymentFailedAt) {
+      await storage.updatePaymentFailedAt(user.id, paymentFailedAt);
+    }
+    if (isPaymentGraceExpired(paymentFailedAt)) {
+      await storage.updateSubscriptionStatus(user.id, 'inactive', endDate);
+      await handleInactiveUser(user, subscription);
+    } else {
+      await handleSuccessfulPayment(user, subscription);
+    }
+  } else if (status === 'inactive') {
+    await storage.updatePaymentFailedAt(user.id, null);
     await handleInactiveUser(user, subscription);
   }
 
@@ -584,14 +643,21 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   await storage.updateSubscriptionStatus(user.id, 'inactive');
+  await storage.updatePaymentFailedAt(user.id, null);
   console.log(`✅ Subscription deleted for user ${user.email}`);
 
   await handleInactiveUser(user, subscription);
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
+  const subscriptionId = getInvoiceSubscriptionId(invoice);
+  if (!subscriptionId) {
+    console.error('Subscription not found on invoice:', invoice.id);
+    return;
+  }
+
   const users = await storage.getAllUsers();
-  const user = users.find(u => u.stripeSubscriptionId === invoice.subscription);
+  const user = users.find(u => u.stripeSubscriptionId === subscriptionId);
 
   if (!user) {
     console.error('User not found for invoice:', invoice.id);
@@ -599,7 +665,74 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   }
 
   await storage.updateSubscriptionStatus(user.id, 'past_due');
+  const failedAt = user.paymentFailedAt || (
+    invoice.created ? new Date(invoice.created * 1000) : new Date()
+  );
+  if (!user.paymentFailedAt) {
+    await storage.updatePaymentFailedAt(user.id, failedAt);
+  }
   console.log(`💔 Payment failed for user ${user.email}`);
 
-  await handleInactiveUser(user);
+  if (isPaymentGraceExpired(failedAt)) {
+    await storage.updateSubscriptionStatus(user.id, 'inactive');
+    await activeCampaign.setMembershipTag(user.email, 'inactive');
+  } else {
+    await activeCampaign.setMembershipTag(user.email, 'paid');
+  }
+}
+
+async function reconcileExpiredPaymentGracePeriods() {
+  try {
+    const cutoff = Date.now() - PAYMENT_GRACE_PERIOD_MS;
+    const users = await storage.getAllUsers();
+    const missingFailureTimeUsers = users.filter(
+      user =>
+        user.subscriptionStatus === 'past_due' &&
+        !user.paymentFailedAt
+    );
+
+    for (const user of missingFailureTimeUsers) {
+      await storage.updatePaymentFailedAt(user.id, new Date());
+      await activeCampaign.setMembershipTag(user.email, 'paid');
+      console.log(
+        `Initialized 10-day payment grace period for existing past_due user ${user.email}`
+      );
+    }
+
+    const expiredUsers = users.filter(
+      user =>
+        user.subscriptionStatus === 'past_due' &&
+        user.paymentFailedAt &&
+        new Date(user.paymentFailedAt).getTime() <= cutoff
+    );
+
+    for (const user of expiredUsers) {
+      if (user.stripeSubscriptionId) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+          if (subscription.status === 'active' || subscription.status === 'trialing') {
+            await storage.updateSubscriptionStatus(
+              user.id,
+              mapStripeStatus(subscription.status)
+            );
+            await storage.updatePaymentFailedAt(user.id, null);
+            await activeCampaign.setMembershipTag(
+              user.email,
+              subscription.status === 'trialing' ? 'trial' : 'paid'
+            );
+            continue;
+          }
+        } catch (error) {
+          console.error(`Failed to verify overdue subscription ${user.stripeSubscriptionId}:`, error);
+          continue;
+        }
+      }
+
+      await storage.updateSubscriptionStatus(user.id, 'inactive');
+      await activeCampaign.setMembershipTag(user.email, 'inactive');
+      console.log(`Payment grace period expired for ${user.email}; marked inactive`);
+    }
+  } catch (error) {
+    console.error('Payment grace period reconciliation failed:', error);
+  }
 }

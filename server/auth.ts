@@ -6,6 +6,7 @@ import { activeCampaign } from "./activecampaign";
 import { sendDeveloperNotification } from "./sendgrid";
 import { insertUserSchema, loginSchema } from "@shared/schema";
 import { z } from "zod";
+import { hasPaymentGraceAccess } from "./subscription-access";
 
 const pgStore = connectPg(session);
 
@@ -59,6 +60,10 @@ export async function requireActiveSubscription(req: express.Request, res: expre
 
     // Check if user has active subscription
     if (user.subscriptionStatus === 'active') {
+      return next();
+    }
+
+    if (hasPaymentGraceAccess(user)) {
       return next();
     }
 
